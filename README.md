@@ -133,6 +133,16 @@ Sources/AnyRecord
 └── UI/             status item + pill/waveform, floating bar, settings window
 ```
 
+## App icon
+
+`Resources/AppIcon.icns` is generated from `scripts/make-icon.swift` (a CoreGraphics
+rendering of the chosen design: the floating bar with two transcript lines):
+
+```sh
+swift scripts/make-icon.swift Resources/AppIcon-1024.png 1024
+# then build the iconset / icns with sips + iconutil (see git history of this file)
+```
+
 ## Versions and updates
 
 - The version lives in `Resources/Info.plist` (`CFBundleShortVersionString`); `bundle.sh`

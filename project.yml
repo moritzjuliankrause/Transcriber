@@ -14,6 +14,8 @@ targets:
     type: application
     platform: macOS
     sources: [Sources/AnyRecord]
+    # App icon: Resources/AppIcon.icns is referenced via CFBundleIconFile in Info.plist
+    resources: [Resources/AppIcon.icns]
     info:
       path: Resources/Info.plist
     entitlements:

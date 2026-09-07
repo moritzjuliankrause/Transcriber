@@ -8,6 +8,8 @@
 	<string>AnyRecord</string>
 	<key>CFBundleExecutable</key>
 	<string>AnyRecord</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.moritzkrause.anyrecord</string>
 	<key>CFBundleInfoDictionaryVersion</key>
