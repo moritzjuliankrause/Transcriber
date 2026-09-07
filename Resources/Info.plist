@@ -5,9 +5,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>AnyRecord</string>
+	<string>Transcriber</string>
 	<key>CFBundleExecutable</key>
-	<string>AnyRecord</string>
+	<string>Transcriber</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>AnyRecord</string>
+	<string>Transcriber</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,12 +27,12 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>AnyRecord captures system audio so the other participants of a call can be transcribed.</string>
+	<string>Transcriber captures system audio so the other participants of a call can be transcribed.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>AnyRecord records your microphone so your side of a call can be transcribed.</string>
+	<string>Transcriber records your microphone so your side of a call can be transcribed.</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>AnyRecord notifies you when a call seems to start so you can begin recording.</string>
+	<string>Transcriber notifies you when a call seems to start so you can begin recording.</string>
 </dict>
 </plist>

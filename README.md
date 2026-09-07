@@ -1,4 +1,4 @@
-# AnyRecord
+# Transcriber
 
 Menu bar app for macOS that records calls (microphone + system audio), transcribes
 them locally with FluidAudio / Parakeet, separates speakers and saves the transcript
@@ -14,13 +14,13 @@ Everything runs offline. The only network access is the one-time model download.
 
 ## Build
 
-Option A – Xcode: open `Package.swift` in Xcode, select the *AnyRecord* scheme, run.
+Option A – Xcode: open `Package.swift` in Xcode, select the *Transcriber* scheme, run.
 
 Option B – terminal, produces a double-clickable app in `dist/`:
 
 ```sh
-./scripts/bundle.sh          # release build + AnyRecord.app
-open dist/AnyRecord.app
+./scripts/bundle.sh          # release build + Transcriber.app
+open dist/Transcriber.app
 ```
 
 Option C – generate an `.xcodeproj` (optional): `brew install xcodegen && xcodegen`.
@@ -43,19 +43,19 @@ identity, e.g. a Developer ID.
 
 ### Logs and self-tests
 
-The app writes `~/Library/Logs/AnyRecord.log` (device, formats, tap, echo-gate stats
+The app writes `~/Library/Logs/Transcriber.log` (device, formats, tap, echo-gate stats
 every 30 s, restarts). Two self-tests exist:
 
 ```sh
 # full recording session without UI (uses the real coordinator, echo gate, ASR)
-open -a /Applications/AnyRecord.app --args --record-test 20 --log /tmp/record.log
+open -a /Applications/Transcriber.app --args --record-test 20 --log /tmp/record.log
 sleep 50; cat /tmp/record.log
 ```
 
 ### Diagnosing audio capture
 
 ```sh
-open -a /Applications/AnyRecord.app --args --capture-test 8 --log /tmp/capture.log
+open -a /Applications/Transcriber.app --args --capture-test 8 --log /tmp/capture.log
 sleep 25; cat /tmp/capture.log
 ```
 
@@ -94,7 +94,7 @@ Each recording gets a folder `<Transcripts>/<yyyy-MM-dd HH-mm> <title>/`:
 | `session.json` | Metadata and status (`recording` / `complete`). |
 
 If the Mac crashes mid-call, the transcript up to the last segment is already on
-disk. On the next launch AnyRecord offers to finalize the session: it transcribes
+disk. On the next launch Transcriber offers to finalize the session: it transcribes
 the audio that was not processed yet and renders the final files.
 
 ## How speakers are separated
@@ -114,7 +114,7 @@ the audio that was not processed yet and renders the final files.
 
 - **System audio tap on macOS 26:** a global tap (`stereoGlobalTapButExcludeProcesses`)
   is created without error but its aggregate device never starts IO. A mixdown tap
-  over the explicit list of audio process objects works, so AnyRecord uses that and
+  over the explicit list of audio process objects works, so Transcriber uses that and
   rebuilds the tap when the process list changes (apps launched mid-recording).
 - **System audio permission:** there is no public API to trigger the prompt, so the
   app calls the private `TCCAccessRequest` for `kTCCServiceAudioCapture` (fine for a
@@ -123,7 +123,7 @@ the audio that was not processed yet and renders the final files.
 ## Project layout
 
 ```
-Sources/AnyRecord
+Sources/Transcriber
 ├── App/            entry point, AppDelegate, AppState, AppSettings
 ├── Audio/          Core Audio devices, microphone capture, system audio tap, resampler, WAV writer
 ├── Transcription/  ModelManager, FluidAudio engine, VAD segmenter, transcription queue, diarizer

@@ -1,4 +1,4 @@
-// Renders the AnyRecord app icon (design "4 – bar plus transcript lines") to PNG.
+// Renders the Transcriber app icon (design "4 – bar plus transcript lines") to PNG.
 // Usage: swift scripts/make-icon.swift <output.png> [size]
 import AppKit
 import CoreImage
