@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>AnyRecord</string>
 	<key>CFBundleExecutable</key>
 	<string>AnyRecord</string>
 	<key>CFBundleIdentifier</key>
@@ -12,24 +14,22 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>AnyRecord</string>
-	<key>CFBundleDisplayName</key>
-	<string>AnyRecord</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.0</string>
+	<string>0.1.1</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.2</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>AnyRecord captures system audio so the other participants of a call can be transcribed.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AnyRecord records your microphone so your side of a call can be transcribed.</string>
-	<key>NSAudioCaptureUsageDescription</key>
-	<string>AnyRecord captures system audio so the other participants of a call can be transcribed.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>AnyRecord notifies you when a call seems to start so you can begin recording.</string>
 </dict>
