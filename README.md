@@ -167,6 +167,10 @@ swift scripts/make-icon.swift Resources/AppIcon-1024.png 1024
   running version with the latest GitHub release and can download, install and relaunch.
   It also checks once a day automatically. It uses the public GitHub API without any
   token, so it works for everyone once the repository is public.
+- The installer only accepts an update that is signed by the same identity as the running
+  app (the designated requirement is checked with the Security framework before the swap).
+  An ad-hoc signed build therefore cannot self-update; sign with a stable identity
+  (see "Code signing and permissions"). The bundle is signed with the hardened runtime.
 - Note: an app built on another Mac carries a different signature, so macOS asks for the
   microphone / system-audio permissions again after such an update.
 

@@ -102,7 +102,7 @@ final class RecordingCoordinator {
                                             words: result.words.map { WordStamp(word: $0.word, start: segment.start + $0.startTime, end: segment.start + $0.endTime) })
                 // Residual echo: drop a mic entry that repeats what the far end just said.
                 if entry.channel == .me, store.entries.suffix(12).contains(where: { EchoDeduplicator.isEcho(entry, of: $0) }) {
-                    NSLog("Dropped echo duplicate at \(entry.start)s: \(entry.text)")
+                    NSLog("Dropped echo duplicate at \(entry.start)s (\(entry.text.count) chars)")
                     await MainActor.run {
                         self.partialHistory[segment.channel] = nil
                         state.clearPartial(channel: segment.channel)

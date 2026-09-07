@@ -4,3 +4,4 @@ dist/
 *.xcworkspace
 .swiftpm/
 .DS_Store
+.claude/worktrees/

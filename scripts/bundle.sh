@@ -33,7 +33,9 @@ if [ -z "$IDENTITY" ]; then
     if security find-identity -v -p codesigning | grep -q "\"$name\""; then IDENTITY="$name"; break; fi
   done
 fi
-codesign --force --sign "${IDENTITY:--}" --entitlements Resources/Transcriber.entitlements "$APP"
+# --options runtime enables the hardened runtime (library validation, no injection into a
+# process that holds microphone / system-audio / accessibility grants).
+codesign --force --options runtime --sign "${IDENTITY:--}" --entitlements Resources/Transcriber.entitlements "$APP"
 echo "Signed with: ${IDENTITY:-ad-hoc}"
 echo "Built $APP"
 

@@ -46,7 +46,7 @@ enum RecordingFinalizer {
             let remote = Set(store.entries.filter { $0.channel == .them }.map(\.speaker))
             let names = SpeakerNameGuesser.guess(entries: store.entries, myName: settings.myName, remoteLabels: remote)
             if !names.isEmpty {
-                AppLog.write("Guessed speaker names: \(names)")
+                AppLog.write("Guessed speaker names for \(names.count) remote label(s)")
                 store.replaceEntries(SpeakerNameGuesser.relabel(store.entries, names: names))
             }
         }

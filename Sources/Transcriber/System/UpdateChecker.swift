@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Security
 
 /// Checks GitHub Releases for a newer version and can install it in place.
 ///
@@ -131,18 +132,20 @@ final class UpdateChecker: ObservableObject {
 
             let current = Bundle.main.bundleURL
             guard current.pathExtension == "app" else { throw UpdateError.message("Not running from an .app bundle – use scripts/bundle.sh instead.") }
+            // Only install code signed by the same identity as the running app. This is the
+            // trust anchor for the update: a tampered or foreign zip is refused here.
+            try UpdateChecker.verifySignature(of: newApp, matching: current)
             // Swap: move the running app aside (it keeps running from the old inode), put the new one in place.
             let backup = work.appendingPathComponent("previous.app")
             try FileManager.default.moveItem(at: current, to: backup)
             try FileManager.default.moveItem(at: newApp, to: current)
-            try? run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", current.path])
             AppLog.write("Installed update from \(assetURL.lastPathComponent); relaunching")
 
-            // Relaunch the new copy after this process exits.
-            let script = "sleep 1; open \"\(current.path)\""
+            // Relaunch the new copy: `-n` starts a fresh instance even though this one is
+            // still running (from the moved-aside bundle). No shell involved.
             let relaunch = Process()
-            relaunch.executableURL = URL(fileURLWithPath: "/bin/sh")
-            relaunch.arguments = ["-c", script]
+            relaunch.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            relaunch.arguments = ["-n", "-a", current.path]
             try relaunch.run()
             NSApp.terminate(nil)
         } catch {
@@ -150,6 +153,29 @@ final class UpdateChecker: ObservableObject {
             status = available
             installBlocker = "Install failed: \(error.localizedDescription)"
             UpdateWindowController.shared.show()
+        }
+    }
+
+    /// Throws unless `candidate` carries a valid code signature that satisfies the designated
+    /// requirement of `reference` (the running app). With the self-signed "Transcriber Dev" or a
+    /// Developer ID identity this means "signed by the same certificate"; an ad-hoc signed app has
+    /// a per-build requirement, so it can never accept updates and is told so.
+    static func verifySignature(of candidate: URL, matching reference: URL) throws {
+        var referenceCode: SecStaticCode?
+        var candidateCode: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(reference as CFURL, [], &referenceCode) == errSecSuccess, let referenceCode,
+              SecStaticCodeCreateWithPath(candidate as CFURL, [], &candidateCode) == errSecSuccess, let candidateCode else {
+            throw UpdateError.message("Could not read the code signatures.")
+        }
+        var requirement: SecRequirement?
+        guard SecCodeCopyDesignatedRequirement(referenceCode, [], &requirement) == errSecSuccess, let requirement else {
+            throw UpdateError.message("The running app is not signed; rebuild with scripts/bundle.sh and a signing identity.")
+        }
+        let flags = SecCSFlags(rawValue: kSecCSCheckAllArchitectures | kSecCSCheckNestedCode | kSecCSStrictValidate)
+        let status = SecStaticCodeCheckValidity(candidateCode, flags, requirement)
+        guard status == errSecSuccess else {
+            let reason = SecCopyErrorMessageString(status, nil) as String? ?? "OSStatus \(status)"
+            throw UpdateError.message("Update refused: it is not signed by the same identity as the installed app (\(reason)).")
         }
     }
 
