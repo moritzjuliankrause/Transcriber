@@ -149,6 +149,10 @@ swift scripts/make-icon.swift Resources/AppIcon-1024.png 1024
   stamps the build number (commit count) and git hash into the built app.
 - `./scripts/release.sh 0.2.0 "notes"` bumps the version, commits, tags `v0.2.0`, builds,
   zips and publishes a GitHub release with the zip attached.
+- A version with a suffix, e.g. `./scripts/release.sh 0.3.0-beta.1`, is published as a
+  GitHub pre-release. The normal update check ignores pre-releases; users who turn on
+  "Include pre-releases" in Settings › General are offered them. A later `0.3.0` counts as
+  newer than any `0.3.0-…` pre-release.
 - In the app, **Check for Updates…** (right-click menu or Settings › General) compares the
   running version with the latest GitHub release and can download, install and relaunch.
   It also checks once a day automatically. It uses the public GitHub API without any

@@ -47,7 +47,11 @@ final class UpdateChecker: ObservableObject {
     func check(interactive: Bool) async {
         status = .checking
         do {
-            var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(UpdateChecker.repository)/releases/latest")!)
+            // `releases/latest` never returns pre-releases; with the opt-in we list
+            // recent releases and take the newest one, pre-release or not.
+            let includePre = AppSettings.shared.includePreReleases
+            let endpoint = includePre ? "releases?per_page=10" : "releases/latest"
+            var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(UpdateChecker.repository)/\(endpoint)")!)
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse else { throw UpdateError.badResponse }
@@ -55,11 +59,20 @@ final class UpdateChecker: ObservableObject {
                 throw UpdateError.message("No release reachable. The repository may still be private.")
             }
             guard http.statusCode == 200 else { throw UpdateError.message("GitHub answered \(http.statusCode).") }
-            let release = try JSONDecoder().decode(Release.self, from: data)
+            let release: Release
+            if includePre {
+                let list = try JSONDecoder().decode([Release].self, from: data).filter { !$0.draft }
+                guard let newest = list.max(by: { UpdateChecker.isNewer(UpdateChecker.version(from: $1.tag_name), than: UpdateChecker.version(from: $0.tag_name)) }) else {
+                    throw UpdateError.message("No release found.")
+                }
+                release = newest
+            } else {
+                release = try JSONDecoder().decode(Release.self, from: data)
+            }
             lastCheck = Date()
             UserDefaults.standard.set(lastCheck, forKey: "lastUpdateCheck")
 
-            let latest = release.tag_name.hasPrefix("v") ? String(release.tag_name.dropFirst()) : release.tag_name
+            let latest = UpdateChecker.version(from: release.tag_name)
             guard UpdateChecker.isNewer(latest, than: UpdateChecker.currentVersion) else {
                 status = .upToDate(latest)
                 if interactive { notify("AnyRecord is up to date", "Version \(UpdateChecker.currentVersion) is the latest release.") }
@@ -152,19 +165,35 @@ final class UpdateChecker: ObservableObject {
 
     // MARK: - Helpers
 
+    static func version(from tag: String) -> String {
+        tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
+    }
+
+    /// Semantic comparison: 0.3.0 > 0.3.0-rc.1 > 0.3.0-beta.2 > 0.3.0-beta.1 > 0.2.9.
     static func isNewer(_ a: String, than b: String) -> Bool {
-        let pa = a.split(separator: ".").map { Int($0) ?? 0 }
-        let pb = b.split(separator: ".").map { Int($0) ?? 0 }
-        for i in 0..<max(pa.count, pb.count) {
-            let x = i < pa.count ? pa[i] : 0, y = i < pb.count ? pb[i] : 0
+        func split(_ v: String) -> ([Int], String?) {
+            let parts = v.split(separator: "-", maxSplits: 1).map(String.init)
+            let nums = parts[0].split(separator: ".").map { Int($0) ?? 0 }
+            return (nums, parts.count > 1 ? parts[1] : nil)
+        }
+        let (na, pa) = split(a), (nb, pb) = split(b)
+        for i in 0..<max(na.count, nb.count) {
+            let x = i < na.count ? na[i] : 0, y = i < nb.count ? nb[i] : 0
             if x != y { return x > y }
         }
-        return false
+        switch (pa, pb) {
+        case (nil, nil): return false
+        case (nil, _): return true            // release beats its own pre-releases
+        case (_, nil): return false
+        case (let x?, let y?): return x.compare(y, options: .numeric) == .orderedDescending
+        }
     }
 
     private struct Release: Decodable {
         let tag_name: String
         let body: String?
+        let draft: Bool
+        let prerelease: Bool
         let assets: [Asset]
         struct Asset: Decodable { let name: String; let url: String }
     }

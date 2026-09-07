@@ -21,6 +21,7 @@ final class AppSettings: ObservableObject {
     @Published var detectCalls: Bool { didSet { defaults.set(detectCalls, forKey: "detectCalls") } }
     @Published var consentAcknowledged: Bool { didSet { defaults.set(consentAcknowledged, forKey: "consentAcknowledged") } }
     @Published var autoCheckUpdates: Bool { didSet { defaults.set(autoCheckUpdates, forKey: "autoCheckUpdates") } }
+    @Published var includePreReleases: Bool { didSet { defaults.set(includePreReleases, forKey: "includePreReleases") } }
 
     // Audio
     @Published var inputDeviceUID: String { didSet { defaults.set(inputDeviceUID, forKey: "inputDeviceUID") } }
@@ -60,6 +61,7 @@ final class AppSettings: ObservableObject {
         detectCalls = bool("detectCalls", true)
         consentAcknowledged = bool("consentAcknowledged", false)
         autoCheckUpdates = bool("autoCheckUpdates", true)
+        includePreReleases = bool("includePreReleases", false)
 
         inputDeviceUID = str("inputDeviceUID", "")
         echoCancellation = bool("echoCancellation", false)

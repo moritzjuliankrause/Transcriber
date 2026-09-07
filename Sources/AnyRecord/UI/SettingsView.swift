@@ -88,6 +88,7 @@ struct GeneralSettings: View {
                     updateStatusText
                 }
                 Toggle("Check automatically once a day", isOn: $settings.autoCheckUpdates)
+                Toggle("Include pre-releases (beta versions)", isOn: $settings.includePreReleases)
                 Text("Updates come from GitHub releases of moritzjkr/AnyRecord. No account needed.")
                     .font(.caption).foregroundStyle(.secondary)
             }

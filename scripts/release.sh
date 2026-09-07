@@ -2,6 +2,9 @@
 # Publishes a new version: bumps CFBundleShortVersionString, commits, tags vX.Y.Z,
 # builds AnyRecord.app, zips it and creates a GitHub release with the zip attached.
 #   ./scripts/release.sh 0.2.0 ["release notes"]
+# A version with a suffix (0.3.0-beta.1, 1.0.0-rc.2) becomes a GitHub *pre-release*:
+# the app's normal update check ignores it; only users who enabled
+# "Include pre-releases" in Settings are offered it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VERSION="${1:?usage: release.sh <version> [notes]}"
@@ -22,5 +25,7 @@ rm -f "$ZIP"
 ditto -c -k --keepParent dist/AnyRecord.app "$ZIP"
 
 git push -q origin main --tags
-gh release create "v$VERSION" "$ZIP" --title "AnyRecord $VERSION" --notes "$NOTES"
+PRERELEASE=()
+[[ "$VERSION" == *-* ]] && PRERELEASE=(--prerelease)
+gh release create "v$VERSION" "$ZIP" --title "AnyRecord $VERSION" --notes "$NOTES" "${PRERELEASE[@]}"
 echo "Released v$VERSION → $(gh release view "v$VERSION" --json url -q .url)"
