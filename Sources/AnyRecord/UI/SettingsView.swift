@@ -88,8 +88,7 @@ struct GeneralSettings: View {
                     updateStatusText
                 }
                 Toggle("Check automatically once a day", isOn: $settings.autoCheckUpdates)
-                SecureField("GitHub token (private repository)", text: $settings.githubToken)
-                Text("Releases are published from the private repository moritzjkr/AnyRecord. A fine-grained personal access token with read access to Contents is required to check and download them.")
+                Text("Updates come from GitHub releases of moritzjkr/AnyRecord. No account needed.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Speaker labels") {

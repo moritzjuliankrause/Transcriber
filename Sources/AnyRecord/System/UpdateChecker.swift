@@ -6,9 +6,9 @@ import Foundation
 /// Release flow: `scripts/release.sh 0.2.0` bumps the version, tags `v0.2.0`,
 /// builds the app, zips it and publishes a GitHub release with the zip attached.
 /// The app compares its `CFBundleShortVersionString` with the latest release tag.
-/// The repository is private, so API calls carry a personal access token
-/// (Settings › General › Updates) – a fine-grained token with read access to
-/// "Contents" of this repository is enough.
+/// Uses the unauthenticated GitHub API, so it works for every user once the
+/// repository is public. While the repository is private the check reports
+/// that no release is reachable.
 @MainActor
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
@@ -35,8 +35,6 @@ final class UpdateChecker: ObservableObject {
         return hash.isEmpty ? "build \(build)" : "build \(build), \(hash)"
     }
 
-    private var token: String { AppSettings.shared.githubToken.trimmingCharacters(in: .whitespacesAndNewlines) }
-
     // MARK: - Check
 
     /// Checks at most once a day when called automatically.
@@ -51,11 +49,10 @@ final class UpdateChecker: ObservableObject {
         do {
             var request = URLRequest(url: URL(string: "https://api.github.com/repos/\(UpdateChecker.repository)/releases/latest")!)
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-            if !token.isEmpty { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse else { throw UpdateError.badResponse }
             if http.statusCode == 404 {
-                throw UpdateError.message("No release found. For a private repository add a GitHub token in Settings.")
+                throw UpdateError.message("No release reachable. The repository may still be private.")
             }
             guard http.statusCode == 200 else { throw UpdateError.message("GitHub answered \(http.statusCode).") }
             let release = try JSONDecoder().decode(Release.self, from: data)
@@ -103,7 +100,6 @@ final class UpdateChecker: ObservableObject {
         do {
             var request = URLRequest(url: assetURL)
             request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
-            if !token.isEmpty { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
             let (tmp, response) = try await URLSession.shared.download(for: request)
             guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw UpdateError.message("Download failed.") }
 

@@ -141,8 +141,8 @@ Sources/AnyRecord
   zips and publishes a GitHub release with the zip attached.
 - In the app, **Check for Updates…** (right-click menu or Settings › General) compares the
   running version with the latest GitHub release and can download, install and relaunch.
-  It also checks once a day automatically. The repository is private, so a fine-grained
-  personal access token with read access to *Contents* has to be entered in Settings.
+  It also checks once a day automatically. It uses the public GitHub API without any
+  token, so it works for everyone once the repository is public.
 - Note: an app built on another Mac carries a different signature, so macOS asks for the
   microphone / system-audio permissions again after such an update.
 
