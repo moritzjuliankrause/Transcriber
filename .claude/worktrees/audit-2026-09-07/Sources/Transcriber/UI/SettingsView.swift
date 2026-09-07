@@ -48,11 +48,7 @@ struct SettingsView: View {
     }
 
     static let size = CGSize(width: 800, height: 580)
-    @ObservedObject private var navigation = SettingsNavigation.shared
-    private var selection: Section {
-        get { navigation.section }
-        nonmutating set { navigation.section = newValue }
-    }
+    @State private var selection: Section = .general
 
     var body: some View {
         HStack(spacing: 0) {
@@ -166,13 +162,6 @@ struct SettingsPage<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-}
-
-/// Which section the Settings window shows; shared so other parts of the app can open one.
-@MainActor
-final class SettingsNavigation: ObservableObject {
-    static let shared = SettingsNavigation()
-    @Published var section: SettingsView.Section = .general
 }
 
 /// A rounded card with a small caps title; rows are separated by hairlines.
@@ -309,16 +298,7 @@ struct GeneralSettings: View {
                             .disabled(updater.status == .checking)
                     }
                 }
-                SettingRow(title: "Check automatically", caption: "Checked when the app has been running for a while and the interval has passed") {
-                    Picker("", selection: $settings.updateCheckInterval) {
-                        Text("Never").tag("never")
-                        Text("Every launch").tag("launch")
-                        Text("Daily").tag("daily")
-                        Text("Weekly").tag("weekly")
-                        Text("Monthly").tag("monthly")
-                    }
-                    .labelsHidden().frame(width: 130)
-                }
+                ToggleRow(title: "Check automatically once a day", isOn: $settings.autoCheckUpdates)
                 ToggleRow(title: "Include pre-releases", caption: "Beta versions", isOn: $settings.includePreReleases)
             }
             SettingsCard(title: "Legal") {

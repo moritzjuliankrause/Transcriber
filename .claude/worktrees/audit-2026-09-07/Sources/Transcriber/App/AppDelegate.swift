@@ -39,10 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ConsentNotice.showIfNeeded(settings: settings)
         LaunchAtLogin.sync(enabled: settings.launchAtLogin)
 
-        Task {
-            await ModelManager.shared.refreshStatus()
-            ModelSetupPrompt.showIfNeeded(settings: settings) { [weak self] in self?.showSettings(section: .transcription) }
-        }
+        Task { await ModelManager.shared.refreshStatus() }
         Task { await ModelCache.shared.preload(settings: settings) }
         Task {
             try? await Task.sleep(nanoseconds: 10_000_000_000)   // don't compete with launch work
@@ -84,8 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func showSettings(section: SettingsView.Section? = nil) {
-        if let section { SettingsNavigation.shared.section = section }
+    func showSettings() {
         if settingsWindowController == nil {
             settingsWindowController = SettingsWindowController(settings: settings, state: state)
         }

@@ -23,9 +23,7 @@ final class AppSettings: ObservableObject {
     @Published var soundEffects: Bool { didSet { defaults.set(soundEffects, forKey: "soundEffects") } }
     @Published var detectCalls: Bool { didSet { defaults.set(detectCalls, forKey: "detectCalls") } }
     @Published var consentAcknowledged: Bool { didSet { defaults.set(consentAcknowledged, forKey: "consentAcknowledged") } }
-    /// never | launch | daily | weekly | monthly
-    @Published var updateCheckInterval: String { didSet { defaults.set(updateCheckInterval, forKey: "updateCheckInterval") } }
-    @Published var modelsPromptShown: Bool { didSet { defaults.set(modelsPromptShown, forKey: "modelsPromptShown") } }
+    @Published var autoCheckUpdates: Bool { didSet { defaults.set(autoCheckUpdates, forKey: "autoCheckUpdates") } }
     @Published var includePreReleases: Bool { didSet { defaults.set(includePreReleases, forKey: "includePreReleases") } }
 
     // AI hand-off
@@ -77,9 +75,7 @@ final class AppSettings: ObservableObject {
         soundEffects = bool("soundEffects", true)
         detectCalls = bool("detectCalls", true)
         consentAcknowledged = bool("consentAcknowledged", false)
-        // Migration from the old on/off switch (default was daily).
-        updateCheckInterval = str("updateCheckInterval", bool("autoCheckUpdates", true) ? "daily" : "never")
-        modelsPromptShown = bool("modelsPromptShown", false)
+        autoCheckUpdates = bool("autoCheckUpdates", true)
         includePreReleases = bool("includePreReleases", false)
 
         aiToolMode = str("aiToolMode", "website")

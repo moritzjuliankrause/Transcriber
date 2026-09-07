@@ -39,22 +39,11 @@ final class UpdateChecker: ObservableObject {
 
     // MARK: - Check
 
-    /// Automatic check, throttled to the interval chosen in Settings.
+    /// Checks at most once a day when called automatically.
     func checkAutomaticallyIfDue() async {
-        guard let minimum = UpdateChecker.interval(for: AppSettings.shared.updateCheckInterval) else { return }
-        if let last = lastCheck, Date().timeIntervalSince(last) < minimum { return }
+        guard AppSettings.shared.autoCheckUpdates else { return }
+        if let last = lastCheck, Date().timeIntervalSince(last) < 24 * 3600 { return }
         await check(interactive: false)
-    }
-
-    /// Minimum seconds between automatic checks; nil = never check automatically.
-    static func interval(for setting: String) -> TimeInterval? {
-        switch setting {
-        case "launch": return 0
-        case "daily": return 24 * 3600
-        case "weekly": return 7 * 24 * 3600
-        case "monthly": return 30 * 24 * 3600
-        default: return nil
-        }
     }
 
     func check(interactive: Bool) async {
