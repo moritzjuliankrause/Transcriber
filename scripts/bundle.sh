@@ -24,12 +24,14 @@ for b in .build/$CONFIG/*.bundle; do [ -d "$b" ] && cp -R "$b" "$APP/Contents/Re
 [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 echo -n "APPL????" > "$APP/Contents/PkgInfo"
 
-# Sign. A self-signed "AnyRecord Dev" identity gives a stable designated requirement so
+# Sign. A self-signed "Transcriber Dev" identity gives a stable designated requirement so
 # macOS keeps the microphone / system-audio grants across rebuilds. Ad-hoc signatures
 # change with every build and reset the permissions each time.
 IDENTITY="${CODESIGN_IDENTITY:-}"
-if [ -z "$IDENTITY" ] && security find-identity -v -p codesigning | grep -q '"AnyRecord Dev"'; then
-  IDENTITY="AnyRecord Dev"
+if [ -z "$IDENTITY" ]; then
+  for name in "Transcriber Dev" "AnyRecord Dev"; do
+    if security find-identity -v -p codesigning | grep -q "\"$name\""; then IDENTITY="$name"; break; fi
+  done
 fi
 codesign --force --sign "${IDENTITY:--}" --entitlements Resources/Transcriber.entitlements "$APP"
 echo "Signed with: ${IDENTITY:-ad-hoc}"

@@ -36,7 +36,7 @@ system-audio permissions and "Launch at login" only for a real `.app` bundle.
 macOS ties privacy grants to the app's code signature. An ad-hoc signature changes
 with every build, so the microphone / system-audio permissions would be reset after
 each rebuild. `bundle.sh` therefore signs with a self-signed identity named
-**AnyRecord Dev** when one exists in the login keychain (create one once via
+**Transcriber Dev** when one exists in the login keychain (create one once via
 Keychain Access › Certificate Assistant › Create a Certificate, type "Code Signing",
 or with `openssl` + `security import`). Set `CODESIGN_IDENTITY` to use a different
 identity, e.g. a Developer ID.
