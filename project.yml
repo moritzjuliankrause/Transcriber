@@ -1,0 +1,30 @@
+# Optional: `brew install xcodegen && xcodegen` generates AnyRecord.xcodeproj.
+# Opening Package.swift directly in Xcode works too (Xcode 15.2+).
+name: AnyRecord
+options:
+  bundleIdPrefix: com.moritzkrause
+  deploymentTarget:
+    macOS: "14.2"
+packages:
+  FluidAudio:
+    url: https://github.com/FluidInference/FluidAudio.git
+    from: 0.15.0
+targets:
+  AnyRecord:
+    type: application
+    platform: macOS
+    sources: [Sources/AnyRecord]
+    info:
+      path: Resources/Info.plist
+    entitlements:
+      path: Resources/AnyRecord.entitlements
+    dependencies:
+      - package: FluidAudio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.moritzkrause.anyrecord
+        SWIFT_VERSION: "5.10"
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_APP_SANDBOX: NO
+        GENERATE_INFOPLIST_FILE: NO
+        OTHER_LDFLAGS: ""
