@@ -24,6 +24,8 @@ final class UpdateChecker: ObservableObject {
     }
 
     @Published var status: Status = .idle
+    /// Why "Install" is not possible right now (shown in the update window's footer).
+    @Published var installBlocker: String?
     @Published var lastCheck: Date? = UserDefaults.standard.object(forKey: "lastUpdateCheck") as? Date
 
     static var currentVersion: String {
@@ -46,6 +48,8 @@ final class UpdateChecker: ObservableObject {
 
     func check(interactive: Bool) async {
         status = .checking
+        installBlocker = nil
+        if interactive { UpdateWindowController.shared.show() }
         do {
             // `releases/latest` never returns pre-releases; with the opt-in we list
             // recent releases and take the newest one, pre-release or not.
@@ -75,29 +79,16 @@ final class UpdateChecker: ObservableObject {
             let latest = UpdateChecker.version(from: release.tag_name)
             guard UpdateChecker.isNewer(latest, than: UpdateChecker.currentVersion) else {
                 status = .upToDate(latest)
-                if interactive { notify("Transcriber is up to date", "Version \(UpdateChecker.currentVersion) is the latest release.") }
                 return
             }
             guard let asset = release.assets.first(where: { $0.name.hasSuffix(".zip") }) else {
                 throw UpdateError.message("Release \(latest) has no .zip attached.")
             }
             status = .available(version: latest, notes: release.body ?? "", assetURL: URL(string: asset.url)!, assetName: asset.name)
-            if interactive || AppSettings.shared.autoCheckUpdates { offerInstall(version: latest, notes: release.body ?? "") }
+            // An automatic check only interrupts with a window when there is something to install.
+            UpdateWindowController.shared.show()
         } catch {
             status = .failed(error.localizedDescription)
-            if interactive { notify("Update check failed", error.localizedDescription) }
-        }
-    }
-
-    private func offerInstall(version: String, notes: String) {
-        let alert = NSAlert()
-        alert.messageText = "Transcriber \(version) is available"
-        alert.informativeText = "You have \(UpdateChecker.currentVersion).\n\n" + (notes.isEmpty ? "" : String(notes.prefix(600)))
-        alert.addButton(withTitle: "Install and Relaunch")
-        alert.addButton(withTitle: "Later")
-        NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
-            Task { await installAvailableUpdate() }
         }
     }
 
@@ -106,9 +97,12 @@ final class UpdateChecker: ObservableObject {
     func installAvailableUpdate() async {
         guard case .available(_, _, let assetURL, _) = status else { return }
         guard !AppState.shared.isRecording else {
-            notify("Recording in progress", "Stop the recording before installing an update.")
+            installBlocker = "Stop the recording before installing the update."
+            UpdateWindowController.shared.show()
             return
         }
+        installBlocker = nil
+        let available = status
         status = .downloading(0)
         do {
             var request = URLRequest(url: assetURL)
@@ -141,8 +135,10 @@ final class UpdateChecker: ObservableObject {
             try relaunch.run()
             NSApp.terminate(nil)
         } catch {
-            status = .failed(error.localizedDescription)
-            notify("Update failed", error.localizedDescription)
+            // Back to "available" so the user can retry; the footer explains what went wrong.
+            status = available
+            installBlocker = "Install failed: \(error.localizedDescription)"
+            UpdateWindowController.shared.show()
         }
     }
 
@@ -153,14 +149,6 @@ final class UpdateChecker: ObservableObject {
         try p.run()
         p.waitUntilExit()
         guard p.terminationStatus == 0 else { throw UpdateError.message("\(tool) failed (\(p.terminationStatus)).") }
-    }
-
-    private func notify(_ title: String, _ text: String) {
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = text
-        NSApp.activate(ignoringOtherApps: true)
-        alert.runModal()
     }
 
     // MARK: - Helpers

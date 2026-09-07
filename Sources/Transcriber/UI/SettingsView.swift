@@ -291,7 +291,7 @@ struct GeneralSettings: View {
                     HStack(spacing: 10) {
                         updateStatusText
                         if case .available(let v, _, _, _) = updater.status {
-                            Button("Install \(v)") { Task { await updater.installAvailableUpdate() } }
+                            Button("Install \(v)…") { UpdateWindowController.shared.show() }
                                 .buttonStyle(.borderedProminent)
                         }
                         Button("Check Now") { Task { await updater.check(interactive: true) } }
