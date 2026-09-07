@@ -101,6 +101,9 @@ final class StatusItemController {
         }
 
         menu.addItem(.separator())
+        let update = NSMenuItem(title: "Check for Updates…", action: #selector(menuCheckUpdates), keyEquivalent: "")
+        update.target = self
+        menu.addItem(update)
         let settings = NSMenuItem(title: "Settings…", action: #selector(menuSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
@@ -115,6 +118,7 @@ final class StatusItemController {
 
     @objc private func menuToggle() { onToggleRecording() }
     @objc private func menuPause() { onTogglePause() }
+    @objc private func menuCheckUpdates() { Task { await UpdateChecker.shared.check(interactive: true) } }
     @objc private func menuSettings() { onOpenSettings() }
     @objc private func menuQuit() { onQuit() }
     @objc private func menuOpenFolder() {

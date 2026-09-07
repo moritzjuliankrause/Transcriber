@@ -15,6 +15,11 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/AnyRecord"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+# Stamp build number (commit count) and git hash into the bundle's Info.plist.
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(git rev-list --count HEAD)" "$APP/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c "Add :AnyRecordGitHash string $(git rev-parse --short HEAD)$( [ -n "$(git status --porcelain)" ] && echo '-dirty')" "$APP/Contents/Info.plist"
+fi
 for b in .build/$CONFIG/*.bundle; do [ -d "$b" ] && cp -R "$b" "$APP/Contents/Resources/"; done
 [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 echo -n "APPL????" > "$APP/Contents/PkgInfo"

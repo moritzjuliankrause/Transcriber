@@ -72,9 +72,26 @@ struct SettingsView: View {
 
 struct GeneralSettings: View {
     @ObservedObject var settings: AppSettings
+    @ObservedObject var updater = UpdateChecker.shared
 
     var body: some View {
         Form {
+            Section("Updates") {
+                LabeledContent("Version", value: "\(UpdateChecker.currentVersion) (\(UpdateChecker.buildInfo))")
+                HStack {
+                    Button("Check for Updates…") { Task { await updater.check(interactive: true) } }
+                        .disabled(updater.status == .checking)
+                    if case .available(let v, _, _, _) = updater.status {
+                        Button("Install \(v)") { Task { await updater.installAvailableUpdate() } }
+                    }
+                    Spacer()
+                    updateStatusText
+                }
+                Toggle("Check automatically once a day", isOn: $settings.autoCheckUpdates)
+                SecureField("GitHub token (private repository)", text: $settings.githubToken)
+                Text("Releases are published from the private repository moritzjkr/AnyRecord. A fine-grained personal access token with read access to Contents is required to check and download them.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Speaker labels") {
                 TextField("Your name (microphone)", text: $settings.myName)
                 TextField("Remote speaker label (system audio)", text: $settings.otherName)
@@ -100,6 +117,21 @@ struct GeneralSettings: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+extension GeneralSettings {
+    @ViewBuilder
+    var updateStatusText: some View {
+        switch updater.status {
+        case .idle:
+            if let last = updater.lastCheck { Text("Last check \(last.formatted(date: .abbreviated, time: .shortened))").font(.caption).foregroundStyle(.secondary) }
+        case .checking: ProgressView().controlSize(.small)
+        case .upToDate: Label("Up to date", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+        case .available(let v, _, _, _): Label("\(v) available", systemImage: "arrow.down.circle.fill").foregroundStyle(.blue)
+        case .downloading: ProgressView().controlSize(.small)
+        case .failed(let msg): Label(msg, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).lineLimit(2)
+        }
     }
 }
 

@@ -133,6 +133,19 @@ Sources/AnyRecord
 └── UI/             status item + pill/waveform, floating bar, settings window
 ```
 
+## Versions and updates
+
+- The version lives in `Resources/Info.plist` (`CFBundleShortVersionString`); `bundle.sh`
+  stamps the build number (commit count) and git hash into the built app.
+- `./scripts/release.sh 0.2.0 "notes"` bumps the version, commits, tags `v0.2.0`, builds,
+  zips and publishes a GitHub release with the zip attached.
+- In the app, **Check for Updates…** (right-click menu or Settings › General) compares the
+  running version with the latest GitHub release and can download, install and relaunch.
+  It also checks once a day automatically. The repository is private, so a fine-grained
+  personal access token with read access to *Contents* has to be entered in Settings.
+- Note: an app built on another Mac carries a different signature, so macOS asks for the
+  microphone / system-audio permissions again after such an update.
+
 ## Legal
 
 Recording conversations without consent is illegal in many jurisdictions

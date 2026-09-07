@@ -37,6 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         LaunchAtLogin.sync(enabled: settings.launchAtLogin)
 
         Task { await ModelManager.shared.refreshStatus() }
+        Task {
+            try? await Task.sleep(nanoseconds: 10_000_000_000)   // don't compete with launch work
+            await UpdateChecker.shared.checkAutomaticallyIfDue()
+        }
         Task { await SessionRecovery.checkOnLaunch(settings: settings, state: state) }
 
         if settings.outputDirectory.isEmpty {
