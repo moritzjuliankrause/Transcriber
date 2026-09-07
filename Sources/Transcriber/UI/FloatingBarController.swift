@@ -49,7 +49,7 @@ final class FloatingBarController {
     /// pay for window + SwiftUI setup while the menu bar pill is animating.
     private func makePanel() -> NSPanel {
         let p = FloatingPanel(contentRect: NSRect(origin: .zero, size: FloatingBarController.panelSize),
-                              styleMask: [.borderless, .nonactivatingPanel, .utilityWindow],
+                              styleMask: [.borderless, .nonactivatingPanel],
                               backing: .buffered, defer: false)
         p.onCancel = { [weak self] in self?.cancelStopConfirmation() }
         p.level = .statusBar
@@ -60,7 +60,14 @@ final class FloatingBarController {
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         p.isMovableByWindowBackground = true
         p.alphaValue = 0
-        p.contentView = CapsuleHostingView(rootView: FloatingBarView(state: state, settings: settings, model: model), model: model)
+        let host = CapsuleHostingView(rootView: FloatingBarView(state: state, settings: settings, model: model), model: model)
+        // Make the transparent margin explicit on every layer: some systems / displays otherwise
+        // composite the (fixed-size, rectangular) panel with a faint opaque backing.
+        host.wantsLayer = true
+        host.layer?.backgroundColor = NSColor.clear.cgColor
+        host.layer?.isOpaque = false
+        p.contentView = host
+        p.invalidateShadow()
         return p
     }
 

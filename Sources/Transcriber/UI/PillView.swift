@@ -15,10 +15,11 @@ struct PillView: View {
 
     @Environment(\.colorScheme) private var scheme
 
-    /// Colour of the glyph's pill: black like the icon; while recording it pulses red.
+    /// Colour of the glyph's pill: black like the icon (white on a dark menu bar);
+    /// while recording it pulses red.
     private var pillColor: Color {
         switch state.phase {
-        case .idle: return .black
+        case .idle: return scheme == .dark ? .white : .black
         case .starting, .stopping: return .orange
         case .recording: return state.isPaused ? Color(white: 0.45) : GlyphView.red
         }
@@ -102,8 +103,6 @@ struct GlyphView: View {
             ZStack {
                 Capsule().fill(pillColor)
                     .opacity(dimmed ? 0.55 : 1)
-                // Keeps the black pill visible on a dark menu bar (the icon has the same rim).
-                Capsule().stroke(Color.white.opacity(scheme == .dark ? 0.35 : 0), lineWidth: 0.6)
             }
             .frame(width: GlyphView.width, height: 9)
             Capsule().fill(ink.opacity(0.6)).frame(width: 20, height: 1.8)

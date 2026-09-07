@@ -57,7 +57,9 @@ final class RecordingCoordinator {
     // MARK: - Start
 
     func start() async {
-        guard !state.isRecording else { return }
+        // Only from idle: while a stop is finalizing (title dialog, diarization) the state is
+        // not "recording" either, and a second session would run into the first one's cleanup.
+        guard state.phase == .idle else { return }
         state.lastError = nil
         state.phase = .starting
         // Let the menu bar pill expand on an idle main thread before the setup work starts.

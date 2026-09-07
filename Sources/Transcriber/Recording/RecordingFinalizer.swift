@@ -82,6 +82,12 @@ enum TitlePrompt {
 
     @MainActor
     static func ask(defaultTitle: String) -> Answer {
+        // Never nest modal sessions: a second alert on top of a running one leaves the first
+        // unresponsive (and the app must be force-quit). Save without a title instead.
+        guard NSApp.modalWindow == nil else {
+            AppLog.write("Title prompt skipped: another modal dialog is open")
+            return Answer(title: nil, openInAI: false)
+        }
         let alert = NSAlert()
         alert.messageText = "Name this recording"
         alert.informativeText = "Optional. Used for the folder name and the transcript heading."
@@ -101,6 +107,8 @@ enum TitlePrompt {
         // session start asynchronously, so claim focus a few times during the first moments.
         for delay in [0.0, 0.1, 0.3, 0.6] {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                // Only while this alert is the modal window – never re-show a dismissed one.
+                guard NSApp.modalWindow == alert.window else { return }
                 alert.window.makeKeyAndOrderFront(nil)
                 alert.window.makeFirstResponder(field)
             }

@@ -54,19 +54,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         if state.isRecording {
-            // Best effort: flush what we have so nothing is lost on quit.
-            let semaphore = DispatchSemaphore(value: 0)
-            Task {
+            // Best effort: flush what we have so nothing is lost on quit. The stop runs on the
+            // main actor, so keep the run loop turning instead of blocking the main thread.
+            var done = false
+            Task { @MainActor in
                 await coordinator.stop()
-                semaphore.signal()
+                done = true
             }
-            _ = semaphore.wait(timeout: .now() + 15)
+            let deadline = Date().addingTimeInterval(15)
+            while !done, Date() < deadline {
+                RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
         }
     }
 
     // MARK: - Actions
 
     func toggleRecording() {
+        if case .stopping = state.phase { return }   // finalizing: neither start nor stop again
         Task { @MainActor in
             if state.isRecording {
                 await coordinator.stop()

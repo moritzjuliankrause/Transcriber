@@ -62,6 +62,8 @@ final class StatusItemController {
             onTogglePause()
         } else if state.isRecording {
             onConfirmStop()
+        } else if case .stopping = state.phase {
+            return                      // finalizing – wait for it
         } else {
             onToggleRecording()
         }
@@ -88,6 +90,7 @@ final class StatusItemController {
 
         let toggle = NSMenuItem(title: state.isRecording ? "Stop & Save" : "Start Recording", action: #selector(menuToggle), keyEquivalent: "")
         toggle.target = self
+        if case .stopping = state.phase { toggle.isEnabled = false }   // finalizing – neither is possible
         menu.addItem(toggle)
         if case .recording = state.phase {
             let pause = NSMenuItem(title: state.isPaused ? "Resume" : "Pause", action: #selector(menuPause), keyEquivalent: "")
