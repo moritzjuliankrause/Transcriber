@@ -133,6 +133,16 @@ Sources/AnyRecord
 └── UI/             status item + pill/waveform, floating bar, settings window
 ```
 
+## Hand transcripts to an AI tool
+
+Settings › AI lets you pick a website (Claude, ChatGPT, Perplexity presets, or any URL with
+a `{prompt}` placeholder) or a Mac app, and edit the prompt template (`{transcript}` is
+replaced by the transcript). "Save & Open in …" in the title dialog and "Open Last
+Transcript in …" in the menu then open the tool with the prompt ready – you only press
+Enter. Short prompts travel in the URL; real transcripts are too long for that, so the text
+goes to the clipboard and is pasted automatically (requires the Accessibility permission,
+macOS asks once).
+
 ## App icon
 
 `Resources/AppIcon.icns` is generated from `scripts/make-icon.swift` (a CoreGraphics

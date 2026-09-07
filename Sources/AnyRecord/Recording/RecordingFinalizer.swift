@@ -42,11 +42,12 @@ enum RecordingFinalizer {
             }
         }
 
+        var openInAI = false
         if askTitle {
             state.phase = .stopping("Waiting for title…")
-            if let title = TitlePrompt.ask(defaultTitle: "") {
-                store.setTitle(title)
-            }
+            let answer = TitlePrompt.ask(defaultTitle: "")
+            if let title = answer.title { store.setTitle(title) }
+            openInAI = answer.openInAI
         }
 
         store.exportExtras(json: settings.exportJSON, srt: settings.exportSRT)
@@ -60,16 +61,25 @@ enum RecordingFinalizer {
         let finalURL = store.renameFolderIfNeeded()
         state.currentSessionURL = finalURL
         NSSound(named: "Glass")?.play()
+        if openInAI { AITool.open(session: finalURL) }
     }
 }
 
 enum TitlePrompt {
+    struct Answer {
+        var title: String?
+        var openInAI: Bool
+    }
+
     @MainActor
-    static func ask(defaultTitle: String) -> String? {
+    static func ask(defaultTitle: String) -> Answer {
         let alert = NSAlert()
         alert.messageText = "Name this recording"
         alert.informativeText = "Optional. Used for the folder name and the transcript heading."
         alert.addButton(withTitle: "Save")
+        if AITool.isConfigured {
+            alert.addButton(withTitle: "Save & Open in \(AITool.toolDisplayName)")
+        }
         alert.addButton(withTitle: "Skip")
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
         field.placeholderString = "e.g. Weekly sync with Anna"
@@ -78,8 +88,12 @@ enum TitlePrompt {
         alert.window.initialFirstResponder = field
         NSApp.activate(ignoringOtherApps: true)
         let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else { return nil }
         let text = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.isEmpty ? nil : text
+        let title: String? = text.isEmpty ? nil : text
+        switch response {
+        case .alertFirstButtonReturn: return Answer(title: title, openInAI: false)
+        case .alertSecondButtonReturn where AITool.isConfigured: return Answer(title: title, openInAI: true)
+        default: return Answer(title: nil, openInAI: false)
+        }
     }
 }

@@ -23,6 +23,13 @@ final class AppSettings: ObservableObject {
     @Published var autoCheckUpdates: Bool { didSet { defaults.set(autoCheckUpdates, forKey: "autoCheckUpdates") } }
     @Published var includePreReleases: Bool { didSet { defaults.set(includePreReleases, forKey: "includePreReleases") } }
 
+    // AI hand-off
+    @Published var aiToolMode: String { didSet { defaults.set(aiToolMode, forKey: "aiToolMode") } }        // website | app
+    @Published var aiToolURL: String { didSet { defaults.set(aiToolURL, forKey: "aiToolURL") } }
+    @Published var aiToolAppPath: String { didSet { defaults.set(aiToolAppPath, forKey: "aiToolAppPath") } }
+    @Published var aiPromptTemplate: String { didSet { defaults.set(aiPromptTemplate, forKey: "aiPromptTemplate") } }
+    @Published var aiAutoPaste: Bool { didSet { defaults.set(aiAutoPaste, forKey: "aiAutoPaste") } }
+
     // Audio
     @Published var inputDeviceUID: String { didSet { defaults.set(inputDeviceUID, forKey: "inputDeviceUID") } }
     @Published var echoCancellation: Bool { didSet { defaults.set(echoCancellation, forKey: "echoCancellation") } }
@@ -62,6 +69,12 @@ final class AppSettings: ObservableObject {
         consentAcknowledged = bool("consentAcknowledged", false)
         autoCheckUpdates = bool("autoCheckUpdates", true)
         includePreReleases = bool("includePreReleases", false)
+
+        aiToolMode = str("aiToolMode", "website")
+        aiToolURL = str("aiToolURL", "https://claude.ai/new?q={prompt}")
+        aiToolAppPath = str("aiToolAppPath", "")
+        aiPromptTemplate = str("aiPromptTemplate", AITool.defaultPrompt)
+        aiAutoPaste = bool("aiAutoPaste", true)
 
         inputDeviceUID = str("inputDeviceUID", "")
         echoCancellation = bool("echoCancellation", false)

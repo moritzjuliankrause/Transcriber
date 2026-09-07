@@ -98,6 +98,12 @@ final class StatusItemController {
             openLast.target = self
             openLast.representedObject = url
             menu.addItem(openLast)
+            if AITool.isConfigured {
+                let ai = NSMenuItem(title: "Open Last Transcript in \(AITool.toolDisplayName)…", action: #selector(menuOpenLastInAI), keyEquivalent: "")
+                ai.target = self
+                ai.representedObject = url
+                menu.addItem(ai)
+            }
         }
 
         menu.addItem(.separator())
@@ -125,6 +131,10 @@ final class StatusItemController {
         let url = AppSettings.shared.outputDirectoryURL
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         NSWorkspace.shared.open(url)
+    }
+    @objc private func menuOpenLastInAI(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else { return }
+        AITool.open(session: url)
     }
     @objc private func menuOpenLast(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }

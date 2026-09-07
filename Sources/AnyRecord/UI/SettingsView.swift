@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
@@ -12,6 +13,7 @@ struct SettingsView: View {
         case transcription = "Transcription"
         case output = "Output"
         case recovery = "Recovery"
+        case ai = "AI"
         var id: String { rawValue }
         var icon: String {
             switch self {
@@ -20,6 +22,7 @@ struct SettingsView: View {
             case .transcription: return "text.bubble"
             case .output: return "folder"
             case .recovery: return "arrow.counterclockwise"
+            case .ai: return "sparkles"
             }
         }
     }
@@ -60,6 +63,7 @@ struct SettingsView: View {
                 case .transcription: TranscriptionSettings(settings: settings, models: models)
                 case .output: OutputSettings(settings: settings)
                 case .recovery: RecoverySettings(settings: settings, state: state)
+                case .ai: AISettings(settings: settings, state: state)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -322,6 +326,84 @@ struct OutputSettings: View {
         panel.directoryURL = settings.outputDirectoryURL
         if panel.runModal() == .OK, let url = panel.url {
             settings.outputDirectory = url.path
+        }
+    }
+}
+
+// MARK: - AI hand-off
+
+struct AISettings: View {
+    @ObservedObject var settings: AppSettings
+    @ObservedObject var state: AppState
+
+    var body: some View {
+        Form {
+            Section("Where to send transcripts") {
+                Picker("Tool", selection: $settings.aiToolMode) {
+                    Text("Website").tag("website")
+                    Text("Mac app").tag("app")
+                }
+                .pickerStyle(.segmented)
+                if settings.aiToolMode == "website" {
+                    HStack {
+                        TextField("URL with {prompt}", text: $settings.aiToolURL)
+                        Menu("Presets") {
+                            ForEach(AITool.presets, id: \.url) { p in
+                                Button(p.name) { settings.aiToolURL = p.url }
+                            }
+                        }
+                        .frame(width: 90)
+                    }
+                    Toggle("Paste automatically (needs Accessibility permission)", isOn: $settings.aiAutoPaste)
+                    Text("Short prompts go into the URL via {prompt}. Real call transcripts are too long for a URL, so the text is copied to the clipboard, the page opens and ⌘V is sent into its input field after a moment.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    LabeledContent("App") {
+                        HStack {
+                            Text(settings.aiToolAppPath.isEmpty ? "None chosen" : (settings.aiToolAppPath as NSString).lastPathComponent)
+                                .lineLimit(1).truncationMode(.middle)
+                            Button("Choose…", action: chooseApp)
+                        }
+                    }
+                    Toggle("Paste automatically (needs Accessibility permission)", isOn: $settings.aiAutoPaste)
+                    Text("Desktop apps cannot be prefilled directly. The prompt is copied to the clipboard, the app is brought to front and ⌘V is sent. macOS asks once for Accessibility access for AnyRecord.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Section("Prompt") {
+                TextEditor(text: $settings.aiPromptTemplate)
+                    .font(.system(size: 12, design: .monospaced))
+                    .frame(minHeight: 180)
+                HStack {
+                    Text("{transcript} is replaced by the transcript. Without the placeholder the transcript is appended.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reset to default") { settings.aiPromptTemplate = AITool.defaultPrompt }
+                }
+            }
+            Section("Try it") {
+                HStack {
+                    Button("Open last transcript in \(AITool.toolDisplayName)") {
+                        if let url = state.currentSessionURL { AITool.open(session: url) }
+                    }
+                    .disabled(state.currentSessionURL == nil || !AITool.isConfigured)
+                    Spacer()
+                    Text(state.currentSessionURL?.lastPathComponent ?? "No recording in this session yet").font(.caption).foregroundStyle(.secondary)
+                }
+                Text("After stopping a recording, the title dialog offers “Save & Open in …” as well.").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func chooseApp() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        if panel.runModal() == .OK, let url = panel.url {
+            settings.aiToolAppPath = url.path
         }
     }
 }
