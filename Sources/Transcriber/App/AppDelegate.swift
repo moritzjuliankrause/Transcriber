@@ -64,6 +64,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--start") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.toggleRecording() }
         }
+        // Development aid: `Transcriber --cycle` records, stops (skipping the title), records again.
+        if CommandLine.arguments.contains("--cycle") {
+            let t = { (d: Double, f: @escaping () -> Void) in DispatchQueue.main.asyncAfter(deadline: .now() + d) { f() } }
+            t(1.5) { [weak self] in self?.toggleRecording() }
+            t(9) { [weak self] in self?.toggleRecording() }
+            t(15) { [weak self] in self?.floatingBar?.skipTitle() }
+            t(20) { [weak self] in self?.toggleRecording() }
+        }
         // Development aid: `Transcriber --title-test` shows the bar's save prompt right away.
         if CommandLine.arguments.contains("--title-test") {
             Task { @MainActor in

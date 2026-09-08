@@ -203,6 +203,9 @@ final class FloatingBarController {
         }
     }
 
+    /// Dismisses the title prompt without a title (used by the --cycle development flag).
+    func skipTitle() { model.onSkipTitle?() }
+
     /// Builds the panel ahead of time (see makePanel).
     func prepare() {
         if panel == nil {
