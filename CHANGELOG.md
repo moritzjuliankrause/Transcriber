@@ -3,6 +3,9 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.3.8 (2026-09-08)
+- Fixed the recording start failure (Core Audio error -10868) after Apple voice processing falls back to plain capture. The fix announced in 0.3.3 had not made it into the build.
+
 ## 0.3.7 (2026-09-08)
 - The close button of the Settings and What's New windows sits on the left, like the traffic lights.
 
