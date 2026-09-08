@@ -121,7 +121,12 @@ jobs:
             *)       msg="Rebuild blog";;
           esac
           git commit -m "$msg"
-          git push
+          # Another push (the writer, the routine, Moritz) may land at the same time: rebase and retry.
+          for i in 1 2 3 4 5; do
+            git push && break
+            git pull --rebase -X theirs origin main || { git rebase --abort; sleep 3; git pull --rebase -X theirs origin main; }
+            sleep $((i * 3))
+          done
 
       # New drafts pushed by the writing routine get announced once, with a preview link and buttons.
       # Rewrites (commit message contains [rewrite]) are announced again for the modified drafts.
