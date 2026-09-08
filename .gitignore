@@ -1,8 +1,9 @@
-.build/
-dist/
 *.xcodeproj
 *.xcworkspace
-.swiftpm/
 .DS_Store
+.build/
 .claude/worktrees/
+.env
+.swiftpm/
 .wrangler/
+dist/
