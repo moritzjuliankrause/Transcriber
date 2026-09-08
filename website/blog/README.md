@@ -50,9 +50,9 @@ faq:                        # optional, 4 to 8 entries, rendered as an accordion
 Then the body. The first paragraph answers the title directly, H2s are phrased as questions where
 that sounds natural, prose before lists, FAQ goes in the frontmatter (not in the body), and the
 closing paragraph is rendered from `cta` / `ctaText`, so don't write a sales ending in the body.
-No H1 in the body: the title is the H1. Voice and banned words: `VOICE.md` and `writing-rules.md`
-in the SEO folder, then `website/blog/EDITOR-LEARNINGS.md`, which holds the rules learned from
-Moritz's edits and wins where they conflict. The build refuses en/em dashes.
+No H1 in the body: the title is the H1. Voice and banned words: `website/blog/WRITING.md`, then
+`website/blog/EDITOR-LEARNINGS.md`, which holds the rules learned from Moritz's edits and wins where
+they conflict. The build refuses en/em dashes.
 
 Supported Markdown: `##`/`###` headings, paragraphs, `**bold**`, `*italic*`, `` `code` ``, links,
 `![alt](img/<slug>/name.webp "optional caption")`, `-` and `1.` lists, `>` quotes, fenced code,
