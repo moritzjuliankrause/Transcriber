@@ -79,12 +79,28 @@ final class FloatingBarController {
 
     private var showGeneration = 0
 
+    /// Text input in the save prompt makes the system attach helper windows (prediction /
+    /// writing-tools panels, hosted out of process) to the app. They can stay on screen after
+    /// the prompt is gone and then sit as a dark rectangle behind the bar – close them.
+    static func dismissTextInputHelperWindows() {
+        for w in NSApp.windows where w.isVisible && !(w is FloatingPanel) && w.title.isEmpty && w.level.rawValue > NSWindow.Level.floating.rawValue
+            && !(w.contentView is NSHostingView<FloatingBarView>) {
+            let cls = String(describing: type(of: w))
+            let content = w.contentView.map { String(describing: type(of: $0)) } ?? ""
+            // Private AppKit classes: SPRoundedWindow / TUINSWindow with an NSRemoteView inside.
+            guard cls.hasPrefix("SP") || cls.hasPrefix("TUI") || content.contains("RemoteView") else { continue }
+            AppLog.write("Closing stray text input window \(type(of: w)) \(w.frame)")
+            w.orderOut(nil)
+        }
+    }
+
     private func show() {
         if panel == nil {
             panel = makePanel()
             reposition()
         }
         guard let panel else { return }
+        FloatingBarController.dismissTextInputHelperWindows()
         showGeneration += 1
         let generation = showGeneration
         // Snap to the initial size without animation while still invisible.
@@ -181,6 +197,7 @@ final class FloatingBarController {
                 self.model.onSkipTitle = nil
                 (self.panel as? FloatingPanel)?.allowsKey = false
                 if self.panel?.isKeyWindow == true { self.panel?.resignKey() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { FloatingBarController.dismissTextInputHelperWindows() }
                 continuation.resume(returning: answer)
             }
             model.title = defaultTitle
@@ -546,7 +563,7 @@ struct FloatingBarView: View {
         return CGSize(width: width(forMessage: model.message), height: height(forLines: model.visibleLineCount) - 2)
     }
 
-    @FocusState private var titleFocused: Bool
+    @State private var titleFocused = false
 
     var body: some View {
         let size = FloatingBarView.size(for: model)
@@ -560,19 +577,9 @@ struct FloatingBarView: View {
                 .frame(width: 22, height: 10)
 
             if asking {
-                TextField("", text: $model.title)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white)
-                    .focused($titleFocused)
-                    .onSubmit { model.onSaveTitle?(false) }
-                    .overlay(alignment: .leading) {
-                        if model.title.isEmpty {
-                            Text("Name this recording (optional)")
-                                .font(.system(size: 12)).foregroundStyle(.white.opacity(0.45))
-                                .allowsHitTesting(false)
-                        }
-                    }
+                TitleField(text: $model.title, placeholder: "Name this recording (optional)", focused: $titleFocused,
+                           onSubmit: { model.onSaveTitle?(false) }, onCancel: { model.onSkipTitle?() })
+                    .frame(height: 17)
                     .padding(.horizontal, 12)
                     .frame(height: 26)
                     .background(.white.opacity(0.12), in: Capsule())
@@ -690,5 +697,81 @@ struct PillButtonStyle: ButtonStyle {
             .background(prominent ? Color.white.opacity(configuration.isPressed ? 0.75 : 1) : Color.white.opacity(configuration.isPressed ? 0.25 : 0.14),
                         in: Capsule())
             .contentShape(Capsule())
+    }
+}
+
+/// The save prompt's text field: a bare NSTextField with completion, spell checking and inline
+/// prediction switched off. Those features open helper windows (candidate lists) below the bar,
+/// which showed up as a stray rectangle behind the bar. Return submits, Escape cancels.
+private struct TitleField: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    @Binding var focused: Bool
+    var onSubmit: () -> Void
+    var onCancel: () -> Void
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField()
+        field.isBordered = false
+        field.drawsBackground = false
+        field.focusRingType = .none
+        field.font = .systemFont(ofSize: 12)
+        field.textColor = .white
+        field.placeholderAttributedString = NSAttributedString(string: placeholder, attributes: [
+            .foregroundColor: NSColor.white.withAlphaComponent(0.45), .font: NSFont.systemFont(ofSize: 12)])
+        field.isAutomaticTextCompletionEnabled = false
+        field.allowsEditingTextAttributes = false
+        field.lineBreakMode = .byTruncatingTail
+        field.cell?.usesSingleLineMode = true
+        field.cell?.wraps = false
+        field.delegate = context.coordinator
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        if field.stringValue != text { field.stringValue = text }
+        if focused, field.window?.firstResponder !== field.currentEditor(), field.window != nil {
+            field.window?.makeFirstResponder(field)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: TitleField
+        init(_ parent: TitleField) { self.parent = parent }
+
+        func controlTextDidBeginEditing(_ notification: Notification) {
+            // The field editor is the window's shared NSTextView; switch off everything that
+            // pops up helper windows.
+            if let editor = (notification.object as? NSTextField)?.currentEditor() as? NSTextView {
+                editor.isAutomaticTextCompletionEnabled = false
+                editor.isContinuousSpellCheckingEnabled = false
+                editor.isAutomaticSpellingCorrectionEnabled = false
+                editor.isGrammarCheckingEnabled = false
+                editor.isAutomaticQuoteSubstitutionEnabled = false
+                editor.isAutomaticDashSubstitutionEnabled = false
+                editor.isAutomaticTextReplacementEnabled = false
+                editor.isAutomaticDataDetectionEnabled = false
+                editor.isAutomaticLinkDetectionEnabled = false
+                if #available(macOS 14, *) { editor.inlinePredictionType = .no }
+                if #available(macOS 15.2, *) { editor.writingToolsBehavior = .none }
+                editor.insertionPointColor = .white
+            }
+            parent.focused = true
+        }
+        func controlTextDidEndEditing(_ notification: Notification) { parent.focused = false }
+        func controlTextDidChange(_ notification: Notification) {
+            parent.text = (notification.object as? NSTextField)?.stringValue ?? ""
+        }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            switch selector {
+            case #selector(NSResponder.insertNewline(_:)): parent.onSubmit(); return true
+            case #selector(NSResponder.cancelOperation(_:)): parent.onCancel(); return true
+            default: return false
+            }
+        }
     }
 }

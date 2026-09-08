@@ -74,6 +74,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // Development aid: `Transcriber --title-test` shows the bar's save prompt right away.
         if CommandLine.arguments.contains("--title-test") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                for w in NSApp.windows {
+                    AppLog.write("Window: \(type(of: w)) level=\(w.level.rawValue) frame=\(w.frame) visible=\(w.isVisible) alpha=\(w.alphaValue) title=\(w.title) content=\(w.contentView.map { String(describing: type(of: $0)) } ?? "-")")
+                }
+            }
             Task { @MainActor in
                 let answer = await TitlePrompt.ask(defaultTitle: "")
                 AppLog.write("Title test: \(answer.title ?? "<none>") openInAI=\(answer.openInAI)")
