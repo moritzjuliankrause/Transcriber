@@ -1,19 +1,25 @@
 name: Hero images
 
-# Renders blog hero images from the app's real UI code on a macOS runner.
-# A writer (routine or human) drops website/blog/img/<slug>/hero.json:
+# Renders blog hero images from the app's real UI code (this repo's Swift) and pushes them to the
+# private website repo moritzjuliankrause/transcriber-blog, where the website content now lives.
+# The renderer needs the app code, so the job stays here.
+#
+# A writer drops website/blog/img/<slug>/hero.json in the transcriber-blog repo:
 #   { "lines": ["Anna: …", "Me: …", "Anna: …"], "caption": "…", "sub": "…", "timer": "12:34" }
-# This job builds the app once (cached), runs `Transcriber --render-hero`, writes hero.webp next to
-# the json, sets `hero:` and `heroAlt:` in the post's frontmatter if missing, and commits.
+# Then trigger this workflow: from transcriber-blog via repository_dispatch (type render-heroes),
+# or by hand here (workflow_dispatch). It builds the app once (cached), runs `Transcriber
+# --render-hero`, writes hero.webp next to the json, sets hero:/heroAlt: in the post frontmatter
+# if missing, and commits to transcriber-blog.
+#
+# Needs secret BLOG_REPO_TOKEN: a token with contents:write on moritzjuliankrause/transcriber-blog.
 
 on:
-  push:
-    branches: [main]
-    paths: ['website/blog/img/**/hero.json', 'Sources/Transcriber/App/HeroRender.swift']
   workflow_dispatch:
+  repository_dispatch:
+    types: [render-heroes]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: hero
@@ -23,12 +29,19 @@ jobs:
   render:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the app (Swift renderer)
+        uses: actions/checkout@v4
+      - name: Check out the website repo
+        uses: actions/checkout@v4
+        with:
+          repository: moritzjuliankrause/transcriber-blog
+          token: ${{ secrets.BLOG_REPO_TOKEN }}
+          path: site
       - name: Find specs without an image
         id: find
         run: |
           list=""
-          for j in website/blog/img/*/hero.json; do
+          for j in site/website/blog/img/*/hero.json; do
             [ -f "$j" ] || continue
             d=$(dirname "$j")
             if [ ! -f "$d/hero.webp" ] || [ "$j" -nt "$d/hero.webp" ]; then list="$list $j"; fi
@@ -61,18 +74,19 @@ jobs:
           im.save(f'{d}/hero.webp','WEBP',quality=85,method=6)
           PY
             rm -f "$d/hero.png"
-            p="website/blog/posts/$slug.md"
+            p="site/website/blog/posts/$slug.md"
             if [ -f "$p" ] && ! grep -qE '^hero:' "$p"; then
               kw=$(grep -m1 -E '^keyword:' "$p" | sed 's/^keyword:[[:space:]]*//')
               sed -i '' "s|^draft:|hero: img/$slug/hero.webp\nheroAlt: $kw, the Transcriber recording pill and live transcript bar\ndraft:|" "$p"
             fi
             echo "rendered $slug"
           done
-      - name: Commit
+      - name: Commit to the website repo
         if: steps.find.outputs.specs != ''
+        working-directory: site
         run: |
           git config user.name "hero-bot"; git config user.email "hero-bot@users.noreply.github.com"
           git add website/blog/img website/blog/posts
           git diff --cached --quiet && exit 0
           git commit -m "Hero images rendered from the app UI"
-          for i in 1 2 3; do git push && break; git pull --rebase -X theirs origin main; sleep 3; done
+          for i in 1 2 3; do git push && break; git pull --rebase -X theirs; sleep 3; done

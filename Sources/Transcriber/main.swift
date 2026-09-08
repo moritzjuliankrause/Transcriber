@@ -16,6 +16,10 @@ if CommandLine.arguments.contains("--render-hero") {
     let code = await HeroRender.run(arguments: CommandLine.arguments)
     exit(code)
 }
+if CommandLine.arguments.contains("--render-bar") {
+    let code = await HeroRender.runBar(arguments: CommandLine.arguments)
+    exit(code)
+}
 if CommandLine.arguments.contains("--transcribe") {
     let code = await HeadlessTranscribe.run(arguments: CommandLine.arguments)
     exit(code)

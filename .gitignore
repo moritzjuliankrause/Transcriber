@@ -7,3 +7,20 @@
 .swiftpm/
 .wrangler/
 dist/
+
+# Website, blog and SEO infrastructure moved to the private repo moritzjuliankrause/transcriber-blog
+website/
+keywords/
+blog-reviews/
+status/
+.claude/skills/transcriber-seo/
+scripts/dataforseo.mjs
+scripts/fetch-seo-data.mjs
+scripts/gsc.mjs
+scripts/index-urls.mjs
+scripts/check-draft.mjs
+scripts/notify.mjs
+.github/workflows/blog-publish.yml
+.github/workflows/seo-data.yml
+.github/workflows/seo-notify.yml
+.env.example

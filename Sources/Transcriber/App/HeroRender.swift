@@ -107,6 +107,48 @@ enum HeroRender {
         return 0
     }
 
+    /// Renders just the floating bar (the app's real `FloatingBarView`) showing a single line of
+    /// text in its status-message style, on a transparent background so it drops onto any page.
+    /// Used for the pricing page.
+    ///
+    ///   Transcriber --render-bar out.png [--text "This thing is free! What did you think?"]
+    @MainActor
+    static func runBar(arguments: [String]) async -> Int32 {
+        var args = Array(arguments.dropFirst())
+        guard let i = args.firstIndex(of: "--render-bar"), i + 1 < args.count else {
+            FileHandle.standardError.write("usage: Transcriber --render-bar out.png [--text \"…\"]\n".data(using: .utf8)!)
+            return 2
+        }
+        args.remove(at: i)
+        let out = args.remove(at: i)
+        var text = "This thing is free! What did you think?"
+        if let j = args.firstIndex(of: "--text"), j + 1 < args.count { text = args[j + 1] }
+
+        // Fake state: recording, a live waveform, and the marketing line shown as the bar's message.
+        let state = AppState()
+        let settings = AppSettings.shared
+        state.phase = .recording
+        state.recordingStartedAt = Date()
+        state.levelHistory = [0.30, 0.70, 1.0, 0.55, 0.85, 0.40, 0.95, 0.60, 0.35, 0.50, 0.80, 0.45,
+                              0.30, 0.70, 1.0, 0.55, 0.85, 0.40, 0.95, 0.60, 0.35, 0.50, 0.80, 0.45]
+        let model = FloatingBarModel()
+        model.animated = false
+        model.message = text            // the bar's compact status-line layout, not a transcript
+        model.visibleLineCount = 1
+
+        let scale: CGFloat = 6
+        let bar = FloatingBarView(state: state, settings: settings, model: model)
+        guard let barImg = render(bar, scale: scale) else {
+            FileHandle.standardError.write("render failed\n".data(using: .utf8)!)
+            return 1
+        }
+        let rep = NSBitmapImageRep(cgImage: barImg)
+        guard let png = rep.representation(using: .png, properties: [:]) else { return 1 }
+        do { try png.write(to: URL(fileURLWithPath: out)) } catch { FileHandle.standardError.write("\(error)\n".data(using: .utf8)!); return 1 }
+        print("wrote \(out) (\(barImg.width)x\(barImg.height) px)")
+        return 0
+    }
+
     @MainActor
     private static func render<V: View>(_ view: V, scale: CGFloat) -> CGImage? {
         let renderer = ImageRenderer(content: view)
