@@ -766,14 +766,25 @@ struct AISettings: View {
                                 .font(.system(size: 12, design: .monospaced))
                                 .scrollContentBackground(.hidden)
                                 .padding(.vertical, 8)
-                                .frame(minHeight: 180)
+                                .frame(height: 260)
                         }
                         HStack(spacing: 8) {
-                            Button(copied ? "Copied" : "Copy Prompt") {
+                            if copied {
+                                Label("Prompt copied", systemImage: "checkmark")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12)
+                                    .frame(height: 28)
+                                    .background(Theme.accent, in: Capsule())
+                                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                            }
+                            Button("Copy Prompt") {
                                 NSPasteboard.general.clearContents()
                                 NSPasteboard.general.setString(settings.aiPromptTemplate, forType: .string)
-                                copied = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
+                                withAnimation(.easeOut(duration: 0.15)) { copied = true }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                                    withAnimation(.easeOut(duration: 0.25)) { copied = false }
+                                }
                             }
                             .buttonStyle(SoftButtonStyle())
                             Button("Reset to Default") { settings.aiPromptTemplate = AITool.defaultPrompt }
