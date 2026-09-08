@@ -4,6 +4,8 @@ description: Record a Microsoft Teams meeting on a Mac locally and get a transcr
 author: Moritz Krause
 keyword: record teams meeting mac
 keywords: [record teams meeting mac, teams meeting transcript, transcribe teams meeting mac, record teams call mac]
+hero: img/record-teams-meeting-mac-transcript/hero.webp
+heroAlt: record teams meeting mac, the Transcriber recording pill and live transcript bar
 draft: true
 faq:
   - q: Do I need permission from an admin to record a Teams meeting this way?
