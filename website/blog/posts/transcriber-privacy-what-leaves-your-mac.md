@@ -26,7 +26,7 @@ When Transcriber records a call, the audio and the transcript stay on your Mac. 
 
 ## What does the app send anywhere?
 
-Two things. The first recording downloads the models, about one gigabyte, into the FluidAudio folder under Application Support. You can also trigger that download up front in Settings. Once the files are there the transcription runs without the network (try ranscribing offline. It'll work).
+Two things. The first recording downloads the models, about one gigabyte, into the FluidAudio folder under Application Support. You can also trigger that download up front in Settings. Once the files are there the transcription runs without the network (try transcribing offline. It'll work).
 
 The second request is the update check. Once a day, or on demand from the menu, the app asks the public GitHub API whether a newer release exists. No token, no account, no identifier beyond what any HTTP request carries. If a new version exists, the app can download and install it, but only if the download is signed by the same identity as the running app.
 
