@@ -1,5 +1,4 @@
 ---
-date: 2026-09-08
 title: What leaves your Mac when Transcriber records a call
 description: Transcriber privacy in detail. Which network requests the app makes, where audio and transcripts are stored, and what to tell the people on the call.
 author: Moritz Krause
@@ -7,7 +6,7 @@ keyword: transcriber privacy
 keywords: [transcriber privacy, offline call transcription mac, local transcription privacy, meeting transcript data protection]
 hero: img/transcriber-privacy-what-leaves-your-mac/hero.webp
 heroAlt: transcriber privacy, a call transcript that stays in a folder on the Mac
-draft: false
+draft: true
 faq:
   - q: Does the audio ever go to a server?
     a: No. Recording and transcription both happen on your Mac. The audio files stay in the folder you chose, or are deleted after the call if you turned off keeping audio.

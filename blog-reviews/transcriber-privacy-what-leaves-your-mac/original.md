@@ -1,5 +1,4 @@
 ---
-date: 2026-09-08
 title: What leaves your Mac when Transcriber records a call
 description: Transcriber privacy in detail. Which network requests the app makes, where audio and transcripts are stored, and what to tell the people on the call.
 author: Moritz Krause
@@ -7,7 +6,7 @@ keyword: transcriber privacy
 keywords: [transcriber privacy, offline call transcription mac, local transcription privacy, meeting transcript data protection]
 hero: img/transcriber-privacy-what-leaves-your-mac/hero.webp
 heroAlt: transcriber privacy, a call transcript that stays in a folder on the Mac
-draft: false
+draft: true
 faq:
   - q: Does the audio ever go to a server?
     a: No. Recording and transcription both happen on your Mac. The audio files stay in the folder you chose, or are deleted after the call if you turned off keeping audio.
@@ -23,11 +22,11 @@ faq:
     a: Yes, the source is on GitHub, so every claim on this page can be checked against the code.
 ---
 
-When Transcriber records a call, the audio and the transcript stay on your Mac. The app makes exactly two kinds of network requests, the download of the transcription models the first time you record and a version check against GitHub, and neither carries any audio or text. This post lists every place your data touches, so you can decide whether that fits your situation, and it ends with the part the app can't do for you: telling people they are being recorded (and you better tell them!).
+When Transcriber records a call, the audio and the transcript stay on your Mac. The app makes exactly two kinds of network requests, the download of the transcription models the first time you record and a version check against GitHub, and neither carries any audio or text. This post lists every place your data touches, so you can decide whether that fits your situation, and it ends with the part the app can't take off your hands: telling people they are being recorded.
 
 ## What does the app send anywhere?
 
-Two things. The first recording downloads the models, about one gigabyte, into the FluidAudio folder under Application Support. You can also trigger that download up front in Settings. Once the files are there the transcription runs without the network (try transcribing offline. It'll work).
+Two things, and both are boring. The first recording downloads the models, about one gigabyte, into the FluidAudio folder under Application Support. You can also trigger that download up front in Settings. Once the files are there the transcription runs without the network, and you can pull the Ethernet cable to prove it.
 
 The second request is the update check. Once a day, or on demand from the menu, the app asks the public GitHub API whether a newer release exists. No token, no account, no identifier beyond what any HTTP request carries. If a new version exists, the app can download and install it, but only if the download is signed by the same identity as the running app.
 
@@ -53,4 +52,4 @@ Two permissions on the first run. Microphone, for your side of the call. System 
 
 The app can keep your data on your Mac. It cannot make a recording legal. In Germany, § 201 StGB makes recording a private conversation without consent a criminal offence, and many other countries have comparable rules, some of which require every participant to agree. Because nothing visible joins the call, the other side has no way to notice. Say it at the start, every time, and if someone objects, don't record.
 
-For a description of how the recording itself works, see [how Transcriber works](/blog/how-transcriber-works/), and for the practical side of a recording, the post on [recording a Zoom call on a Mac](/blog/record-zoom-call-mac-transcript/).
+For a description of how the recording itself works, see [how Transcriber works](https://moritz-krause.com/transcriber/blog/how-transcriber-works/), and for the practical side of a recording, the post on [recording a Zoom call on a Mac](https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/).

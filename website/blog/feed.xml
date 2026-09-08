@@ -20,5 +20,12 @@
     <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
     <description>Record a Zoom call on your Mac, with both sides of the conversation, and turn it into a transcript without sending the audio anywhere.</description>
   </item>
+  <item>
+    <title>What leaves your Mac when Transcriber records a call</title>
+    <link>https://transcriber-x84.pages.dev/blog/transcriber-privacy-what-leaves-your-mac/</link>
+    <guid isPermaLink="true">https://transcriber-x84.pages.dev/blog/transcriber-privacy-what-leaves-your-mac/</guid>
+    <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
+    <description>Transcriber privacy in detail. Which network requests the app makes, where audio and transcripts are stored, and what to tell the people on the call.</description>
+  </item>
 </channel>
 </rss>
