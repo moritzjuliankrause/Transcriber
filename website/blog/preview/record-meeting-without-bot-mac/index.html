@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to record a meeting without a bot joining the call · Transcriber</title>
+<meta name="description" content="Record a meeting without a bot joining, on a Mac, and still get a transcript with both sides labelled. Nothing shows up in the attendee list.">
+
+<meta name="robots" content="noindex, nofollow">
+<link rel="alternate" type="application/rss+xml" title="Transcriber Blog" href="https://moritz-krause.com/transcriber/blog/feed.xml">
+<meta property="og:site_name" content="Transcriber">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to record a meeting without a bot joining the call">
+<meta property="og:description" content="Record a meeting without a bot joining, on a Mac, and still get a transcript with both sides labelled. Nothing shows up in the attendee list.">
+
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>:root {
+  --bg: #eef0f4; --bg2: #e3e6ec; --paper: #f7f8fb;
+  --ink: #17191f; --ink2: #464a56; --muted: #767b8a; --faint: #a9aeba; --rule: rgba(23,25,31,0.1);
+  --ui: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { background: var(--ink); }
+body { margin: 0; background: linear-gradient(180deg, var(--paper) 0, var(--bg) 480px); color: var(--ink); font-family: var(--ui);
+       -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
+a { color: inherit; text-decoration: none; }
+a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+
+/* nav, same as the landing page */
+nav { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 24px; padding: 18px 40px;
+      background: linear-gradient(var(--paper) 55%, rgba(247,248,251,0)); }
+nav .spacer { flex-grow: 1; }
+.wordmark, footer .brand { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.wordmark svg, footer .brand svg { width: 24px; height: 24px; }
+nav a.navlink { font-size: 13px; font-weight: 500; color: var(--ink2); }
+nav a.navlink:hover { color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 0; cursor: pointer;
+       background: var(--ink); color: #fff; font-weight: 600; white-space: nowrap;
+       box-shadow: 0 1px 2px rgba(0,0,0,0.18), 0 6px 18px rgba(23,25,31,0.18); transition: transform .15s ease, box-shadow .15s ease; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.18), 0 10px 26px rgba(23,25,31,0.22); }
+.btn.sm { padding: 8px 16px; font-size: 13px; }
+.btn.lg { padding: 13px 26px; font-size: 15px; }
+@media (max-width: 640px) { nav { padding: 14px 18px; gap: 16px; } nav a.navlink { display: none; } }
+
+main { flex-grow: 1; width: 100%; }
+
+/* index */
+.index { max-width: 760px; margin: 0 auto; padding: 56px 24px 96px; }
+.index .head { padding: 24px 0 40px; border-bottom: 1px solid var(--rule); }
+.index h1 { margin: 0 0 10px; font-size: clamp(34px, 5vw, 56px); line-height: 1.02; letter-spacing: -0.03em; font-weight: 700; }
+.index .lede { margin: 0; font-size: 18px; line-height: 1.5; color: var(--ink2); max-width: 560px; }
+.posts { list-style: none; margin: 0; padding: 0; }
+.posts li { border-bottom: 1px solid var(--rule); }
+.posts a { display: grid; grid-template-columns: 150px 1fr; grid-template-areas: "date title" "date desc" "date read"; gap: 6px 24px; padding: 30px 0; }
+.posts .date { grid-area: date; font-size: 13px; color: var(--muted); padding-top: 6px; font-variant-numeric: tabular-nums; }
+.posts .title { grid-area: title; font-size: 24px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 600; transition: color .15s; }
+.posts a:hover .title { color: #000; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.posts .desc { grid-area: desc; font-size: 16px; line-height: 1.55; color: var(--ink2); }
+.posts .read { grid-area: read; font-size: 13px; color: var(--muted); }
+.empty { color: var(--muted); padding: 40px 0; }
+@media (max-width: 640px) { .posts a { grid-template-columns: 1fr; grid-template-areas: "date" "title" "desc" "read"; gap: 6px; } .posts .date { padding-top: 0; } }
+
+/* article */
+.article { max-width: 700px; margin: 0 auto; padding: 48px 24px 96px; }
+.article .head { padding: 16px 0 28px; }
+.crumbs { margin: 0 0 22px; font-size: 13px; font-weight: 500; color: var(--muted); display: flex; gap: 12px; align-items: center; }
+.crumbs a:hover { color: var(--ink); }
+.draft { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: #ff9f0a; color: #1d1200; }
+.article h1 { margin: 0 0 16px; font-size: clamp(32px, 4.6vw, 48px); line-height: 1.06; letter-spacing: -0.03em; font-weight: 700; }
+.article .lede { margin: 0 0 20px; font-size: 19px; line-height: 1.5; color: var(--ink2); }
+.meta { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 0; font-size: 13.5px; color: var(--muted); }
+.meta span + span::before { content: '·'; margin: 0 9px; color: var(--faint); }
+.hero { margin: 8px 0 36px; }
+.hero img, .body img { display: block; width: 100%; height: auto; border-radius: 14px; background: var(--bg2); }
+.hero img { aspect-ratio: 16 / 9; object-fit: cover; }
+
+.body { font-size: 18px; line-height: 1.68; color: var(--ink); }
+.body > * + * { margin-top: 1.1em; }
+.body p { margin: 0; }
+.body p + p { margin-top: 1.1em; }
+.body h2 { margin: 2.1em 0 0.55em; font-size: 27px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 650; }
+.body h3 { margin: 1.7em 0 0.4em; font-size: 20px; line-height: 1.3; letter-spacing: -0.01em; font-weight: 600; }
+.body h4 { margin: 1.4em 0 0.3em; font-size: 17px; font-weight: 600; }
+.body a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--faint); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.body a:hover { text-decoration-color: var(--ink); }
+.body strong { font-weight: 650; }
+.body ul, .body ol { padding-left: 1.3em; }
+.body li { margin: 0.35em 0; padding-left: 0.2em; }
+.body li::marker { color: var(--muted); }
+.body blockquote { margin: 1.4em 0; padding: 4px 0 4px 22px; border-left: 3px solid var(--ink); color: var(--ink2); font-size: 18px; }
+.body blockquote p { margin: 0; }
+.body code { font-family: var(--mono); font-size: 0.86em; background: rgba(23,25,31,0.06); padding: 0.12em 0.4em; border-radius: 5px; }
+.body pre { margin: 1.4em 0; padding: 18px 20px; border-radius: 12px; background: var(--ink); color: #e6e7ec; overflow-x: auto; font-size: 14px; line-height: 1.55; }
+.body pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.body hr { border: 0; height: 1px; background: var(--rule); margin: 2.4em 0; }
+.body figure { margin: 1.6em 0; }
+.body figcaption { margin-top: 10px; font-size: 13.5px; color: var(--muted); text-align: center; }
+
+/* tables: a real grid on wide screens, stacked cards on phones, never a sideways scroll */
+.tbl { margin: 1.6em 0; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 16px; line-height: 1.45; }
+.tbl th { text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); padding: 0 12px 10px 0; border-bottom: 1px solid var(--ink); }
+.tbl td { padding: 12px 12px 12px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+@media (max-width: 600px) {
+  .tbl thead { display: none; }
+  .tbl table, .tbl tbody, .tbl tr, .tbl td { display: block; width: 100%; }
+  .tbl tr { padding: 14px 16px; margin-bottom: 12px; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 6px 18px rgba(23,25,31,0.06); }
+  .tbl td { padding: 6px 0; border: 0; }
+  .tbl td::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+}
+
+/* faq */
+.faq { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--rule); }
+.faq h2 { margin: 0 0 8px; font-size: 24px; letter-spacing: -0.02em; font-weight: 650; }
+.faq details { border-bottom: 1px solid var(--rule); }
+.faq summary { cursor: pointer; list-style: none; padding: 18px 36px 18px 0; font-size: 17.5px; font-weight: 600; line-height: 1.35; position: relative; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: ''; position: absolute; right: 6px; top: 50%; width: 10px; height: 10px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+                      transform: translateY(-70%) rotate(45deg); transition: transform .2s; }
+.faq details[open] summary::after { transform: translateY(-30%) rotate(225deg); }
+.faq details p { margin: 0 0 20px; font-size: 17px; line-height: 1.62; color: var(--ink2); }
+
+/* closing */
+.cta { margin-top: 56px; display: flex; gap: 22px; align-items: flex-start; padding: 28px; border-radius: 20px; background: #fff;
+       box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 12px 32px rgba(23,25,31,0.08); }
+.cta-icon { flex-shrink: 0; width: 64px; height: 64px; }
+.cta-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.25)); }
+.cta p { margin: 0 0 16px; font-size: 16.5px; line-height: 1.55; color: var(--ink2); }
+.cta .quiet { margin-left: 14px; font-size: 14px; font-weight: 500; color: var(--ink2); border-bottom: 1px solid var(--faint); }
+@media (max-width: 540px) { .cta { flex-direction: column; } }
+
+.more { margin-top: 56px; }
+.more h2 { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); margin: 0 0 8px; }
+.more ul { list-style: none; margin: 0; padding: 0; }
+.more li { border-top: 1px solid var(--rule); }
+.more a { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; }
+.more .t { font-weight: 600; font-size: 17px; }
+.more a:hover .t { text-decoration: underline; text-underline-offset: 4px; }
+.more .d { font-size: 13px; color: var(--muted); white-space: nowrap; padding-top: 3px; }
+
+/* footer, same as the landing page */
+footer { background: var(--ink); color: #b7bac4; padding: 26px 40px 22px; border-radius: 24px 24px 0 0; }
+footer .in { max-width: 980px; margin: 0 auto; display: flex; align-items: center; gap: 28px; font-size: 13px; line-height: 1.5; }
+footer .brand { color: #fff; white-space: nowrap; }
+footer .brand svg { width: 22px; height: 22px; }
+footer .tag { color: #8a8e9b; }
+footer .spacer { flex-grow: 1; }
+footer .links { display: flex; gap: 22px; white-space: nowrap; }
+footer a { color: #e6e7ec; }
+footer a:hover { color: #fff; }
+footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11.5px; line-height: 1.5; color: #8a8e9b; }
+@media (max-width: 720px) { footer { padding: 22px 22px 18px; } footer .in { flex-wrap: wrap; gap: 12px 18px; } footer .tag { display: none; } footer .links { gap: 16px; } }
+</style>
+
+
+</head>
+<body>
+<nav>
+  <a class="wordmark" href="../../../"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="gF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e2028"/><stop offset="1" stop-color="#0a0b0f"/></linearGradient></defs><rect width="200" height="200" rx="44.74" fill="url(#gF)"/><rect x="22" y="53" width="156" height="56" rx="28" fill="rgba(0,0,0,0.92)"/><rect x="23" y="54" width="154" height="54" rx="27" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><circle cx="50" cy="81" r="8" fill="#ff3b30"/><g fill="rgba(255,255,255,0.9)"><rect x="72" y="76.8" width="4.8" height="8.4" rx="2.4"/><rect x="80.8" y="71.2" width="4.8" height="19.6" rx="2.4"/><rect x="89.6" y="67" width="4.8" height="28" rx="2.4"/><rect x="98.4" y="73.3" width="4.8" height="15.4" rx="2.4"/><rect x="107.2" y="69.1" width="4.8" height="23.8" rx="2.4"/><rect x="116" y="75.4" width="4.8" height="11.2" rx="2.4"/><rect x="124.8" y="67.7" width="4.8" height="26.6" rx="2.4"/><rect x="133.6" y="72.6" width="4.8" height="16.8" rx="2.4"/><rect x="142.4" y="76.1" width="4.8" height="9.8" rx="2.4"/><rect x="151.2" y="74" width="4.8" height="14" rx="2.4"/></g><rect x="34" y="123" width="132" height="9" rx="4.5" fill="rgba(255,255,255,0.6)"/><rect x="50" y="146" width="100" height="9" rx="4.5" fill="rgba(255,255,255,0.3)"/></svg>Transcriber</a>
+  <span class="spacer"></span>
+  <a class="navlink" href="../../../blog/">Blog</a>
+  <a class="navlink" href="https://github.com/moritzjkr/Transcriber">GitHub</a>
+  <a class="btn sm" href="https://github.com/moritzjkr/Transcriber/releases/latest">Download</a>
+</nav>
+
+<main class="article">
+  <header class="head">
+    <p class="crumbs"><a href="../../">Blog</a> <span class="draft">Draft preview</span></p>
+    <h1>How to record a meeting without a bot joining the call</h1>
+    <p class="lede">Record a meeting without a bot joining, on a Mac, and still get a transcript with both sides labelled. Nothing shows up in the attendee list.</p>
+    <p class="meta"><span>Moritz Krause</span><span>Unpublished</span><span>4 min read</span></p>
+  </header>
+  
+  <div class="body">
+<p>You can record a meeting without a bot by recording it on your own machine instead of inside the meeting. Transcriber does this on a Mac: it captures your microphone and the sound the other participants make through your speakers, transcribes both locally, and writes the transcript to a folder while the call is still running. Nobody sees a &quot;Recorder&quot; tile, the host doesn't have to allow anything, and no audio leaves your computer.</p>
+<p>This post explains why bots exist in the first place, how recording on your own Mac replaces them, and where that approach has real limits.</p>
+<h2 id="why-do-meeting-tools-use-a-bot-at-all">Why do meeting tools use a bot at all?</h2>
+<p>A bot is the easiest way for a cloud service to hear a meeting. It joins as a participant, receives the audio and video stream like anyone else, and sends it to a server for transcription. That's why the bot shows up in the attendee list, why the host sometimes has to admit it from the waiting room, and why some companies block them outright.</p>
+<p>The bot approach has two side effects people dislike. The first is social: a &quot;Notetaker&quot; tile changes the tone of a call, especially with clients or in a first conversation. The second is technical: the recording lives with the service, so the transcript is on someone else's server and depends on their retention policy.</p>
+<h2 id="how-do-you-record-without-one">How do you record without one?</h2>
+<p>You record the two audio streams that already reach your Mac. Your voice goes into the microphone, and everyone else's voice comes out of your speakers as system audio. Since macOS 14.2, Apple provides an audio tap that lets an app listen to what other apps play, after you grant permission once. Transcriber uses that tap for the far end and your normal microphone for your side.</p>
+<p>Both channels are recorded in parallel and transcribed on the Mac with a local model. The meeting app doesn't know any of this is happening, because from its point of view nothing changed: it plays audio, it receives audio, and there is no extra participant.</p>
+<p>The practical steps are short. You click the dot in the menu bar or press the global shortcut ⌃⌥⌘R, the dot turns red and expands into a small pill with a waveform and a timer, and a floating bar below the menu bar shows the transcript as it forms. When the meeting ends, you click the dot again and give the recording a title. The first time you do this, macOS asks for Microphone and System Audio Recording permission, and the first recording downloads the transcription models, roughly a gigabyte, once.</p>
+<h2 id="do-you-still-get-speakers-separated">Do you still get speakers separated?</h2>
+<p>Yes, and the two channels are the reason it works. Everything from your microphone is labelled with your name. Everything from the system channel is the other side. After the call, a diarization step runs over that channel and splits it into Speaker 1, Speaker 2 and so on when several remote voices are detected. A bot gets speaker names for free from the meeting platform, and that is one thing a local recording can't replicate: you get labels, not names, unless you edit them.</p>
+<p>If you don't wear headphones, your microphone also hears the loudspeaker, so the far end would appear twice. Transcriber's echo gate uses the system channel as a reference, estimates delay and echo gain, and mutes the microphone frames that only contain the other side. On a real 54-minute Zoom call this removed 220 of 225 echo segments. Headphones remain the cleaner setup, the gate is for the calls where you forgot them.</p>
+<h2 id="what-do-you-get-at-the-end">What do you get at the end?</h2>
+<p>A folder per recording, named after the date and the title, in the transcripts folder you chose. Inside sits a readable Markdown transcript grouped by speaker with timestamps, and next to it a line-by-line JSON file that is written and flushed after every segment. If your Mac crashes mid-meeting, everything up to the last segment is already on disk, and Transcriber offers to finish the session on the next launch. JSON and SRT exports and the raw audio are optional.</p>
+<p>From the title dialog you can also hand the transcript straight to an AI tool. Settings lets you pick Claude, ChatGPT, Perplexity or any Mac app, plus a prompt template. &quot;Save &amp; Open in Claude&quot; puts the transcript on the clipboard, opens the tool with your prompt, and pastes it, so a summary or a to-do list is one Enter away. How that looks in practice is in the post on <a href="https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/" rel="noopener">recording a Zoom call on a Mac</a>.</p>
+<h2 id="where-does-recording-without-a-bot-fall-short">Where does recording without a bot fall short?</h2>
+<p>You have to be in the meeting. A bot can attend on your behalf while you're somewhere else, a local recorder can't, because there is no audio on your Mac to record. If you regularly need transcripts of meetings you skip, a bot is the right tool and Transcriber is not.</p>
+<p>Shared notes are another gap. A cloud service puts every transcript in a searchable workspace that your whole team can open. Transcriber writes files to a folder, and sharing them is up to you and your sync tool. For a team that lives in shared meeting notes, that is a step backwards.</p>
+<p>And the transcription runs on your hardware, so an Apple Silicon Mac is recommended and Windows or phones are out. The model is good but it is a model: names, product codes and heavy accents deserve a read-through before you send anything on.</p>
+<h2 id="is-it-legal-to-record-without-telling-anyone">Is it legal to record without telling anyone?</h2>
+<p>In many places it isn't. Germany's § 201 StGB makes recording a conversation without consent a crime, and other countries have similar rules. The absence of a bot removes the visual reminder, which makes it more important, not less, to say at the start that you're recording. Transcriber shows a consent notice for that reason. Say the sentence, then press record.</p>
+  </div>
+  <section class="faq" aria-labelledby="faq-h"><h2 id="faq-h">Questions people ask</h2><details><summary>Will the other participants see that I'm recording?</summary><p>Not from the software side. Transcriber records what your Mac plays and what your microphone hears, so nothing joins the meeting and no icon appears for anyone else. Tell them anyway, recording without consent is illegal in many places.</p></details><details><summary>Does this work if I'm not the host?</summary><p>Yes. Nothing on the meeting side has to be enabled or allowed. If audio reaches your speakers and your microphone, it can be recorded.</p></details><details><summary>Which meeting apps does it work with?</summary><p>Any app that plays audio on your Mac. Zoom, Teams, Google Meet, WhatsApp, FaceTime and calls in a browser all work the same way.</p></details><details><summary>Does the audio go to a server for transcription?</summary><p>No. Transcription runs on your Mac with a downloaded model. The only network access is the one-time model download and the daily update check against GitHub.</p></details><details><summary>Can it record a meeting I'm not attending?</summary><p>No. It records the audio on your Mac, so you have to be in the call. That's the price of not having a bot.</p></details><details><summary>What Mac do I need?</summary><p>macOS 14.2 or newer, because that's where the system audio tap arrived. An Apple Silicon Mac is recommended for the transcription models.</p></details></section>
+  <aside class="cta">
+    <div class="cta-icon"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="gF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e2028"/><stop offset="1" stop-color="#0a0b0f"/></linearGradient></defs><rect width="200" height="200" rx="44.74" fill="url(#gF)"/><rect x="22" y="53" width="156" height="56" rx="28" fill="rgba(0,0,0,0.92)"/><rect x="23" y="54" width="154" height="54" rx="27" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><circle cx="50" cy="81" r="8" fill="#ff3b30"/><g fill="rgba(255,255,255,0.9)"><rect x="72" y="76.8" width="4.8" height="8.4" rx="2.4"/><rect x="80.8" y="71.2" width="4.8" height="19.6" rx="2.4"/><rect x="89.6" y="67" width="4.8" height="28" rx="2.4"/><rect x="98.4" y="73.3" width="4.8" height="15.4" rx="2.4"/><rect x="107.2" y="69.1" width="4.8" height="23.8" rx="2.4"/><rect x="116" y="75.4" width="4.8" height="11.2" rx="2.4"/><rect x="124.8" y="67.7" width="4.8" height="26.6" rx="2.4"/><rect x="133.6" y="72.6" width="4.8" height="16.8" rx="2.4"/><rect x="142.4" y="76.1" width="4.8" height="9.8" rx="2.4"/><rect x="151.2" y="74" width="4.8" height="14" rx="2.4"/></g><rect x="34" y="123" width="132" height="9" rx="4.5" fill="rgba(255,255,255,0.6)"/><rect x="50" y="146" width="100" height="9" rx="4.5" fill="rgba(255,255,255,0.3)"/></svg></div>
+    <div><p>If that sounds like how you'd want to work, Transcriber is free and runs on your Mac. If not, no hard feelings, there are plenty of other ways to get a transcript.</p><a class="btn lg" href="https://github.com/moritzjkr/Transcriber/releases/latest">Download for macOS</a> <a class="quiet" href="../../../">What Transcriber does</a></div>
+  </aside>
+  <section class="more"><h2>More from the blog</h2><ul><li><a href="../../record-zoom-call-mac-transcript/"><span class="t">How to record a Zoom call on a Mac and get a transcript</span><span class="d">September 8, 2026</span></a></li></ul></section>
+</main>
+<footer>
+  <div class="in">
+    <span class="brand"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="gF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e2028"/><stop offset="1" stop-color="#0a0b0f"/></linearGradient></defs><rect width="200" height="200" rx="44.74" fill="url(#gF)"/><rect x="22" y="53" width="156" height="56" rx="28" fill="rgba(0,0,0,0.92)"/><rect x="23" y="54" width="154" height="54" rx="27" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><circle cx="50" cy="81" r="8" fill="#ff3b30"/><g fill="rgba(255,255,255,0.9)"><rect x="72" y="76.8" width="4.8" height="8.4" rx="2.4"/><rect x="80.8" y="71.2" width="4.8" height="19.6" rx="2.4"/><rect x="89.6" y="67" width="4.8" height="28" rx="2.4"/><rect x="98.4" y="73.3" width="4.8" height="15.4" rx="2.4"/><rect x="107.2" y="69.1" width="4.8" height="23.8" rx="2.4"/><rect x="116" y="75.4" width="4.8" height="11.2" rx="2.4"/><rect x="124.8" y="67.7" width="4.8" height="26.6" rx="2.4"/><rect x="133.6" y="72.6" width="4.8" height="16.8" rx="2.4"/><rect x="142.4" y="76.1" width="4.8" height="9.8" rx="2.4"/><rect x="151.2" y="74" width="4.8" height="14" rx="2.4"/></g><rect x="34" y="123" width="132" height="9" rx="4.5" fill="rgba(255,255,255,0.6)"/><rect x="50" y="146" width="100" height="9" rx="4.5" fill="rgba(255,255,255,0.3)"/></svg>Transcriber</span>
+    <span class="tag">Made by Moritz Krause. Everything runs on your Mac.</span>
+    <span class="spacer"></span>
+    <span class="links">
+      <a href="../../../blog/">Blog</a>
+      <a href="https://moritz-krause.com/transcriber/blog/feed.xml">RSS</a>
+      <a href="https://github.com/moritzjkr/Transcriber/releases/latest">Latest release</a>
+      <a href="https://github.com/moritzjkr/Transcriber">Source code</a>
+    </span>
+  </div>
+  <div class="legal">Recording conversations without consent is illegal in many places. Tell the people in the call before you press record.</div>
+</footer>
+</body>
+</html>
