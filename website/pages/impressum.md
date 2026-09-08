@@ -1,37 +1,41 @@
 ---
-title: Impressum
-description: Anbieterkennzeichnung für gettranscriber.com nach § 5 DDG.
+title: Impressum / Mentions légales
+description: Legal notice for gettranscriber.com. Provider, contact, hosting and liability, in English, French and German.
 noindex: true
 ---
 
-## Angaben gemäß § 5 DDG
+## Provider
 
 Moritz Krause
-[Straße und Hausnummer]
-[PLZ] Cham
-Deutschland
+55 chemin des Bios
+74400 Chamonix-Mont-Blanc
+France
 
-E-Mail: [hello@moritz-krause.com](mailto:hello@moritz-krause.com)
+Email: [hello@moritz-krause.com](mailto:hello@moritz-krause.com)
 Web: [moritz-krause.com](https://moritz-krause.com)
 
-Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV: Moritz Krause, Anschrift wie oben.
+Moritz Krause is a freelance documentary filmmaker and the sole author and publisher of this website and of the Transcriber app. The app is free and open source; nothing is sold on this website and there is no user account.
 
-## Was diese Website ist
+**Hosting:** Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, USA (Cloudflare Pages). Downloads are served by GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA.
 
-gettranscriber.com ist die Website zu Transcriber, einer kostenlosen, quelloffenen macOS-App von Moritz Krause. Die App wird ohne Entgelt zur Verfügung gestellt. Es gibt kein Konto, kein Abonnement und keinen Verkauf über diese Website.
+**Responsible for the content:** Moritz Krause, address as above.
 
-## Haftung für Inhalte
+## Mentions légales (français)
 
-Die Inhalte dieser Seiten wurden mit Sorgfalt erstellt. Für Richtigkeit, Vollständigkeit und Aktualität wird keine Gewähr übernommen. Als Diensteanbieter bin ich für eigene Inhalte nach den allgemeinen Gesetzen verantwortlich, aber nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen. Bei Bekanntwerden von Rechtsverletzungen werden entsprechende Inhalte umgehend entfernt.
+Éditeur du site : Moritz Krause, 55 chemin des Bios, 74400 Chamonix-Mont-Blanc, France. Courriel : [hello@moritz-krause.com](mailto:hello@moritz-krause.com). Directeur de la publication : Moritz Krause. Personne physique exerçant à titre individuel ; ce site ne vend rien et ne collecte aucune donnée de compte.
 
-## Haftung für Links
+Hébergeur : Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis (Cloudflare Pages). Les téléchargements sont fournis par GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.
 
-Diese Website enthält Links zu externen Websites Dritter, auf deren Inhalte ich keinen Einfluss habe. Für diese Inhalte ist der jeweilige Anbieter verantwortlich. Zum Zeitpunkt der Verlinkung waren keine Rechtsverstöße erkennbar. Bei Bekanntwerden von Rechtsverletzungen werden solche Links entfernt.
+Données personnelles : voir la [politique de confidentialité](/privacy/). Aucun cookie, aucun outil de mesure d'audience.
 
-## Urheberrecht
+## Impressum (deutsch)
 
-Texte, Bilder und Code auf dieser Website unterliegen dem deutschen Urheberrecht. Der Quellcode der App steht unter der im [GitHub-Repository](https://github.com/moritzjuliankrause/Transcriber) genannten Lizenz. Blogtexte dürfen mit Quellenangabe und Link zitiert werden.
+Anbieter dieser Website und der App Transcriber ist Moritz Krause, 55 chemin des Bios, 74400 Chamonix-Mont-Blanc, Frankreich. E-Mail: [hello@moritz-krause.com](mailto:hello@moritz-krause.com). Verantwortlich für den Inhalt: Moritz Krause, Anschrift wie oben. Der Anbieter ist in Frankreich niedergelassen; die Angaben erfolgen freiwillig in Anlehnung an § 5 DDG.
 
-## Hinweis zu Aufnahmen
+## Liability and copyright
 
-Transcriber zeichnet Gespräche auf. Das Aufzeichnen des nichtöffentlich gesprochenen Wortes ohne Einwilligung der Beteiligten ist in Deutschland nach § 201 StGB strafbar und in vielen anderen Ländern ebenfalls verboten. Die Verantwortung für eine rechtmäßige Nutzung liegt bei der Person, die aufzeichnet.
+The content of this site is written with care, but no guarantee is given for its accuracy, completeness or currency. Links to third-party sites are provided as ordinary links; the respective operators are responsible for their content, and links are removed when a legal problem becomes known. Texts and images on this site are protected by copyright. The app's source code is licensed as stated in the [GitHub repository](https://github.com/moritzjuliankrause/Transcriber). Blog posts may be quoted with attribution and a link.
+
+## Note on recordings
+
+Transcriber records conversations. Recording a private conversation without the consent of the participants is a criminal offence in many countries, for example under Article 226-1 of the French Code pénal and § 201 of the German StGB. The person recording is responsible for lawful use.

@@ -4,7 +4,7 @@ lede: What this website and the app know about you. Short version: almost nothin
 description: Privacy policy for gettranscriber.com and the Transcriber macOS app. No accounts, no analytics, no tracking; the app processes audio only on your Mac.
 ---
 
-This page covers two things: the website gettranscriber.com and the Transcriber app for macOS. Both are made by Moritz Krause (contact details in the [Impressum](/impressum/)). A German version follows below, the German text is the binding one for visitors from Germany.
+This page covers two things: the website gettranscriber.com and the Transcriber app for macOS. Both are made by Moritz Krause, 55 chemin des Bios, 74400 Chamonix-Mont-Blanc, France (contact details in the [legal notice](/impressum/)), who is the controller in the sense of the GDPR. A German version follows below.
 
 ## The website
 
@@ -31,13 +31,13 @@ Recording a conversation may require the consent of everyone in it. That obligat
 
 ## Your rights
 
-Since neither the website nor the app collects personal data beyond Cloudflare's short-lived server logs, there is little to access, correct or delete. You still have the rights under Art. 15 to 21 GDPR and the right to complain to a supervisory authority. Write to [hello@moritz-krause.com](mailto:hello@moritz-krause.com) for anything related to this policy.
+Since neither the website nor the app collects personal data beyond Cloudflare's short-lived server logs, there is little to access, correct or delete. You still have the rights under Art. 15 to 21 GDPR and the right to complain to a supervisory authority, in France the CNIL. Write to [hello@moritz-krause.com](mailto:hello@moritz-krause.com) for anything related to this policy.
 
 ---
 
 ## Datenschutzerklärung (Deutsch)
 
-Verantwortlicher ist Moritz Krause, Kontaktdaten im [Impressum](/impressum/).
+Verantwortlicher ist Moritz Krause, 55 chemin des Bios, 74400 Chamonix-Mont-Blanc, Frankreich, Kontaktdaten im [Impressum](/impressum/).
 
 **Website.** gettranscriber.com besteht aus statischen Seiten ohne Cookies, ohne Analyse-Tools, ohne Login und ohne Formulare. Beim Aufruf verarbeitet der Hosting-Anbieter Cloudflare (Cloudflare, Inc., USA, in der EU vertreten durch Cloudflare Germany GmbH) technisch notwendig Ihre IP-Adresse, die aufgerufene Seite, den Browser-Typ und den Zeitpunkt des Zugriffs und speichert diese Daten kurzzeitig in Server-Logs zum Betrieb und Schutz des Dienstes. Rechtsgrundlage ist mein berechtigtes Interesse an einem sicheren und schnellen Betrieb der Website (Art. 6 Abs. 1 lit. f DSGVO). Datenschutzerklärung von Cloudflare: [cloudflare.com/privacypolicy](https://www.cloudflare.com/privacypolicy/).
 
