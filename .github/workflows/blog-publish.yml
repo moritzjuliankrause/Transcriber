@@ -4,6 +4,10 @@ name: Blog
 #  - a push that touches website/blog/posts/**  -> rebuild (drafts land under blog/preview/) and, for new drafts, notify Slack
 #  - repository_dispatch approve-post {slug}    -> flip draft: false, stamp the date, rebuild, commit   (sent by the Slack worker)
 #  - repository_dispatch reject-post  {slug}    -> retire the draft (renamed to .md.rejected), rebuild, commit
+#  - repository_dispatch revise-post  {slug, notes, by} -> save the change request to blog-reviews/<slug>/requests/, commit
+#                                                  (the rewrite routine picks it up, rewrites, pushes with "[rewrite]" in the message)
+#  - a push whose message contains [rewrite]     -> rebuild and re-notify Slack for the rewritten draft(s)
+#  - workflow_dispatch notify {slug}             -> (re)send the Slack message for a draft, e.g. to test the buttons
 #  - workflow_dispatch                          -> the same two actions by hand from the Actions tab
 
 on:
@@ -11,15 +15,15 @@ on:
     branches: [main]
     paths: ['website/blog/posts/**', 'website/blog/img/**', 'website/blog/config.json', 'website/blog/blog.css', 'website/scripts/build-blog.mjs']
   repository_dispatch:
-    types: [approve-post, reject-post]
+    types: [approve-post, reject-post, revise-post]
   workflow_dispatch:
     inputs:
       action:
-        description: approve or reject
+        description: approve, reject or notify (re-send the Slack message)
         required: true
         default: approve
         type: choice
-        options: [approve, reject]
+        options: [approve, reject, notify]
       slug:
         description: post slug (file name without .md)
         required: true
@@ -46,7 +50,7 @@ jobs:
         id: act
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            echo "action=${{ github.event.action == 'approve-post' && 'approve' || 'reject' }}" >> "$GITHUB_OUTPUT"
+            echo "action=${{ github.event.action == 'approve-post' && 'approve' || github.event.action == 'revise-post' && 'revise' || 'reject' }}" >> "$GITHUB_OUTPUT"
             echo "slug=${{ github.event.client_payload.slug }}" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "action=${{ github.event.inputs.action }}" >> "$GITHUB_OUTPUT"
@@ -88,6 +92,19 @@ jobs:
           git mv "$f" "$f.rejected"
           echo "retired $f"
 
+      - name: Save change request
+        if: steps.act.outputs.action == 'revise'
+        env:
+          NOTES: ${{ github.event.client_payload.notes }}
+          BY: ${{ github.event.client_payload.by }}
+        run: |
+          slug="${{ steps.act.outputs.slug }}"
+          test -f "website/blog/posts/$slug.md" || { echo "no such draft: $slug"; exit 1; }
+          d="blog-reviews/$slug/requests"; mkdir -p "$d"
+          f="$d/$(date -u +%Y%m%dT%H%M%SZ).md"
+          { printf -- '---\nslug: %s\nby: %s\nrequested: %s\nstatus: open\n---\n\n' "$slug" "$BY" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf '%s\n' "$NOTES"; } > "$f"
+          echo "saved $f"
+
       - name: Build
         run: node website/scripts/build-blog.mjs
 
@@ -100,19 +117,37 @@ jobs:
           case "${{ steps.act.outputs.action }}" in
             approve) msg="Publish blog post: ${{ steps.act.outputs.slug }}";;
             reject)  msg="Retire blog draft: ${{ steps.act.outputs.slug }}";;
+            revise)  msg="Change request for blog draft: ${{ steps.act.outputs.slug }}";;
             *)       msg="Rebuild blog";;
           esac
           git commit -m "$msg"
           git push
 
       # New drafts pushed by the writing routine get announced once, with a preview link and buttons.
-      - name: Notify Slack about new drafts
+      # Rewrites (commit message contains [rewrite]) are announced again for the modified drafts.
+      - name: Notify Slack about new or rewritten drafts
         if: steps.act.outputs.action == 'build' && env.SLACK_BOT_TOKEN != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+          HEAD_MSG: ${{ github.event.head_commit.message }}
         run: |
-          for f in $(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'website/blog/posts/*.md' 2>/dev/null); do
+          before="${{ github.event.before }}"
+          git rev-parse -q --verify "$before^{commit}" >/dev/null 2>&1 || before="HEAD~1"
+          for f in $(git diff --name-only --diff-filter=A "$before" HEAD -- 'website/blog/posts/*.md' 2>/dev/null); do
             slug=$(basename "$f" .md)
             node website/scripts/notify-slack.mjs "$slug" || echo "slack notification failed for $slug"
           done
+          case "$HEAD_MSG" in *"[rewrite]"*)
+            for f in $(git diff --name-only --diff-filter=M "$before" HEAD -- 'website/blog/posts/*.md' 2>/dev/null); do
+              slug=$(basename "$f" .md)
+              grep -qE '^draft:\s*true' "$f" && { node website/scripts/notify-slack.mjs "$slug" --rewrite || echo "slack notification failed for $slug"; }
+            done;;
+          esac
+
+      - name: Notify Slack on request
+        if: steps.act.outputs.action == 'notify' && env.SLACK_BOT_TOKEN != ''
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+        run: node website/scripts/notify-slack.mjs "${{ steps.act.outputs.slug }}"

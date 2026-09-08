@@ -4,6 +4,8 @@ description: Record a meeting without a bot joining, on a Mac, and still get a t
 author: Moritz Krause
 keyword: record meeting without bot
 keywords: [record meeting without bot, meeting transcription without bot, notetaker without bot, record call on mac]
+hero: img/record-meeting-without-bot-mac/hero.webp
+heroAlt: record meeting without bot, the Transcriber pill in the menu bar and the live transcript bar
 draft: true
 faq:
   - q: Will the other participants see that I'm recording?

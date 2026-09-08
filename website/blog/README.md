@@ -18,8 +18,9 @@ website/
 │   └── README.md               this file
 └── scripts/
     ├── build-blog.mjs          renders everything above. Node 22, no dependencies.
-    ├── notify-slack.mjs        posts a draft to Slack with Approve / Reject buttons
-    └── slack-approve-worker.js Cloudflare Worker that turns a button click into a GitHub dispatch
+    ├── notify-slack.mjs        posts a draft to Slack with Approve / Request changes / Edit / Reject buttons
+    ├── slack-approve-worker.js Cloudflare Worker that turns a button click into a GitHub dispatch
+    └── make-hero.swift         renders a 16:9 hero image in the app's design (menu bar pill + transcript bar)
 ```
 
 ## Writing a post
@@ -59,6 +60,10 @@ tables (`| a | b |`, they stack into cards on phones), `---`.
 
 Facts about Transcriber come from the app's README only. If it's not in there, it doesn't go in a post.
 
+Hero images: a real screenshot when there is something real to show, otherwise render one in the
+app's design: `swift website/scripts/make-hero.swift out.png "Anna: line" "Me: line" "Anna: line" 12:34`,
+then convert to WebP (1600x900, quality ~82) into `img/<slug>/hero.webp`.
+
 ## Building
 
 ```sh
@@ -77,7 +82,10 @@ the feed and the sitemap are built from it.
 2. The GitHub workflow `.github/workflows/blog-publish.yml` rebuilds. The draft appears at
    `/blog/preview/<slug>/` (noindex) once the site deploys, and `notify-slack.mjs` posts it to
    Slack with the preview link and two buttons.
-3. To change something first, click **Edit on GitHub**, edit the Markdown in the browser and commit
+3. For bigger changes click **Request changes**, write what should change and why, submit. The notes
+   are saved to `blog-reviews/<slug>/requests/`, the rewrite routine rewrites the draft, pushes with
+   `[rewrite]` in the commit message, and the workflow posts the new preview to Slack (same buttons).
+   For small fixes click **Edit on GitHub**, edit the Markdown in the browser and commit
    to `main`. The push rebuilds the preview (no new Slack message, the file is not new). Then approve.
 4. Clicking **Approve and publish** calls the Cloudflare Worker, which verifies Slack's signature
    and sends `repository_dispatch: approve-post {slug}` to GitHub. The workflow sets
