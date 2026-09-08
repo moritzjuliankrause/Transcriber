@@ -7,13 +7,13 @@
 <meta name="description" content="Transcriber privacy in detail. Which network requests the app makes, where audio and transcripts are stored, and what to tell the people on the call.">
 
 <meta name="robots" content="noindex, nofollow">
-<link rel="alternate" type="application/rss+xml" title="Transcriber Blog" href="https://moritz-krause.com/transcriber/blog/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="Transcriber Blog" href="https://transcriber-x84.pages.dev/blog/feed.xml">
 <meta property="og:site_name" content="Transcriber">
 <meta property="og:type" content="article">
 <meta property="og:title" content="What leaves your Mac when Transcriber records a call">
 <meta property="og:description" content="Transcriber privacy in detail. Which network requests the app makes, where audio and transcripts are stored, and what to tell the people on the call.">
 
-<meta property="og:image" content="https://moritz-krause.com/transcriber/blog/img/transcriber-privacy-what-leaves-your-mac/hero.webp">
+<meta property="og:image" content="https://transcriber-x84.pages.dev/blog/img/transcriber-privacy-what-leaves-your-mac/hero.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -191,7 +191,7 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
 <p>Two permissions on the first run. Microphone, for your side of the call. System Audio Recording, for the other side, because since macOS 14.2 an app needs explicit permission to listen to what other apps play. If you use the automatic paste into an AI app, a third one, Accessibility, is needed for sending the paste keystroke. Each is asked once and remembered as long as the app keeps the same code signature.</p>
 <h2 id="the-part-that-stays-your-responsibility">The part that stays your responsibility</h2>
 <p>The app can keep your data on your Mac. It cannot make a recording legal. In Germany, § 201 StGB makes recording a private conversation without consent a criminal offence, and many other countries have comparable rules, some of which require every participant to agree. Because nothing visible joins the call, the other side has no way to notice. Say it at the start, every time, and if someone objects, don't record.</p>
-<p>For a description of how the recording itself works, see <a href="https://moritz-krause.com/transcriber/blog/how-transcriber-works/" rel="noopener">how Transcriber works</a>, and for the practical side of a recording, the post on <a href="https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/" rel="noopener">recording a Zoom call on a Mac</a>.</p>
+<p>For a description of how the recording itself works, see <a href="/blog/how-transcriber-works/">how Transcriber works</a>, and for the practical side of a recording, the post on <a href="/blog/record-zoom-call-mac-transcript/">recording a Zoom call on a Mac</a>.</p>
   </div>
   <section class="faq" aria-labelledby="faq-h"><h2 id="faq-h">Questions people ask</h2><details><summary>Does the audio ever go to a server?</summary><p>No. Recording and transcription both happen on your Mac. The audio files stay in the folder you chose, or are deleted after the call if you turned off keeping audio.</p></details><details><summary>Which network connections does the app make?</summary><p>Two. The one-time download of the transcription models, and a check for new versions against GitHub, once a day by default. Both can be seen in the app log.</p></details><details><summary>Do I need an account?</summary><p>No account, no login, no email address. Download the app, grant the two permissions, record.</p></details><details><summary>Where are transcripts stored?</summary><p>In a folder you pick in Settings, one subfolder per recording. Your sync tool decides where they go from there, the app does not upload anything.</p></details><details><summary>Can I use it under GDPR?</summary><p>The app itself sends no personal data anywhere, which removes the usual processor question. Recording a conversation still needs a legal basis and the consent of the participants, that part is yours.</p></details><details><summary>Is the code public?</summary><p>Yes, the source is on GitHub, so every claim on this page can be checked against the code.</p></details></section>
   <aside class="cta">
@@ -207,7 +207,7 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
     <span class="spacer"></span>
     <span class="links">
       <a href="../../../blog/">Blog</a>
-      <a href="https://moritz-krause.com/transcriber/blog/feed.xml">RSS</a>
+      <a href="https://transcriber-x84.pages.dev/blog/feed.xml">RSS</a>
       <a href="https://github.com/moritzjuliankrause/Transcriber/releases/latest">Latest release</a>
       <a href="https://github.com/moritzjuliankrause/Transcriber">Source code</a>
     </span>

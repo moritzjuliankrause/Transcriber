@@ -7,13 +7,13 @@
 <meta name="description" content="How Transcriber records both sides of a call on a Mac, transcribes them locally and tells speakers apart, explained step by step with the limits included.">
 
 <meta name="robots" content="noindex, nofollow">
-<link rel="alternate" type="application/rss+xml" title="Transcriber Blog" href="https://moritz-krause.com/transcriber/blog/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="Transcriber Blog" href="https://transcriber-x84.pages.dev/blog/feed.xml">
 <meta property="og:site_name" content="Transcriber">
 <meta property="og:type" content="article">
 <meta property="og:title" content="How Transcriber works, from audio tap to transcript file">
 <meta property="og:description" content="How Transcriber records both sides of a call on a Mac, transcribes them locally and tells speakers apart, explained step by step with the limits included.">
 
-<meta property="og:image" content="https://moritz-krause.com/transcriber/blog/img/how-transcriber-works/hero.webp">
+<meta property="og:image" content="https://transcriber-x84.pages.dev/blog/img/how-transcriber-works/hero.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -196,7 +196,7 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
 <p>You click the menu bar dot again, or press the global shortcut, and Transcriber asks for a title. If you set up an AI tool in Settings, one of the buttons is Save &amp; Open in Claude, ChatGPT, Perplexity or whichever app or website you picked. The transcript goes onto the clipboard together with your prompt template, the tool opens, and the text is pasted. You press Enter and get a summary, action items, or whatever your template asks for.</p>
 <h2 id="where-is-it-rough">Where is it rough?</h2>
 <p>The transcript is a machine transcript. Names, product codes and heavy accents want a read-through. Speaker labels on the far end are labels, not names. The app is signed with a personal certificate rather than a Developer ID, so macOS asks you to confirm the first launch, and permissions are tied to that signature. And it only runs on a Mac, because the whole approach depends on the macOS audio tap.</p>
-<p>For a look at the same mechanics from the user's side, the post on <a href="https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/" rel="noopener">recording a Zoom call on a Mac</a> shows what a recording looks like start to finish.</p>
+<p>For a look at the same mechanics from the user's side, the post on <a href="/blog/record-zoom-call-mac-transcript/">recording a Zoom call on a Mac</a> shows what a recording looks like start to finish.</p>
   </div>
   <section class="faq" aria-labelledby="faq-h"><h2 id="faq-h">Questions people ask</h2><details><summary>Does it work with every app?</summary><p>With every app that plays audio through the Mac. Zoom, Teams, Google Meet, WhatsApp, FaceTime, a call in a browser tab and a YouTube video are all the same to it.</p></details><details><summary>Why does it need two permissions?</summary><p>Microphone for your side and System Audio Recording for the other side. Without the second one, the far end of the call would be missing from the transcript.</p></details><details><summary>How big is the model download?</summary><p>About one gigabyte, downloaded once on the first recording or up front in Settings. It contains Parakeet for transcription, Silero for voice detection and pyannote for speaker separation.</p></details><details><summary>What happens if the Mac crashes during a call?</summary><p>The transcript is written to disk after every segment, so everything up to the crash is already saved. On the next launch Transcriber offers to finish the session.</p></details><details><summary>Can I get subtitles or JSON out of it?</summary><p>Yes. Markdown is always written, JSON and SRT are optional exports in Settings, and the raw audio can be kept as WAV files.</p></details><details><summary>Is an Intel Mac enough?</summary><p>macOS 14.2 is the requirement. The transcription models run much better on Apple Silicon, so that is what I recommend.</p></details></section>
   <aside class="cta">
@@ -212,7 +212,7 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
     <span class="spacer"></span>
     <span class="links">
       <a href="../../../blog/">Blog</a>
-      <a href="https://moritz-krause.com/transcriber/blog/feed.xml">RSS</a>
+      <a href="https://transcriber-x84.pages.dev/blog/feed.xml">RSS</a>
       <a href="https://github.com/moritzjuliankrause/Transcriber/releases/latest">Latest release</a>
       <a href="https://github.com/moritzjuliankrause/Transcriber">Source code</a>
     </span>

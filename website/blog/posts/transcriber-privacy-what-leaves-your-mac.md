@@ -52,4 +52,4 @@ Two permissions on the first run. Microphone, for your side of the call. System 
 
 The app can keep your data on your Mac. It cannot make a recording legal. In Germany, § 201 StGB makes recording a private conversation without consent a criminal offence, and many other countries have comparable rules, some of which require every participant to agree. Because nothing visible joins the call, the other side has no way to notice. Say it at the start, every time, and if someone objects, don't record.
 
-For a description of how the recording itself works, see [how Transcriber works](https://moritz-krause.com/transcriber/blog/how-transcriber-works/), and for the practical side of a recording, the post on [recording a Zoom call on a Mac](https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/).
+For a description of how the recording itself works, see [how Transcriber works](/blog/how-transcriber-works/), and for the practical side of a recording, the post on [recording a Zoom call on a Mac](/blog/record-zoom-call-mac-transcript/).

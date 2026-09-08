@@ -46,7 +46,7 @@ If you don't wear headphones, your microphone also hears the loudspeaker, so the
 
 A folder per recording, named after the date and the title, in the transcripts folder you chose. Inside sits a readable Markdown transcript grouped by speaker with timestamps, and next to it a line-by-line JSON file that is written and flushed after every segment. If your Mac crashes mid-meeting, everything up to the last segment is already on disk, and Transcriber offers to finish the session on the next launch. JSON and SRT exports and the raw audio are optional.
 
-From the title dialog you can also hand the transcript straight to an AI tool. Settings lets you pick Claude, ChatGPT, Perplexity or any Mac app, plus a prompt template. "Save & Open in Claude" puts the transcript on the clipboard, opens the tool with your prompt, and pastes it, so a summary or a to-do list is one Enter away. How that looks in practice is in the post on [recording a Zoom call on a Mac](https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/).
+From the title dialog you can also hand the transcript straight to an AI tool. Settings lets you pick Claude, ChatGPT, Perplexity or any Mac app, plus a prompt template. "Save & Open in Claude" puts the transcript on the clipboard, opens the tool with your prompt, and pastes it, so a summary or a to-do list is one Enter away. How that looks in practice is in the post on [recording a Zoom call on a Mac](/blog/record-zoom-call-mac-transcript/).
 
 ## Where does recording without a bot fall short?
 

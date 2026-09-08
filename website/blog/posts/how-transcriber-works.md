@@ -62,4 +62,4 @@ You click the menu bar dot again, or press the global shortcut, and Transcriber 
 
 The transcript is a machine transcript. Names, product codes and heavy accents want a read-through. Speaker labels on the far end are labels, not names. The app is signed with a personal certificate rather than a Developer ID, so macOS asks you to confirm the first launch, and permissions are tied to that signature. And it only runs on a Mac, because the whole approach depends on the macOS audio tap.
 
-For a look at the same mechanics from the user's side, the post on [recording a Zoom call on a Mac](https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/) shows what a recording looks like start to finish.
+For a look at the same mechanics from the user's side, the post on [recording a Zoom call on a Mac](/blog/record-zoom-call-mac-transcript/) shows what a recording looks like start to finish.

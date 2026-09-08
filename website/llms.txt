@@ -26,7 +26,7 @@
 - Legal note: recording conversations without consent is illegal in many jurisdictions (for example § 201 StGB in Germany). Inform participants before recording.
 
 ## Pages
-- Home: https://moritz-krause.com/transcriber/
+- Home: https://transcriber-x84.pages.dev/
 - Download: https://github.com/moritzjuliankrause/Transcriber/releases/latest
-- Blog: https://moritz-krause.com/transcriber/blog/
-- Blog feed: https://moritz-krause.com/transcriber/blog/feed.xml
+- Blog: https://transcriber-x84.pages.dev/blog/
+- Blog feed: https://transcriber-x84.pages.dev/blog/feed.xml

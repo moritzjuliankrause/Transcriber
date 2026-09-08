@@ -16,4 +16,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://moritz-krause.com/transcriber/sitemap.xml
+Sitemap: https://transcriber-x84.pages.dev/sitemap.xml
