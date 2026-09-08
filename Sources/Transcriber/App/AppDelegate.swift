@@ -38,19 +38,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.toggleRecording()
         }
 
-        ConsentNotice.showIfNeeded(settings: settings)
-        LaunchAtLogin.sync(enabled: settings.launchAtLogin)
+        // A UI test instance (`--bar-test`) runs next to the installed app: no login item, model
+        // loading, update check or recovery prompt for the other instance's open session.
+        let uiTest = CommandLine.arguments.contains("--bar-test")
+        if !uiTest {
+            ConsentNotice.showIfNeeded(settings: settings)
+            LaunchAtLogin.sync(enabled: settings.launchAtLogin)
 
-        Task {
-            await ModelManager.shared.refreshStatus()
-            ModelSetupPrompt.showIfNeeded(settings: settings) { [weak self] in self?.showSettings(section: .transcription) }
+            Task {
+                await ModelManager.shared.refreshStatus()
+                ModelSetupPrompt.showIfNeeded(settings: settings) { [weak self] in self?.showSettings(section: .transcription) }
+            }
+            Task { await ModelCache.shared.preload(settings: settings) }
+            Task {
+                try? await Task.sleep(nanoseconds: 10_000_000_000)   // don't compete with launch work
+                await UpdateChecker.shared.checkAutomaticallyIfDue()
+            }
+            Task { await SessionRecovery.checkOnLaunch(settings: settings, state: state) }
         }
-        Task { await ModelCache.shared.preload(settings: settings) }
-        Task {
-            try? await Task.sleep(nanoseconds: 10_000_000_000)   // don't compete with launch work
-            await UpdateChecker.shared.checkAutomaticallyIfDue()
-        }
-        Task { await SessionRecovery.checkOnLaunch(settings: settings, state: state) }
 
         if settings.outputDirectory.isEmpty {
             settings.outputDirectory = AppSettings.defaultOutputDirectory.path
@@ -72,6 +77,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             t(9) { [weak self] in self?.toggleRecording() }
             t(15) { [weak self] in self?.floatingBar?.skipTitle() }
             t(20) { [weak self] in self?.toggleRecording() }
+        }
+        // Development aid: `Transcriber --bar-test` shows the floating bar in its paused state
+        // without recording anything (combine with `--bar-offset 80` next to a running instance).
+        if CommandLine.arguments.contains("--bar-test") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self else { return }
+                self.state.recordingStartedAt = Date()
+                self.state.phase = .recording
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self.state.isPaused = true }
+            }
         }
         // Development aid: `Transcriber --title-test` shows the bar's save prompt right away.
         if CommandLine.arguments.contains("--title-test") {

@@ -22,6 +22,12 @@ final class FloatingBarController {
     static let resizeDuration: TimeInterval = 0.35
     /// Transparent margin around the capsule so its shadow is not clipped by the panel.
     static let shadowPadding: CGFloat = 24
+    /// Development aid: `--bar-offset 80` moves the bar down, so a test build's bar can sit
+    /// below the installed app's bar for comparison.
+    static let devOffset: CGFloat = {
+        guard let i = CommandLine.arguments.firstIndex(of: "--bar-offset"), i + 1 < CommandLine.arguments.count else { return 0 }
+        return CGFloat(Double(CommandLine.arguments[i + 1]) ?? 0)
+    }()
 
     /// The panel never changes size: it is as large as the widest / tallest capsule plus
     /// shadow margin, and fully transparent. Only the SwiftUI capsule inside it morphs,
@@ -245,7 +251,7 @@ final class FloatingBarController {
         let visible = screen.visibleFrame
         let size = panel.frame.size
         let x = visible.midX - size.width / 2
-        let y = visible.maxY - size.height - 8 + FloatingBarController.shadowPadding
+        let y = visible.maxY - size.height - 8 + FloatingBarController.shadowPadding - FloatingBarController.devOffset
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 }
@@ -665,10 +671,13 @@ struct FloatingBarView: View {
         .padding(.vertical, FloatingBarView.verticalPadding)
         .frame(width: size.width, height: size.height, alignment: .leading)
         .environment(\.colorScheme, .dark)
-        .background(.black.opacity(0.85), in: shape)
-        .overlay(shape.stroke(.white.opacity(0.15)))
+        // Clip the content first, then put the fill *with its shadow* behind it. The shadow of a
+        // plain shape is rendered from its path; a shadow on the composited group (text, blur,
+        // waveform) was re-rasterised once the size animation ended and showed up as a faint
+        // rectangle around the small status pill instead (macOS 26).
         .clipShape(shape)
-        .shadow(color: .black.opacity(0.35), radius: 10, y: 4)
+        .background(shape.fill(.black.opacity(0.85)).shadow(color: .black.opacity(0.35), radius: 10, y: 4))
+        .overlay(shape.strokeBorder(.white.opacity(0.15)))
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: size)
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: model.message == nil)
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: confirming)
