@@ -2,28 +2,28 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
   <title>Transcriber Blog</title>
-  <link>https://transcriber-x84.pages.dev/blog/</link>
-  <atom:link href="https://transcriber-x84.pages.dev/blog/feed.xml" rel="self" type="application/rss+xml"/>
+  <link>https://gettranscriber.com/blog/</link>
+  <atom:link href="https://gettranscriber.com/blog/feed.xml" rel="self" type="application/rss+xml"/>
   <description>Notes on recording and transcribing calls on a Mac.</description>
   <language>en</language>
   <item>
     <title>How Transcriber works, from audio tap to transcript file</title>
-    <link>https://transcriber-x84.pages.dev/blog/how-transcriber-works/</link>
-    <guid isPermaLink="true">https://transcriber-x84.pages.dev/blog/how-transcriber-works/</guid>
+    <link>https://gettranscriber.com/blog/how-transcriber-works/</link>
+    <guid isPermaLink="true">https://gettranscriber.com/blog/how-transcriber-works/</guid>
     <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
     <description>How Transcriber records both sides of a call on a Mac, transcribes them locally and tells speakers apart, explained step by step with the limits included.</description>
   </item>
   <item>
     <title>How to record a Zoom call on a Mac and get a transcript</title>
-    <link>https://transcriber-x84.pages.dev/blog/record-zoom-call-mac-transcript/</link>
-    <guid isPermaLink="true">https://transcriber-x84.pages.dev/blog/record-zoom-call-mac-transcript/</guid>
+    <link>https://gettranscriber.com/blog/record-zoom-call-mac-transcript/</link>
+    <guid isPermaLink="true">https://gettranscriber.com/blog/record-zoom-call-mac-transcript/</guid>
     <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
     <description>Record a Zoom call on your Mac, with both sides of the conversation, and turn it into a transcript without sending the audio anywhere.</description>
   </item>
   <item>
     <title>What leaves your Mac when Transcriber records a call</title>
-    <link>https://transcriber-x84.pages.dev/blog/transcriber-privacy-what-leaves-your-mac/</link>
-    <guid isPermaLink="true">https://transcriber-x84.pages.dev/blog/transcriber-privacy-what-leaves-your-mac/</guid>
+    <link>https://gettranscriber.com/blog/transcriber-privacy-what-leaves-your-mac/</link>
+    <guid isPermaLink="true">https://gettranscriber.com/blog/transcriber-privacy-what-leaves-your-mac/</guid>
     <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
     <description>Transcriber privacy in detail. Which network requests the app makes, where audio and transcripts are stored, and what to tell the people on the call.</description>
   </item>
