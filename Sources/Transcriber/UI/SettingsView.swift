@@ -451,7 +451,7 @@ struct GeneralSettings: View {
                           caption: LaunchAtLogin.isAvailable ? nil : "Available when running from Transcriber.app",
                           isOn: $settings.launchAtLogin, disabled: !LaunchAtLogin.isAvailable)
             }
-            SettingsCard(title: "Updates", footer: "Updates come from GitHub releases of moritzjkr/Transcriber. No account needed.") {
+            SettingsCard(title: "Updates", footer: "Updates come from GitHub releases of moritzjuliankrause/Transcriber. No account needed.") {
                 SettingRow(title: "Version", caption: UpdateChecker.buildInfo) {
                     HStack(spacing: 10) {
                         Text(UpdateChecker.currentVersion).font(.system(size: 13))

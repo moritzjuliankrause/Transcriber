@@ -20,7 +20,7 @@ ten minutes in the browser, once. Everything else is code in this repo.
 ```sh
 npx wrangler login
 npx wrangler deploy website/scripts/slack-approve-worker.js --name transcriber-blog-approval \
-  --var GITHUB_REPO:moritzjkr/Transcriber --var ALLOWED_USERS:U0123ABC
+  --var GITHUB_REPO:moritzjuliankrause/Transcriber --var ALLOWED_USERS:U0123ABC
 npx wrangler secret put SLACK_SIGNING_SECRET      # from step 1.4
 npx wrangler secret put SLACK_BOT_TOKEN           # from step 1.3, the worker needs it to open the change-request dialog
 npx wrangler secret put GITHUB_TOKEN              # fine-grained PAT, this repo only, Contents: read and write

@@ -13,7 +13,7 @@ import Security
 @MainActor
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
-    static let repository = "moritzjkr/Transcriber"
+    static let repository = "moritzjuliankrause/Transcriber"
 
     enum Status: Equatable {
         case idle

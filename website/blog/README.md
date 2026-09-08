@@ -111,7 +111,7 @@ Worker:
 npx wrangler deploy website/scripts/slack-approve-worker.js --name transcriber-blog-approval
 npx wrangler secret put SLACK_SIGNING_SECRET
 npx wrangler secret put GITHUB_TOKEN        # fine-grained PAT, this repo only, Contents: read and write
-npx wrangler deploy … --var GITHUB_REPO:moritzjkr/Transcriber --var ALLOWED_USERS:U0123ABC   # your Slack user id
+npx wrangler deploy … --var GITHUB_REPO:moritzjuliankrause/Transcriber --var ALLOWED_USERS:U0123ABC   # your Slack user id
 ```
 
 Hosting: the workflow only commits. Whatever serves `website/` (GitHub Pages, Cloudflare Pages, an

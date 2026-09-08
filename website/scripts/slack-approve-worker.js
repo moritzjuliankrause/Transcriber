@@ -3,7 +3,7 @@
 // Deploy once (free tier is plenty):  npx wrangler deploy website/scripts/slack-approve-worker.js --name transcriber-blog-approval
 // Secrets (wrangler secret put …):     SLACK_SIGNING_SECRET, SLACK_BOT_TOKEN (opens the change-request dialog),
 //                                      GITHUB_TOKEN (fine-grained, "Contents: write" on the repo)
-// Vars:                                GITHUB_REPO = moritzjkr/Transcriber, ALLOWED_USERS = comma-separated Slack user ids (optional)
+// Vars:                                GITHUB_REPO = moritzjuliankrause/Transcriber, ALLOWED_USERS = comma-separated Slack user ids (optional)
 // Then set the worker URL as the Slack app's Interactivity request URL. Full setup: website/slack/README.md
 //
 // approve -> repository_dispatch { event_type: "approve-post", client_payload: { slug, by } }
