@@ -1,0 +1,46 @@
+name: SEO data
+
+# Fetches the data the writing routines need and commits it to keywords/data/, so the cloud routines
+# work without any secrets. Also submits new URLs to IndexNow and, on Sundays, the sitemap to Google.
+# Runs daily at 00:30 UTC (before the routines at 01:00) and on demand.
+
+on:
+  schedule:
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: seo-data
+  cancel-in-progress: false
+
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    env:
+      DATAFORSEO_AUTH: ${{ secrets.DATAFORSEO_AUTH }}
+      GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+      INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fetch keyword and ranking data
+        run: node scripts/fetch-seo-data.mjs
+      - name: Index new URLs
+        run: node scripts/index-urls.mjs || echo "index step failed"
+      - name: Commit
+        run: |
+          git config user.name "seo-data-bot"; git config user.email "seo-data-bot@users.noreply.github.com"
+          git add keywords/data status/indexed.json 2>/dev/null || true
+          git diff --cached --quiet && { echo "no data changes"; exit 0; }
+          git commit -m "SEO data $(date -u +%Y-%m-%d)"
+          for i in 1 2 3 4 5; do git push && break; git pull --rebase -X theirs origin main; sleep $((i * 3)); done
+      - name: Alert on failure
+        if: failure() && env.SLACK_BOT_TOKEN != ''
+        run: node scripts/notify.mjs "SEO data run" "The nightly data fetch failed, see the Actions log." error || true

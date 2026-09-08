@@ -4,7 +4,7 @@ Jobs: `article` (Tue, Thu), `page` (Sat, a comparison or per-app guide), `index`
 
 ## Pre-flight (every job)
 1. `git pull --rebase origin main`.
-2. Confirm the env vars the job needs exist (`test -n "$DATAFORSEO_AUTH"` etc.). Never echo them. Missing → `SKIPPED (env)` in the status file, notify warn, stop.
+2. Data comes from `keywords/data/*.json` (written nightly by GitHub Actions). Env vars are optional; never echo them. If `keywords/data/overview.json` is missing or older than 48 h AND no env var exists, fall back to `website/blog/BACKLOG.md`.
 3. Read `keywords/shipped.json`, `keywords/backlog.json`, `website/blog/BACKLOG.md`, and list `website/blog/posts/` (drafts included). More than 4 open drafts (`draft: true`) → `SKIPPED (review queue full)`, notify warn, stop. Moritz's review time is the bottleneck, not writing.
 
 ## Job article / page
@@ -17,10 +17,10 @@ Jobs: `article` (Tue, Thu), `page` (Sat, a comparison or per-app guide), `index`
 7. Status line: `article | <keyword> | drafted <slug> (vol n, kd n)`.
 
 ## Job index
-`node scripts/index-urls.mjs` (adds `--sitemap` automatically on Sundays). Commit `status/indexed.json` if it changed. Notify only on errors.
+Indexing runs inside the nightly GitHub Actions job (`seo-data.yml`, which has the secrets). The routine only verifies: read `status/indexed.json`, compare with the live sitemap, and if URLs published more than 2 days ago are missing, write a status line `index | <n> urls not submitted` (the report picks it up). No commit needed.
 
 ## Job report
-Read `status/` for the last 24 hours, count open drafts, list change requests with `status: open`, note routine errors. One Slack message via `node scripts/notify.mjs "Daily report" "<summary>"`. No commit.
+Read `status/` for the last 24 hours, count open drafts, list change requests with `status: open`, note routine errors. Write the summary to `status/report-latest.md` (overwrite) and commit; a GitHub workflow posts it to Slack. If `SLACK_BOT_TOKEN` happens to be set, `node scripts/notify.mjs` may be used instead.
 
 ## Job optimize (Phase 4)
 `node scripts/gsc.mjs quickwins`. Take at most 3 published posts with queries at position 5 to 20. For each: sharpen title and description toward the query, add or extend an FAQ entry that answers it, add an internal link from a sibling post, keep facts README-only. Edit the published post file in place (it stays published), commit `Blog optimize: <slug> (<query>)`, status line per post. Never touch drafts.
