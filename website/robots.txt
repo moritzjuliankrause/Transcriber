@@ -16,4 +16,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://transcriber-x84.pages.dev/sitemap.xml
+Sitemap: https://gettranscriber.com/sitemap.xml
