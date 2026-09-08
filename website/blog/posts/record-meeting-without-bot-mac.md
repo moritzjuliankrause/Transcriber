@@ -22,25 +22,23 @@ faq:
     a: macOS 14.2 or newer, because that's where the system audio tap arrived. An Apple Silicon Mac is recommended for the transcription models.
 ---
 
-You can record a meeting without a bot by recording it on your own Mac instead of inside the meeting: Transcriber captures your microphone and the sound the other participants make through your speakers, transcribes both locally, and writes the transcript to a folder while the call is still running. Nobody sees a "Recorder" tile, the host doesn't have to allow anything, and no audio leaves your computer.
+You can record a meeting without a bot by recording it on your own Mac. Transcriber captures your microphone and the sound the other participants make through your speakers, transcribes both locally, and writes the transcript while the call is still running. Nobody sees a "Recorder" tile, the host doesn't have to allow anything, and no audio leaves your computer.
 
 ## Why do meeting tools use a bot at all?
 
-A bot is the easiest way for a cloud service to hear a meeting. It joins as a participant, receives the audio and video stream like anyone else, and sends it to a server for transcription. That's why the bot shows up in the attendee list, why the host sometimes has to admit it from the waiting room, and why some companies block them outright.
+A bot is the easiest way for a cloud service to hear a meeting. It joins as a participant, receives the audio, and sends it to a server for transcription. That's why it shows up in the attendee list, why the host sometimes has to admit it from the waiting room, and why some companies block them outright.
 
-The bot approach has two side effects people dislike. The first is social: a "Notetaker" tile changes the tone of a call, especially with clients or in a first conversation. The second is technical: the recording lives with the service, so the transcript is on someone else's server and depends on their retention policy.
+It has two side effects people dislike. A "Notetaker" tile changes the tone of a call, especially with clients or in a first conversation. And the recording lives with the service, so the transcript is on someone else's server under their retention policy.
 
 ## How do you record without one?
 
-You record the two audio streams that already reach your Mac. Your voice goes into the microphone, and everyone else's voice comes out of your speakers as system audio. Since macOS 14.2, Apple provides an audio tap that lets an app listen to what other apps play, after you grant permission once. Transcriber uses that tap for the far end and your normal microphone for your side.
+You record the two audio streams that already reach your Mac. Your voice goes into the microphone, and everyone else's comes out of your speakers as system audio. Since macOS 14.2, Apple provides an audio tap that lets an app listen to what other apps play, after you grant permission once. Transcriber uses that tap for the far end and your normal microphone for your side, records both in parallel, and transcribes them on the Mac. The meeting app sees nothing change: it plays audio, it receives audio, and there is no extra participant.
 
-Both channels are recorded in parallel and transcribed on the Mac with a local model. The meeting app doesn't know any of this is happening, because from its point of view nothing changed: it plays audio, it receives audio, and there is no extra participant.
-
-The practical steps are short. You click the dot in the menu bar or press the global shortcut ⌃⌥⌘R, the dot turns red and expands into a small pill with a waveform and a timer, and a floating bar below the menu bar shows the transcript as it forms. When the meeting ends, you click the dot again and give the recording a title. The first time you do this, macOS asks for Microphone and System Audio Recording permission, and the first recording downloads the transcription models, roughly a gigabyte, once.
+The steps are short. You click the dot in the menu bar or press ⌃⌥⌘R, the dot turns red and expands into a small pill with a waveform and a timer, and a floating bar below the menu bar shows the transcript as it forms. When the meeting ends, you click the dot again and give the recording a title. The first time, macOS asks for Microphone and System Audio Recording permission, and the first recording downloads the transcription models, roughly a gigabyte, once.
 
 ## Do you still get speakers separated?
 
-Yes, and the two channels are the reason it works. Everything from your microphone is labelled with your name. Everything from the system channel is the other side. After the call, a diarization step runs over that channel and splits it into Speaker 1, Speaker 2 and so on when several remote voices are detected. A bot gets speaker names for free from the meeting platform, and that is one thing a local recording can't replicate: you get labels, not names, unless you edit them.
+Yes, and the two channels are the reason. Everything from your microphone is labelled with your name, everything from the system channel is the other side. After the call, a diarization step runs over that channel and splits it into Speaker 1, Speaker 2 and so on when several remote voices are detected. A bot gets speaker names for free from the meeting platform, and that is the one thing a local recording can't replicate: you get labels, not names, unless you edit them.
 
 If you don't wear headphones, your microphone also hears the loudspeaker, so the far end would appear twice. Transcriber's echo gate uses the system channel as a reference, estimates delay and echo gain, and mutes the microphone frames that only contain the other side. On a real 54-minute Zoom call this removed 220 of 225 echo segments. Headphones remain the cleaner setup, the gate is for the calls where you forgot them.
 
@@ -54,9 +52,7 @@ From the title dialog you can also hand the transcript straight to an AI tool. S
 
 You have to be in the meeting. A bot can attend on your behalf while you're somewhere else, a local recorder can't, because there is no audio on your Mac to record. If you regularly need transcripts of meetings you skip, a bot is the right tool and Transcriber is not.
 
-Shared notes are another gap. A cloud service puts every transcript in a searchable workspace that your whole team can open. Transcriber writes files to a folder, and sharing them is up to you and your sync tool. For a team that lives in shared meeting notes, that is a step backwards.
-
-And the transcription runs on your hardware, so an Apple Silicon Mac is recommended and Windows or phones are out. The model is good but it is a model: names, product codes and heavy accents deserve a read-through before you send anything on.
+Shared notes are another gap. A cloud service puts every transcript in a searchable workspace your whole team can open, while Transcriber writes files to a folder and leaves sharing to you and your sync tool. And the transcription runs on your hardware, so an Apple Silicon Mac is recommended and Windows or phones are out. The model is good but it is a model: names, product codes and heavy accents deserve a read-through before you send anything on.
 
 ## Is it legal to record without telling anyone?
 
