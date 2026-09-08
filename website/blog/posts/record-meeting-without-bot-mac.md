@@ -1,6 +1,6 @@
 ---
 title: How to record a meeting without a bot joining the call
-description: Record a meeting without a bot joining, on a Mac, and still get a transcript with both sides labelled. Nothing shows up in the attendee list.
+description: Record a meeting without a bot joining, on a Mac, and still get a transcript with both sides labelled.
 author: Moritz Krause
 keyword: record meeting without bot
 keywords: [record meeting without bot, meeting transcription without bot, notetaker without bot, record call on mac]
