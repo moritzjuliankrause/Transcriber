@@ -29,7 +29,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   angle: Meet runs in a browser tab, so the system audio tap catches it like any other tab. Meet's own recording needs a Workspace plan; local recording does not.
   volume: 10 (US, 2026-09)
   kd: 0
-  status: drafted 2026-09-08
+  status: todo
 
 
 - slug: speaker-diarization-explained
