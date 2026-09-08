@@ -97,8 +97,6 @@ struct SettingsView: View {
 
     private var header: some View {
         HStack(alignment: .center) {
-            Text("Settings").font(.system(size: 22, weight: .semibold))
-            Spacer()
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .semibold))
@@ -109,6 +107,8 @@ struct SettingsView: View {
             .buttonStyle(.plain)
             .keyboardShortcut(.cancelAction)
             .help("Close")
+            Text("Settings").font(.system(size: 22, weight: .semibold)).padding(.leading, 4)
+            Spacer()
         }
         .padding(.top, 26)
         .padding(.horizontal, 30)

@@ -49,8 +49,6 @@ struct ChangelogView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center) {
-                Text("What’s New").font(.system(size: 22, weight: .semibold))
-                Spacer()
                 Button(action: onClose) {
                     Image(systemName: "xmark")
                         .font(.system(size: 12, weight: .semibold))
@@ -60,6 +58,8 @@ struct ChangelogView: View {
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut(.cancelAction)
+                Text("What’s New").font(.system(size: 22, weight: .semibold)).padding(.leading, 4)
+                Spacer()
             }
             .padding(.top, 26).padding(.horizontal, 30).padding(.bottom, 20)
 
