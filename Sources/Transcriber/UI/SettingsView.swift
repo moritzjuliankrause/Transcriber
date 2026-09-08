@@ -19,6 +19,13 @@ enum Theme {
     static let fieldHeight: CGFloat = 36
 }
 
+/// Web pages the app links to.
+enum Links {
+    static let repository = URL(string: "https://github.com/\(UpdateChecker.repository)")!
+    static let issues = URL(string: "https://github.com/\(UpdateChecker.repository)/issues/new")!
+    static let sponsor = URL(string: "https://github.com/sponsors/\(UpdateChecker.repository.split(separator: "/").first!)")!
+}
+
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var state: AppState
@@ -451,7 +458,7 @@ struct GeneralSettings: View {
                           caption: LaunchAtLogin.isAvailable ? nil : "Available when running from Transcriber.app",
                           isOn: $settings.launchAtLogin, disabled: !LaunchAtLogin.isAvailable)
             }
-            SettingsCard(title: "Updates", footer: "Updates come from GitHub releases of moritzjuliankrause/Transcriber. No account needed.") {
+            SettingsCard(title: "Updates", footer: "Updates come from GitHub releases of \(UpdateChecker.repository). No account needed.") {
                 SettingRow(title: "Version", caption: UpdateChecker.buildInfo) {
                     HStack(spacing: 10) {
                         Text(UpdateChecker.currentVersion).font(.system(size: 13))
@@ -472,6 +479,24 @@ struct GeneralSettings: View {
                     ])
                 }
                 ToggleRow(title: "Pre-releases", caption: "Also offer beta versions", isOn: $settings.includePreReleases)
+            }
+            SettingsCard(title: "About") {
+                SettingRow(title: "Source code", caption: "Transcriber is free and open source") {
+                    HStack(spacing: 8) {
+                        Button("Open on GitHub") { NSWorkspace.shared.open(Links.repository) }
+                            .buttonStyle(SoftButtonStyle())
+                        Button("Report a Problem") { NSWorkspace.shared.open(Links.issues) }
+                            .buttonStyle(SoftButtonStyle())
+                    }
+                }
+                SettingRow(title: "Support the developer", caption: "If Transcriber is useful to you, a sponsorship keeps it going") {
+                    Button {
+                        NSWorkspace.shared.open(Links.sponsor)
+                    } label: {
+                        Label("Become a Sponsor", systemImage: "heart.fill")
+                    }
+                    .buttonStyle(AccentButtonStyle())
+                }
             }
             SettingsCard(title: "Legal") {
                 NoteRow(text: "Inform participants before recording. Recording conversations without consent is illegal in many countries (e.g. § 201 StGB in Germany).")
