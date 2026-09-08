@@ -81,6 +81,22 @@ struct SceneTheme {
 }
 
 enum HeroScenes {
+    // Unscaled chrome metrics, shared by the renderer so it can size the window to fit the tiles.
+    static let titleHF: CGFloat = 36, toolbarHF: CGFloat = 58, padF: CGFloat = 16, gapF: CGFloat = 14
+
+    /// A centred landscape window sized so the tiles are real 16:9 video tiles filling it: the
+    /// height is the space available under the bar, the width grows with the number of people.
+    static func windowSize(scale: CGFloat, availableHeight: CGFloat, tileCount: Int, maxWidth: CGFloat) -> CGSize {
+        let h = availableHeight
+        let contentH = h - (titleHF + toolbarHF) * scale
+        let tileW = max(contentH * 16 / 9, 1)
+        let n = max(1, tileCount)
+        var w = 2 * padF * scale + CGFloat(n) * tileW + CGFloat(n - 1) * gapF * scale
+        w = max(w, 1220 * scale / 5)          // wide enough for the toolbar and title bar
+        w = min(w, maxWidth)
+        return CGSize(width: w, height: h)
+    }
+
     /// Paints a meeting-app window into `winRect` (y-up, like `HeroRender`'s canvas). Returns the
     /// y a floating transcript bar should be centred on, so it sits over the call above the toolbar.
     @discardableResult
@@ -100,7 +116,7 @@ enum HeroScenes {
         roundRect(ctx, winRect, radius: radius); ctx.clip()
 
         // Title bar with traffic lights, a live "recording" chip and the meeting title.
-        let titleH = 46 * scale
+        let titleH = titleHF * scale
         let titleRect = CGRect(x: winRect.minX, y: winRect.maxY - titleH, width: winRect.width, height: titleH)
         ctx.setFillColor(theme.titleBar.cgColor); ctx.fill(titleRect)
         ctx.setFillColor(NSColor(white: 1, alpha: 0.06).cgColor)
@@ -114,10 +130,7 @@ enum HeroScenes {
             let r = CGRect(x: winRect.minX + (18 + CGFloat(i) * 20) * scale, y: lightY - d / 2, width: d, height: d)
             ctx.setFillColor(c.cgColor); ctx.fillEllipse(in: r)
         }
-        // Meeting title, centred.
-        drawText(title, font: .systemFont(ofSize: 15 * scale, weight: .semibold),
-                 color: NSColor(white: 1, alpha: 0.92), centreX: titleRect.midX, centreY: titleRect.midY)
-        // Recording chip on the right.
+        // Recording chip on the right (drawn first so the title can be centred in the space left of it).
         let chipText = "REC  \(timer)"
         let chipFont = NSFont.monospacedDigitSystemFont(ofSize: 12 * scale, weight: .semibold)
         let chipW = (chipText as NSString).size(withAttributes: [.font: chipFont]).width + 34 * scale
@@ -127,26 +140,36 @@ enum HeroScenes {
         ctx.fillEllipse(in: CGRect(x: chipRect.minX + 12 * scale, y: chipRect.midY - 4 * scale, width: 8 * scale, height: 8 * scale))
         drawText(chipText, font: chipFont, color: NSColor(srgbRed: 1, green: 0.6, blue: 0.58, alpha: 1),
                  x: chipRect.minX + 26 * scale, centreY: chipRect.midY)
+        // Meeting title, centred in the band between the traffic lights and the chip; shrinks to fit.
+        let bandMin = winRect.minX + 84 * scale, bandMax = chipRect.minX - 16 * scale
+        if bandMax > bandMin, !title.isEmpty {
+            var tf = NSFont.systemFont(ofSize: 14 * scale, weight: .semibold)
+            while (title as NSString).size(withAttributes: [.font: tf]).width > bandMax - bandMin, tf.pointSize > 8 * scale {
+                tf = NSFont.systemFont(ofSize: tf.pointSize - scale, weight: .semibold)
+            }
+            drawText(title, font: tf, color: NSColor(white: 1, alpha: 0.92),
+                     centreX: (bandMin + bandMax) / 2, centreY: titleRect.midY)
+        }
 
         // Content area between title bar and toolbar.
-        let toolbarH = 78 * scale
+        let toolbarH = toolbarHF * scale
         let content = CGRect(x: winRect.minX, y: winRect.minY + toolbarH,
                              width: winRect.width, height: winRect.height - titleH - toolbarH)
-        let pad = 16 * scale
+        let pad = padF * scale
         let inner = content.insetBy(dx: pad, dy: pad)
         if theme.layout == .stage {
-            // One big remote tile, with you as a small self-view in the top-right corner.
+            // One big 16:9 remote tile centred in the content area, with you as a small self-view.
             let remotes = participants.filter { !$0.isSelf }
-            if let big = remotes.first {
-                drawTile(ctx, rect: inner, scale: scale, theme: theme, person: big, active: true, big: true)
+            let big = fit(aspect169: inner)
+            if let b = remotes.first {
+                drawTile(ctx, rect: big, scale: scale, theme: theme, person: b, active: true, big: true)
             }
             if let me = participants.first(where: { $0.isSelf }) {
-                let w = inner.width * 0.20, h = inner.height * 0.44
-                let r = CGRect(x: inner.maxX - w - 12 * scale, y: inner.maxY - h - 12 * scale, width: w, height: h)
+                let w = big.width * 0.22, h = big.height * 0.30
+                let r = CGRect(x: big.maxX - w - 12 * scale, y: big.maxY - h - 12 * scale, width: w, height: h)
                 drawTile(ctx, rect: r, scale: scale, theme: theme, person: me, active: false)
             }
         } else {
-            // Everyone in a single row of tiles, tall enough that faces stay above the bar.
             drawGallery(ctx, area: inner, scale: scale, theme: theme, participants: participants, activeIndex: activeIndex)
         }
 
@@ -168,12 +191,21 @@ enum HeroScenes {
                                     participants: [HeroParticipant], activeIndex: Int) {
         let n = participants.count
         guard n > 0 else { return }
-        // A single row keeps every face tall and clear of the transcript bar that floats over it.
-        let gap = 14 * scale
-        let cellW = (area.width - gap * CGFloat(n - 1)) / CGFloat(n)
+        // A single row of real 16:9 video tiles, centred in the content area (dark margins around
+        // them, like a real call). Faces stay well below the bar that sits above the window.
+        let gap = gapF * scale
+        var tileH = area.height
+        var tileW = tileH * 16 / 9
+        if CGFloat(n) * tileW + CGFloat(n - 1) * gap > area.width {
+            tileW = (area.width - CGFloat(n - 1) * gap) / CGFloat(n)
+            tileH = tileW * 9 / 16
+        }
+        let rowW = CGFloat(n) * tileW + CGFloat(n - 1) * gap
+        let x0 = area.midX - rowW / 2
+        let y0 = area.midY - tileH / 2
         for i in 0..<n {
-            let x = area.minX + CGFloat(i) * (cellW + gap)
-            drawTile(ctx, rect: CGRect(x: x, y: area.minY, width: cellW, height: area.height), scale: scale,
+            let x = x0 + CGFloat(i) * (tileW + gap)
+            drawTile(ctx, rect: CGRect(x: x, y: y0, width: tileW, height: tileH), scale: scale,
                      theme: theme, person: participants[i], active: i == activeIndex)
         }
     }
@@ -189,11 +221,11 @@ enum HeroScenes {
         let g = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
                            colors: [top.cgColor, bot.cgColor] as CFArray, locations: [0, 1])!
         ctx.drawLinearGradient(g, start: CGPoint(x: rect.midX, y: rect.maxY), end: CGPoint(x: rect.midX, y: rect.minY), options: [])
-        // Avatar with initials.
-        let d = min(rect.width, rect.height) * (big ? 0.26 : 0.42)
-        let av = CGRect(x: rect.midX - d / 2, y: rect.midY - d / 2 + rect.height * (big ? 0.16 : 0.12), width: d, height: d)
+        // Avatar with initials, sitting in the upper-middle so the name chip stays clear below it.
+        let d = min(rect.width, rect.height) * (big ? 0.30 : 0.36)
+        let av = CGRect(x: rect.midX - d / 2, y: rect.midY - d / 2 + rect.height * (big ? 0.12 : 0.16), width: d, height: d)
         ctx.setFillColor(person.avatar.cgColor); ctx.fillEllipse(in: av)
-        drawText(person.initials, font: .systemFont(ofSize: d * 0.38, weight: .semibold),
+        drawText(person.initials, font: .systemFont(ofSize: d * 0.40, weight: .semibold),
                  color: .white, centreX: av.midX, centreY: av.midY)
         ctx.restoreGState()
         // Active speaker ring.
@@ -201,26 +233,30 @@ enum HeroScenes {
             roundRect(ctx, rect.insetBy(dx: 1.5 * scale, dy: 1.5 * scale), radius: radius)
             ctx.setStrokeColor(theme.accent.cgColor); ctx.setLineWidth(3 * scale); ctx.strokePath()
         }
-        // Name chip, bottom-left.
-        let nameFont = NSFont.systemFont(ofSize: 12 * scale, weight: .medium)
+        // Name chip, bottom-left, sized to the tile.
+        let chipH = min(26 * scale, rect.height * 0.18)
+        let nameFont = NSFont.systemFont(ofSize: chipH * 0.52, weight: .medium)
+        let cpad = chipH * 0.42
         let label = (person.isSelf && person.name != "You") ? "\(person.name) (You)" : person.name
         let tw = (label as NSString).size(withAttributes: [.font: nameFont]).width
-        let chip = CGRect(x: rect.minX + 10 * scale, y: rect.minY + 10 * scale, width: tw + 22 * scale, height: 24 * scale)
-        roundRect(ctx, chip, radius: 7 * scale); ctx.setFillColor(NSColor(white: 0, alpha: 0.4).cgColor); ctx.fillPath()
-        drawText(label, font: nameFont, color: NSColor(white: 1, alpha: 0.95), x: chip.minX + 11 * scale, centreY: chip.midY)
+        let chip = CGRect(x: rect.minX + 10 * scale, y: rect.minY + 10 * scale, width: tw + cpad * 2, height: chipH)
+        roundRect(ctx, chip, radius: chipH * 0.3); ctx.setFillColor(NSColor(white: 0, alpha: 0.4).cgColor); ctx.fillPath()
+        drawText(label, font: nameFont, color: NSColor(white: 1, alpha: 0.95), x: chip.minX + cpad, centreY: chip.midY)
     }
 
     private static func drawToolbar(_ ctx: CGContext, area: CGRect, scale: CGFloat, accent: NSColor) {
         let icons = ["mic.fill", "video.fill", "rectangle.on.rectangle", "person.2.fill", "bubble.left.fill"]
-        let d = 42 * scale, gap = 16 * scale
-        let leaveW = 64 * scale
+        // Controls scale with the window so they never overflow a narrow call window.
+        let d = min(46 * scale, max(26 * scale, area.width / 15))
+        let gap = d * 0.42
+        let leaveW = d * 1.55
         let total = CGFloat(icons.count) * d + CGFloat(icons.count) * gap + leaveW
         var x = area.midX - total / 2
         let y = area.midY - d / 2
         for name in icons {
             let r = CGRect(x: x, y: y, width: d, height: d)
             ctx.setFillColor(NSColor(white: 1, alpha: 0.10).cgColor); ctx.fillEllipse(in: r)
-            if let img = tintedSymbol(name, pt: 16 * scale, weight: .medium, color: NSColor(white: 1, alpha: 0.9)) {
+            if let img = tintedSymbol(name, pt: d * 0.4, weight: .medium, color: NSColor(white: 1, alpha: 0.9)) {
                 drawCenteredImage(ctx, img, in: r)
             }
             x += d + gap
@@ -228,12 +264,19 @@ enum HeroScenes {
         // Leave button.
         let leave = CGRect(x: x, y: y, width: leaveW, height: d)
         roundRect(ctx, leave, radius: d / 2); ctx.setFillColor(NSColor(srgbRed: 0.9, green: 0.24, blue: 0.22, alpha: 1).cgColor); ctx.fillPath()
-        if let img = tintedSymbol("phone.down.fill", pt: 17 * scale, weight: .semibold, color: .white) {
+        if let img = tintedSymbol("phone.down.fill", pt: d * 0.42, weight: .semibold, color: .white) {
             drawCenteredImage(ctx, img, in: leave)
         }
     }
 
     // MARK: - Drawing helpers
+
+    /// The largest 16:9 rectangle centred inside `rect`.
+    static func fit(aspect169 rect: CGRect) -> CGRect {
+        var w = rect.width, h = w * 9 / 16
+        if h > rect.height { h = rect.height; w = h * 16 / 9 }
+        return CGRect(x: rect.midX - w / 2, y: rect.midY - h / 2, width: w, height: h)
+    }
 
     static func roundRect(_ ctx: CGContext, _ rect: CGRect, radius: CGFloat) {
         ctx.beginPath(); ctx.addPath(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))

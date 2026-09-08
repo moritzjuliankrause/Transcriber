@@ -118,16 +118,21 @@ enum HeroRender {
             let activeIndex = remotes.firstIndex(where: { $0 == lastRemote }) ?? 0
 
             let theme = SceneTheme.of(scene)
+            // The transcript bar sits at the top, below the menu bar (exactly where the real app pins
+            // it). The call window sits entirely below the bar, never under it.
+            let barRect = CGRect(x: (W - barSize.width) / 2, y: H - menuH - 8 * scale - barSize.height, width: barSize.width, height: barSize.height)
             let margin = 0.055 * W
-            let winTop = H - menuH - 26 * scale
-            let winBottom = 0.185 * H
-            let winRect = CGRect(x: margin, y: winBottom, width: W - 2 * margin, height: winTop - winBottom)
-            let barCenterY = HeroScenes.drawMeeting(ctx, winRect: winRect, scale: scale, theme: theme,
-                                                    participants: Array(people), activeIndex: activeIndex,
-                                                    title: title.isEmpty ? theme.appName : title, timer: timer)
-            let barRect = CGRect(x: (W - barSize.width) / 2, y: barCenterY - barSize.height / 2, width: barSize.width, height: barSize.height)
+            let winTop = barRect.minY - 16 * scale
+            let winBottom = 0.055 * H
+            let tileCount = theme.layout == .stage ? 1 : people.count
+            let winSize = HeroScenes.windowSize(scale: scale, availableHeight: winTop - winBottom,
+                                                tileCount: tileCount, maxWidth: W - 2 * margin)
+            let winRect = CGRect(x: (W - winSize.width) / 2, y: winBottom, width: winSize.width, height: winSize.height)
+            _ = HeroScenes.drawMeeting(ctx, winRect: winRect, scale: scale, theme: theme,
+                                       participants: Array(people), activeIndex: activeIndex,
+                                       title: title.isEmpty ? theme.appName : title, timer: timer)
             ctx.saveGState(); barShadow(); ctx.draw(barImg, in: barRect); ctx.restoreGState()
-            drawCaption(centreY: 0.115 * H, capSize: 15, subSize: 11)
+            // No big caption on scene heroes: the call window and the bar above it tell the story.
         } else {
             let barRect = CGRect(x: (W - barSize.width) / 2, y: H - menuH - 8 * scale - barSize.height, width: barSize.width, height: barSize.height)
             ctx.saveGState(); barShadow(); ctx.draw(barImg, in: barRect); ctx.restoreGState()
