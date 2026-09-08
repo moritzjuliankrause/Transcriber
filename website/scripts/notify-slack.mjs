@@ -42,8 +42,9 @@ if (rewrite && existsSync(reqDir)) {
 }
 
 const headline = (rewrite ? 'Rewritten draft: ' : 'New blog draft: ') + title;
+const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
 const blocks = [
-  { type: 'header', text: { type: 'plain_text', text: headline, emoji: false } },
+  { type: 'header', text: { type: 'plain_text', text: (rewrite ? '🔁 ' : '📝 ') + headline, emoji: true } },
   { type: 'section', text: { type: 'mrkdwn', text: description || '_no description_' } },
   { type: 'section', fields: [
     { type: 'mrkdwn', text: '*Keyword*\n' + (keyword || 'n/a') },
@@ -59,12 +60,16 @@ const blocks = [
     { type: 'button', text: { type: 'plain_text', text: 'Request changes' }, action_id: 'revise', value: slug },
     { type: 'button', text: { type: 'plain_text', text: 'Edit on GitHub' }, action_id: 'edit', url: editUrl, value: slug },
     { type: 'button', style: 'danger', text: { type: 'plain_text', text: 'Reject' }, action_id: 'reject', value: slug }
-  ] }
+  ] },
+  { type: 'divider' },
+  { type: 'context', elements: [ { type: 'mrkdwn', text: '⎯⎯ end of *' + slug + '* · ' + stamp + ' ⎯⎯' } ] }
 ];
+// One card per post: a coloured side bar (blue = new draft, orange = rewrite) keeps messages apart.
+const attachments = [ { color: rewrite ? '#e8912d' : '#2f6fed', fallback: headline, blocks } ];
 
 const res = await fetch('https://slack.com/api/chat.postMessage', {
   method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8', Authorization: 'Bearer ' + token },
-  body: JSON.stringify({ channel, text: headline + ' ' + preview, blocks })
+  body: JSON.stringify({ channel, text: headline + ' ' + preview, attachments })
 });
 const json = await res.json();
 if (!json.ok) { console.error('Slack error: ' + json.error); process.exit(1); }

@@ -56,12 +56,27 @@ export default {
     const gh = await dispatch(env, eventType, { slug, by: who(user) });
     const ok = gh.status === 204;
     const verb = action.action_id === 'approve' ? 'Approved' : 'Rejected';
-    // keep the original message but swap the buttons for a status line
-    const blocks = (payload.message && payload.message.blocks || []).filter(b => b.type !== 'actions');
-    blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: ok
-      ? `${verb} by ${mention(user)}. ${action.action_id === 'approve' ? 'Publishing now, the page appears after the site deploys.' : 'The draft is being retired.'}`
-      : `${verb} by ${mention(user)}, but GitHub refused the dispatch (HTTP ${gh.status}). Check the worker's GITHUB_TOKEN.` }] });
-    await respond(payload.response_url, { replace_original: true, blocks, text: `${verb}: ${slug}` });
+    // keep the original message (blocks live inside the coloured attachment) but swap the buttons for a status line
+    const status = { type: 'context', elements: [{ type: 'mrkdwn', text: ok
+      ? `${verb === 'Approved' ? '✅' : '🗑️'} ${verb} by ${mention(user)}. ${action.action_id === 'approve' ? 'Publishing now, the page appears after the site deploys.' : 'The draft is being retired.'}`
+      : `⚠️ ${verb} by ${mention(user)}, but GitHub refused the dispatch (HTTP ${gh.status}). Check the worker's GITHUB_TOKEN.` }] };
+    const msg = payload.message || {};
+    const strip = arr => (arr || []).filter(b => b.type !== 'actions');
+    let update;
+    if (msg.attachments && msg.attachments.length) {
+      const atts = msg.attachments.map((a, i) => {
+        if (i !== 0) return a;
+        const blocks = strip(a.blocks);
+        const end = blocks.findIndex(b => b.type === 'divider');
+        if (end >= 0) blocks.splice(end, 0, status); else blocks.push(status);
+        return { ...a, color: ok ? (verb === 'Approved' ? '#2e9e5b' : '#8a8f9c') : '#d33', blocks };
+      });
+      update = { replace_original: true, text: `${verb}: ${slug}`, blocks: strip(msg.blocks), attachments: atts };
+    } else {
+      const blocks = strip(msg.blocks); blocks.push(status);
+      update = { replace_original: true, text: `${verb}: ${slug}`, blocks };
+    }
+    await respond(payload.response_url, update);
     return new Response('', { status: 200 });
   }
 };
