@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FAQ: recording and transcribing calls on a Mac</title>
-<meta name="description" content="Every question answered across the Transcriber blog, in one place: recording Zoom, Teams and Meet on a Mac, privacy, speakers, transcripts, consent.">
-<link rel="canonical" href="https://gettranscriber.com/blog/faq/">
+<title>Privacy · Transcriber</title>
+<meta name="description" content="Privacy policy for gettranscriber.com and the Transcriber macOS app. No accounts, no analytics, no tracking; the app processes audio only on your Mac.">
+<link rel="canonical" href="https://gettranscriber.com/privacy/">
 
 <link rel="alternate" type="application/rss+xml" title="Transcriber Blog" href="https://gettranscriber.com/blog/feed.xml">
 <meta property="og:site_name" content="Transcriber">
 <meta property="og:type" content="website">
-<meta property="og:title" content="FAQ: recording and transcribing calls on a Mac">
-<meta property="og:description" content="Every question answered across the Transcriber blog, in one place: recording Zoom, Teams and Meet on a Mac, privacy, speakers, transcripts, consent.">
-<meta property="og:url" content="https://gettranscriber.com/blog/faq/">
+<meta property="og:title" content="Privacy">
+<meta property="og:description" content="Privacy policy for gettranscriber.com and the Transcriber macOS app. No accounts, no analytics, no tracking; the app processes audio only on your Mac.">
+<meta property="og:url" content="https://gettranscriber.com/privacy/">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -165,36 +165,47 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
 .release .meta { color: var(--muted, #767b8a); font-size: 14px; margin: -6px 0 14px; }
 </style>
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does it work with every app?","acceptedAnswer":{"@type":"Answer","text":"With every app that plays audio through the Mac. Zoom, Teams, Google Meet, WhatsApp, FaceTime, a call in a browser tab and a YouTube video are all the same to it."}},{"@type":"Question","name":"Why does it need two permissions?","acceptedAnswer":{"@type":"Answer","text":"Microphone for your side and System Audio Recording for the other side. Without the second one, the far end of the call would be missing from the transcript."}},{"@type":"Question","name":"How big is the model download?","acceptedAnswer":{"@type":"Answer","text":"About one gigabyte, downloaded once on the first recording or up front in Settings. It contains Parakeet for transcription, Silero for voice detection and pyannote for speaker separation."}},{"@type":"Question","name":"What happens if the Mac crashes during a call?","acceptedAnswer":{"@type":"Answer","text":"The transcript is written to disk after every segment, so everything up to the crash is already saved. On the next launch Transcriber offers to finish the session."}},{"@type":"Question","name":"Can I get subtitles or JSON out of it?","acceptedAnswer":{"@type":"Answer","text":"Yes. Markdown is always written, JSON and SRT are optional exports in Settings, and the raw audio can be kept as WAV files."}},{"@type":"Question","name":"Is an Intel Mac enough?","acceptedAnswer":{"@type":"Answer","text":"macOS 14.2 is the requirement. The transcription models run much better on Apple Silicon, so that is what I recommend."}},{"@type":"Question","name":"Does Zoom have to be set to record for this to work?","acceptedAnswer":{"@type":"Answer","text":"No. Transcriber listens to what your Mac plays and what your microphone hears, so it doesn't matter whether Zoom's own recording is on, off, or locked by the host."}},{"@type":"Question","name":"Will the other person be transcribed as well?","acceptedAnswer":{"@type":"Answer","text":"Yes. The far end comes in through your Mac's audio output and is captured as its own channel, so their words land in the transcript with a separate speaker label."}},{"@type":"Question","name":"Does any audio leave my Mac?","acceptedAnswer":{"@type":"Answer","text":"No. Transcription runs on your machine with a downloaded model. The only network access is the one-time download of that model and the update check against GitHub."}},{"@type":"Question","name":"Which macOS version do I need?","acceptedAnswer":{"@type":"Answer","text":"macOS 14.2 or newer, because that's where Apple added the audio tap that makes recording another app's sound possible. An Apple Silicon Mac is recommended."}},{"@type":"Question","name":"Is it legal to record a call?","acceptedAnswer":{"@type":"Answer","text":"That depends on where you and the other people are. In many places, including Germany, recording without consent is a crime. Tell everyone before you press record."}},{"@type":"Question","name":"Does the audio ever go to a server?","acceptedAnswer":{"@type":"Answer","text":"No. Recording and transcription both happen on your Mac. The audio files stay in the folder you chose, or are deleted after the call if you turned off keeping audio."}},{"@type":"Question","name":"Which network connections does the app make?","acceptedAnswer":{"@type":"Answer","text":"Two. The one-time download of the transcription models, and a check for new versions against GitHub, once a day by default. Both can be seen in the app log."}},{"@type":"Question","name":"Do I need an account?","acceptedAnswer":{"@type":"Answer","text":"No account, no login, no email address. Download the app, grant the two permissions, record."}},{"@type":"Question","name":"Where are transcripts stored?","acceptedAnswer":{"@type":"Answer","text":"In a folder you pick in Settings, one subfolder per recording. Your sync tool decides where they go from there, the app does not upload anything."}},{"@type":"Question","name":"Can I use it under GDPR?","acceptedAnswer":{"@type":"Answer","text":"The app itself sends no personal data anywhere, which removes the usual processor question. Recording a conversation still needs a legal basis and the consent of the participants, that part is yours."}},{"@type":"Question","name":"Is the code public?","acceptedAnswer":{"@type":"Answer","text":"Yes, the source is on GitHub, so every claim on this page can be checked against the code."}}]}</script>
+
 </head>
 <body>
 <nav>
-  <a class="wordmark" href="../../"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="gF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e2028"/><stop offset="1" stop-color="#0a0b0f"/></linearGradient></defs><rect width="200" height="200" rx="44.74" fill="url(#gF)"/><rect x="22" y="53" width="156" height="56" rx="28" fill="rgba(0,0,0,0.92)"/><rect x="23" y="54" width="154" height="54" rx="27" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><circle cx="50" cy="81" r="8" fill="#ff3b30"/><g fill="rgba(255,255,255,0.9)"><rect x="72" y="76.8" width="4.8" height="8.4" rx="2.4"/><rect x="80.8" y="71.2" width="4.8" height="19.6" rx="2.4"/><rect x="89.6" y="67" width="4.8" height="28" rx="2.4"/><rect x="98.4" y="73.3" width="4.8" height="15.4" rx="2.4"/><rect x="107.2" y="69.1" width="4.8" height="23.8" rx="2.4"/><rect x="116" y="75.4" width="4.8" height="11.2" rx="2.4"/><rect x="124.8" y="67.7" width="4.8" height="26.6" rx="2.4"/><rect x="133.6" y="72.6" width="4.8" height="16.8" rx="2.4"/><rect x="142.4" y="76.1" width="4.8" height="9.8" rx="2.4"/><rect x="151.2" y="74" width="4.8" height="14" rx="2.4"/></g><rect x="34" y="123" width="132" height="9" rx="4.5" fill="rgba(255,255,255,0.6)"/><rect x="50" y="146" width="100" height="9" rx="4.5" fill="rgba(255,255,255,0.3)"/></svg>Transcriber</a>
+  <a class="wordmark" href="../"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="gF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e2028"/><stop offset="1" stop-color="#0a0b0f"/></linearGradient></defs><rect width="200" height="200" rx="44.74" fill="url(#gF)"/><rect x="22" y="53" width="156" height="56" rx="28" fill="rgba(0,0,0,0.92)"/><rect x="23" y="54" width="154" height="54" rx="27" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><circle cx="50" cy="81" r="8" fill="#ff3b30"/><g fill="rgba(255,255,255,0.9)"><rect x="72" y="76.8" width="4.8" height="8.4" rx="2.4"/><rect x="80.8" y="71.2" width="4.8" height="19.6" rx="2.4"/><rect x="89.6" y="67" width="4.8" height="28" rx="2.4"/><rect x="98.4" y="73.3" width="4.8" height="15.4" rx="2.4"/><rect x="107.2" y="69.1" width="4.8" height="23.8" rx="2.4"/><rect x="116" y="75.4" width="4.8" height="11.2" rx="2.4"/><rect x="124.8" y="67.7" width="4.8" height="26.6" rx="2.4"/><rect x="133.6" y="72.6" width="4.8" height="16.8" rx="2.4"/><rect x="142.4" y="76.1" width="4.8" height="9.8" rx="2.4"/><rect x="151.2" y="74" width="4.8" height="14" rx="2.4"/></g><rect x="34" y="123" width="132" height="9" rx="4.5" fill="rgba(255,255,255,0.6)"/><rect x="50" y="146" width="100" height="9" rx="4.5" fill="rgba(255,255,255,0.3)"/></svg>Transcriber</a>
   <span class="spacer"></span>
-  <a class="navlink" href="../../blog/">Blog</a>
+  <a class="navlink" href="../blog/">Blog</a>
   <a class="navlink" href="https://github.com/moritzjuliankrause/Transcriber">GitHub</a>
   <a class="btn sm" href="https://gettranscriber.com/download">Download</a>
 </nav>
 
 <main class="article">
   <header class="head">
-    <p class="crumbs"><a href="../../blog/">Blog</a></p>
-    <h1>Questions about recording and transcribing calls on a Mac</h1>
-    <p class="lede">Every question answered across the blog, in one place. Each answer links to the post it comes from.</p>
+    <p class="crumbs"><a href="../">Transcriber</a></p>
+    <h1>Privacy</h1>
+    <p class="lede">What this website and the app know about you. Short version: almost nothing.</p>
   </header>
   
-  <section class="faq-group">
-    <h2><a href="../../blog/how-transcriber-works/">How Transcriber works, from audio tap to transcript file</a></h2>
-    <details class="faq"><summary>Does it work with every app?</summary><p>With every app that plays audio through the Mac. Zoom, Teams, Google Meet, WhatsApp, FaceTime, a call in a browser tab and a YouTube video are all the same to it.</p></details><details class="faq"><summary>Why does it need two permissions?</summary><p>Microphone for your side and System Audio Recording for the other side. Without the second one, the far end of the call would be missing from the transcript.</p></details><details class="faq"><summary>How big is the model download?</summary><p>About one gigabyte, downloaded once on the first recording or up front in Settings. It contains Parakeet for transcription, Silero for voice detection and pyannote for speaker separation.</p></details><details class="faq"><summary>What happens if the Mac crashes during a call?</summary><p>The transcript is written to disk after every segment, so everything up to the crash is already saved. On the next launch Transcriber offers to finish the session.</p></details><details class="faq"><summary>Can I get subtitles or JSON out of it?</summary><p>Yes. Markdown is always written, JSON and SRT are optional exports in Settings, and the raw audio can be kept as WAV files.</p></details><details class="faq"><summary>Is an Intel Mac enough?</summary><p>macOS 14.2 is the requirement. The transcription models run much better on Apple Silicon, so that is what I recommend.</p></details>
-  </section>
-  <section class="faq-group">
-    <h2><a href="../../blog/record-zoom-call-mac-transcript/">How to record a Zoom call on a Mac and get a transcript</a></h2>
-    <details class="faq"><summary>Does Zoom have to be set to record for this to work?</summary><p>No. Transcriber listens to what your Mac plays and what your microphone hears, so it doesn't matter whether Zoom's own recording is on, off, or locked by the host.</p></details><details class="faq"><summary>Will the other person be transcribed as well?</summary><p>Yes. The far end comes in through your Mac's audio output and is captured as its own channel, so their words land in the transcript with a separate speaker label.</p></details><details class="faq"><summary>Does any audio leave my Mac?</summary><p>No. Transcription runs on your machine with a downloaded model. The only network access is the one-time download of that model and the update check against GitHub.</p></details><details class="faq"><summary>Which macOS version do I need?</summary><p>macOS 14.2 or newer, because that's where Apple added the audio tap that makes recording another app's sound possible. An Apple Silicon Mac is recommended.</p></details><details class="faq"><summary>Is it legal to record a call?</summary><p>That depends on where you and the other people are. In many places, including Germany, recording without consent is a crime. Tell everyone before you press record.</p></details>
-  </section>
-  <section class="faq-group">
-    <h2><a href="../../blog/transcriber-privacy-what-leaves-your-mac/">What leaves your Mac when Transcriber records a call</a></h2>
-    <details class="faq"><summary>Does the audio ever go to a server?</summary><p>No. Recording and transcription both happen on your Mac. The audio files stay in the folder you chose, or are deleted after the call if you turned off keeping audio.</p></details><details class="faq"><summary>Which network connections does the app make?</summary><p>Two. The one-time download of the transcription models, and a check for new versions against GitHub, once a day by default. Both can be seen in the app log.</p></details><details class="faq"><summary>Do I need an account?</summary><p>No account, no login, no email address. Download the app, grant the two permissions, record.</p></details><details class="faq"><summary>Where are transcripts stored?</summary><p>In a folder you pick in Settings, one subfolder per recording. Your sync tool decides where they go from there, the app does not upload anything.</p></details><details class="faq"><summary>Can I use it under GDPR?</summary><p>The app itself sends no personal data anywhere, which removes the usual processor question. Recording a conversation still needs a legal basis and the consent of the participants, that part is yours.</p></details><details class="faq"><summary>Is the code public?</summary><p>Yes, the source is on GitHub, so every claim on this page can be checked against the code.</p></details>
-  </section>
+  <p>This page covers two things: the website gettranscriber.com and the Transcriber app for macOS. Both are made by Moritz Krause (contact details in the <a href="/impressum/">Impressum</a>). A German version follows below, the German text is the binding one for visitors from Germany.</p>
+<h2 id="the-website">The website</h2>
+<p>The website is a set of static pages. It sets no cookies, runs no analytics, has no login and no forms. There is nothing here that identifies you across visits.</p>
+<p><strong>Hosting.</strong> The pages are served by Cloudflare (Cloudflare, Inc., San Francisco, USA, through its EU entity Cloudflare Germany GmbH). Like every web server, Cloudflare's edge receives your IP address, the page you request, your browser's user agent and the time of the request, and keeps that in server logs for a short period to run and protect the service. Legal basis: my legitimate interest in operating a secure, fast website (Art. 6(1)(f) GDPR). Cloudflare's own privacy policy: <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">cloudflare.com/privacypolicy</a>.</p>
+<p><strong>Fonts.</strong> The pages load the Inter typeface from Google Fonts. Your browser therefore sends a request, including your IP address, to Google (Google Ireland Limited). If you'd rather avoid that, a content blocker that blocks fonts.googleapis.com breaks nothing on this site.</p>
+<p><strong>Download.</strong> The download button forwards you to GitHub (GitHub, Inc., USA), where the app's releases are stored. From that moment GitHub's privacy policy applies: <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" rel="noopener">docs.github.com/privacy</a>.</p>
+<p><strong>Links.</strong> Links to other sites, including the blog's references, are ordinary links. Nothing is loaded from those sites until you click.</p>
+<h2 id="the-app">The app</h2>
+<p>Transcriber runs on your Mac and processes audio there.</p>
+<ul><li>Audio and transcripts are stored in a folder on your Mac that you choose. They are never uploaded by the app.</li><li>The app makes exactly two kinds of network requests: the one-time download of the speech recognition models on first use, and a check for new versions against the public GitHub API, once a day by default. Neither request carries audio, text, or an identifier beyond what any HTTP request contains. Both can be seen in the app's log file.</li><li>There is no account, no sign-in, no analytics, no crash reporting and no telemetry.</li><li>The optional hand-off to an AI tool (Claude, ChatGPT, Perplexity or an app you choose) only happens when you press that button. From then on the transcript is subject to that service's terms. If you don't configure a tool, nothing leaves the Mac.</li></ul>
+<p>Recording a conversation may require the consent of everyone in it. That obligation is yours as the person recording, and the app cannot fulfil it for you.</p>
+<h2 id="your-rights">Your rights</h2>
+<p>Since neither the website nor the app collects personal data beyond Cloudflare's short-lived server logs, there is little to access, correct or delete. You still have the rights under Art. 15 to 21 GDPR and the right to complain to a supervisory authority. Write to <a href="mailto:hello@moritz-krause.com">hello@moritz-krause.com</a> for anything related to this policy.</p>
+<hr>
+<h2 id="datenschutzerkl-rung-deutsch">Datenschutzerklärung (Deutsch)</h2>
+<p>Verantwortlicher ist Moritz Krause, Kontaktdaten im <a href="/impressum/">Impressum</a>.</p>
+<p><strong>Website.</strong> gettranscriber.com besteht aus statischen Seiten ohne Cookies, ohne Analyse-Tools, ohne Login und ohne Formulare. Beim Aufruf verarbeitet der Hosting-Anbieter Cloudflare (Cloudflare, Inc., USA, in der EU vertreten durch Cloudflare Germany GmbH) technisch notwendig Ihre IP-Adresse, die aufgerufene Seite, den Browser-Typ und den Zeitpunkt des Zugriffs und speichert diese Daten kurzzeitig in Server-Logs zum Betrieb und Schutz des Dienstes. Rechtsgrundlage ist mein berechtigtes Interesse an einem sicheren und schnellen Betrieb der Website (Art. 6 Abs. 1 lit. f DSGVO). Datenschutzerklärung von Cloudflare: <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">cloudflare.com/privacypolicy</a>.</p>
+<p><strong>Schriftarten.</strong> Die Seiten laden die Schrift Inter von Google Fonts (Google Ireland Limited). Dabei wird Ihre IP-Adresse an Google übermittelt. Wer das nicht möchte, kann fonts.googleapis.com blockieren; die Seite funktioniert dann ohne Einschränkung.</p>
+<p><strong>Download.</strong> Der Download-Button leitet zu GitHub (GitHub, Inc., USA) weiter, wo die App bereitgestellt wird. Dort gilt die Datenschutzerklärung von GitHub.</p>
+<p><strong>App.</strong> Transcriber verarbeitet Audio ausschließlich auf Ihrem Mac. Aufnahmen und Transkripte liegen in einem von Ihnen gewählten Ordner und werden von der App nicht hochgeladen. Die App stellt genau zwei Arten von Netzwerkverbindungen her: den einmaligen Download der Spracherkennungsmodelle bei der ersten Nutzung und eine tägliche Prüfung auf neue Versionen über die öffentliche GitHub-API. Beide übertragen weder Audio noch Text noch eine Kennung. Es gibt kein Konto, keine Analyse, keine Absturzberichte, keine Telemetrie. Die optionale Übergabe eines Transkripts an ein KI-Werkzeug erfolgt nur auf Ihren Knopfdruck und unterliegt ab dann den Bedingungen des jeweiligen Anbieters.</p>
+<p>Das Aufzeichnen von Gesprächen kann die Einwilligung aller Beteiligten erfordern (§ 201 StGB). Diese Pflicht liegt bei der aufzeichnenden Person.</p>
+<p><strong>Ihre Rechte.</strong> Sie haben die Rechte aus Art. 15 bis 21 DSGVO (Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch) sowie das Recht auf Beschwerde bei einer Aufsichtsbehörde. Anfragen an <a href="mailto:hello@moritz-krause.com">hello@moritz-krause.com</a>.</p>
+<p>Stand: September 2026</p>
 </main>
 <footer>
   <div class="in">
@@ -202,13 +213,13 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
     <span class="tag">Made by Moritz Krause. Everything runs on your Mac.</span>
     <span class="spacer"></span>
     <span class="links">
-      <a href="../../blog/">Blog</a>
+      <a href="../blog/">Blog</a>
       <a href="https://gettranscriber.com/blog/feed.xml">RSS</a>
-      <a href="../../about/">About</a>
-      <a href="../../changelog/">Changelog</a>
-      <a href="../../blog/faq/">FAQ</a>
-      <a href="../../impressum/">Impressum</a>
-      <a href="../../privacy/">Privacy</a>
+      <a href="../about/">About</a>
+      <a href="../changelog/">Changelog</a>
+      <a href="../blog/faq/">FAQ</a>
+      <a href="../impressum/">Impressum</a>
+      <a href="../privacy/">Privacy</a>
       <a href="https://gettranscriber.com/download">Latest release</a>
       <a href="https://github.com/moritzjuliankrause/Transcriber">Source code</a>
     </span>
