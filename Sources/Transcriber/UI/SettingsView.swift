@@ -706,6 +706,7 @@ struct AISettings: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var state: AppState
     @Environment(\.colorScheme) private var scheme
+    @State private var copied = false
 
     var body: some View {
         SettingsPage(section: .ai) {
@@ -767,8 +768,17 @@ struct AISettings: View {
                                 .padding(.vertical, 8)
                                 .frame(minHeight: 180)
                         }
-                        Button("Reset to Default") { settings.aiPromptTemplate = AITool.defaultPrompt }
+                        HStack(spacing: 8) {
+                            Button(copied ? "Copied" : "Copy Prompt") {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(settings.aiPromptTemplate, forType: .string)
+                                copied = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
+                            }
                             .buttonStyle(SoftButtonStyle())
+                            Button("Reset to Default") { settings.aiPromptTemplate = AITool.defaultPrompt }
+                                .buttonStyle(SoftButtonStyle())
+                        }
                     }
                 }
             }
