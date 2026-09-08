@@ -22,7 +22,7 @@ faq:
 
 Recording a Microsoft Teams meeting on a Mac comes down to capturing two audio streams at once: your microphone, and the sound Teams sends to your speakers, which is everyone else. Teams has its own recording, but whether you can start it depends on a policy your admin controls, and the file lands in your organization's cloud. Transcriber records both sides locally instead, into a folder on your Mac, and writes the transcript while the meeting is still running.
 
-This guide covers how that works with Teams specifically, the difference between the desktop app and Teams in a browser, and where the local approach stops being the right tool.
+This guide covers how that works with Teams specifically, the difference between the desktop app and Teams in a browser, and where the local approach isn't the right tool.
 
 ## Why can't you always record in Teams itself?
 
@@ -38,7 +38,7 @@ The one thing worth knowing is which app is actually making the sound. Join in t
 
 ## How do you record a Teams meeting?
 
-You click the dot in the menu bar, or press the global shortcut ⌃⌥⌘R, and that's the whole procedure. The dot turns red and grows into a small pill with a waveform and a timer, and a floating bar shows the transcript forming, so you can tell straight away that the other side is coming through. When the meeting ends you click the dot again, the app finishes transcribing, separates the speakers on the far end, and asks for a title that becomes the folder name.
+You click the transcriber-icon in the menu bar, or press the global shortcut ⌃⌥⌘R, and that's the whole procedure. The icon turns red and grows into a small pill with a waveform and a timer, and a floating bar shows the transcript forming, so you can tell straight away that the other side is coming through. When the meeting ends you click the icon again, the app finishes transcribing, separates the speakers on the far end, and asks for a title that becomes the folder name.
 
 The first time, macOS asks for two permissions, Microphone and System Audio Recording, both under System Settings, Privacy and Security. Both are needed: without the second one, everyone else in the meeting is missing from the transcript. The first recording also downloads the transcription models, roughly a gigabyte, which happens once.
 
@@ -48,11 +48,11 @@ This needs macOS 14.2 or newer, because that's the version where Apple added the
 
 A folder named after the date and your title, inside the transcripts folder you chose. The readable file is transcript.md, grouped by speaker with timestamps and re-rendered after every segment. Next to it is transcript.jsonl, one JSON object per segment, written and flushed immediately, which is the crash-safe copy: if your Mac dies during a two-hour meeting, everything up to the last segment is already on disk, and the next launch offers to finish the session.
 
-Your microphone channel is labelled with your name. The far end is split by the diarization step after the call into Speaker 1, Speaker 2 and so on when several people spoke, though it can't put real names to those labels, because nothing is telling it who is who in the meeting. You can keep the raw WAV files and export SRT or JSON if another tool needs them.
+Your microphone channel is labelled with your name. The far end is split by the diarization step after the call into Speaker 1, Speaker 2 and so on when several people spoke, though it can't put real names to those labels, because nothing is telling it who is who in the meeting (not yet at least. I'm working on it!). You can keep the raw WAV files and export SRT or JSON if another tool needs them.
 
 ## What about echo when you're not wearing headphones?
 
-On speaker, your microphone also hears the meeting audio, so the far end would be transcribed twice. There's an echo gate for this. It uses the system channel as a reference, estimates the delay and how loud the echo is, and mutes microphone frames that only contain the other side, with a text-level check afterwards for anything that slips past. On a real 54-minute call this removed 220 of 225 echo segments. Headphones are still the cleaner setup; the gate is for the days you forget them.
+On speaker, your microphone also hears the meeting audio, so the far end would be transcribed twice. There's an echo gate for this. It uses the system channel as a reference, estimates the delay and how loud the echo is, and mutes microphone frames that only contain the other side, with a text-level check afterwards for anything that slips past. Headphones are still the cleaner setup;
 
 ## Where does local recording fall short for Teams?
 
