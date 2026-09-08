@@ -22,6 +22,18 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: drafted 2026-09-08
 
 
+
+- slug: record-facetime-call-mac
+  type: guide
+  title: How to record a FaceTime call, with both sides, on a Mac
+  keyword: how to record a facetime call
+  angle: FaceTime has no recording feature at all. The consent part matters more here because FaceTime calls are private by nature.
+  volume: 1900 (US, 2026-09; "record facetime call mac" itself has 0)
+  kd: 0
+  status: todo
+
+
+
 - slug: record-google-meet-mac-transcript
   type: guide
   title: How to record a Google Meet call on a Mac with a transcript
@@ -30,6 +42,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 10 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: speaker-diarization-explained
@@ -42,6 +55,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: record-system-audio-mac
   type: article
   title: How to record system audio on a Mac without a virtual driver
@@ -50,6 +64,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 390 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: otter-ai-alternative-mac-offline
@@ -62,6 +77,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: granola-vs-transcriber
   type: comparison
   title: Granola vs Transcriber for meeting notes on a Mac
@@ -71,6 +87,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   kd: 0
   status: todo
 
+
 - slug: fireflies-alternative-without-bot
   type: comparison
   title: Fireflies alternative that doesn't send a bot into your meetings
@@ -79,6 +96,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 90 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: macwhisper-vs-transcriber
@@ -91,6 +109,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: record-podcast-interview-remotely-mac
   type: article
   title: How to record a remote podcast interview on a Mac with a transcript
@@ -99,6 +118,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 10 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: is-it-legal-to-record-a-call
@@ -111,6 +131,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: summarize-meeting-transcript-claude-chatgpt
   type: article
   title: How to summarize a meeting transcript with Claude or ChatGPT
@@ -120,15 +141,6 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   kd: 40
   status: todo
 
-
-- slug: record-facetime-call-mac
-  type: guide
-  title: How to record a FaceTime call on a Mac, with both sides
-  keyword: record facetime call mac
-  angle: FaceTime has no recording feature at all. The consent part matters more here because FaceTime calls are private by nature.
-  volume: 0 (US, 2026-09)
-  kd: 0
-  status: todo
 
 
 - slug: record-whatsapp-call-mac
@@ -141,6 +153,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: apple-call-recording-vs-transcriber
   type: comparison
   title: Apple's built-in call recording vs Transcriber
@@ -149,6 +162,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 0 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: local-vs-cloud-transcription
@@ -161,6 +175,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: transcript-file-formats-markdown-jsonl-srt
   type: article
   title: What's inside a Transcriber recording folder: Markdown, JSONL, SRT, WAV
@@ -169,6 +184,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 0 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: fix-echo-duplicate-lines-call-transcript
@@ -181,6 +197,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: transcribe-youtube-video-locally-mac
   type: article
   title: How to transcribe a YouTube video or webinar on a Mac, offline
@@ -189,6 +206,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 0 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: meeting-transcripts-gdpr-freelancers
@@ -201,6 +219,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: transcriber-troubleshooting-permissions-audio
   type: guide
   title: Transcriber troubleshooting: permissions, missing system audio, echo
@@ -209,6 +228,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 0 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: transcriber-system-requirements
@@ -221,6 +241,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: live-transcript-during-call-accessibility
   type: article
   title: A live transcript during your calls, and who it helps
@@ -229,6 +250,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 0 (US, 2026-09)
   kd: 0
   status: todo
+
 
 
 - slug: crash-safe-transcripts-jsonl
@@ -241,6 +263,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   status: todo
 
 
+
 - slug: best-free-call-transcription-apps-mac
   type: comparison
   title: Free call transcription apps for Mac in 2026, compared honestly
@@ -249,4 +272,3 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   volume: 0 (US, 2026-09)
   kd: 0
   status: todo
-

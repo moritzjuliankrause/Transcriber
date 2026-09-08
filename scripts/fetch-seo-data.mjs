@@ -26,7 +26,8 @@ const COMPETITORS = ['otter.ai', 'fireflies.ai', 'tldv.io', 'fathom.video', 'gra
 
 // Relevance filter for candidates: competitor domains rank for their own brand and for unrelated terms.
 const TOPIC = /\b(record|recording|transcri|meeting|call|calls|note|notes|audio|speaker|diariz|subtitle|srt|summar|zoom|teams|meet|facetime|whatsapp|webex|discord|slack|huddle|mac|macos|offline|local|privacy|gdpr|alternative|alternatives|vs|dictat|voice|interview|podcast)\b/i;
-const relevant = k => TOPIC.test(k);
+const NEGATIVE = /world record|zoom test|effects on|longest|meme|lyrics|song|movie|font|logo/i;
+const relevant = k => TOPIC.test(k) && !NEGATIVE.test(k);
 const backlog = existsSync(join(ROOT, 'website/blog/BACKLOG.md')) ? [...readFileSync(join(ROOT, 'website/blog/BACKLOG.md'), 'utf8').matchAll(/^\s+keyword: (.+)$/gm)].map(m => m[1].trim()) : [];
 const shipped = existsSync(join(ROOT, 'keywords/shipped.json')) ? Object.keys(JSON.parse(readFileSync(join(ROOT, 'keywords/shipped.json'), 'utf8'))) : [];
 
