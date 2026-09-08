@@ -1,0 +1,430 @@
+{
+ "fetchedAt": "2026-09-08T09:16:47.099Z",
+ "domains": {
+  "tldv.io": {
+   "fetchedAt": "2026-09-08T09:16:47.099Z",
+   "keywords": [
+    {
+     "keyword": "otter a i",
+     "volume": 165000,
+     "difficulty": 46,
+     "position": 15,
+     "url": "https://tldv.io/blog/otter-ai-review/"
+    },
+    {
+     "keyword": "otter ai",
+     "volume": 165000,
+     "difficulty": 30,
+     "position": 16,
+     "url": "https://tldv.io/blog/otter-ai-review/"
+    },
+    {
+     "keyword": "otter.ai",
+     "volume": 165000,
+     "difficulty": 56,
+     "position": 54,
+     "url": "https://tldv.io/blog/otter-ai-review/"
+    },
+    {
+     "keyword": "turbo ai",
+     "volume": 110000,
+     "difficulty": 15,
+     "position": 10,
+     "url": "https://tldv.io/blog/turbo-ai/"
+    },
+    {
+     "keyword": "fathom",
+     "volume": 90500,
+     "difficulty": 47,
+     "position": 15,
+     "url": "https://tldv.io/blog/honest-review-of-fathom/"
+    },
+    {
+     "keyword": "gong",
+     "volume": 74000,
+     "difficulty": 45,
+     "position": 14,
+     "url": "https://tldv.io/blog/how-does-gong-work/"
+    },
+    {
+     "keyword": "cluely",
+     "volume": 60500,
+     "difficulty": 14,
+     "position": 19,
+     "url": "https://tldv.io/blog/cluely-review/"
+    },
+    {
+     "keyword": "how to get effects on google duo",
+     "volume": 60500,
+     "difficulty": 18,
+     "position": 61,
+     "url": "https://tldv.io/blog/6-google-meet-visual-effects-tools-chrome-extensions/"
+    },
+    {
+     "keyword": "user interviews",
+     "volume": 49500,
+     "difficulty": 27,
+     "position": 52,
+     "url": "https://tldv.io/blog/user-interview/"
+    },
+    {
+     "keyword": "claude pricing",
+     "volume": 40500,
+     "difficulty": 34,
+     "position": 28,
+     "url": "https://tldv.io/blog/claude-enterprise-pricing/"
+    },
+    {
+     "keyword": "granola ai",
+     "volume": 33100,
+     "difficulty": 11,
+     "position": 18,
+     "url": "https://tldv.io/blog/granola-review/"
+    },
+    {
+     "keyword": "jamie",
+     "volume": 33100,
+     "difficulty": 11,
+     "position": 18,
+     "url": "https://tldv.io/blog/meetjamie-alternatives/"
+    },
+    {
+     "keyword": "w f h meaning",
+     "volume": 33100,
+     "difficulty": 1,
+     "position": 9,
+     "url": "https://tldv.io/blog/wfh-abbreviation-why-you-need-to-know-wfh-wfa/"
+    },
+    {
+     "keyword": "wfh meaning",
+     "volume": 33100,
+     "difficulty": 2,
+     "position": 10,
+     "url": "https://tldv.io/blog/wfh-abbreviation-why-you-need-to-know-wfh-wfa/"
+    },
+    {
+     "keyword": "ai note taker",
+     "volume": 27100,
+     "difficulty": 31,
+     "position": 14,
+     "url": "https://tldv.io/blog/free-ai-note-taking/"
+    },
+    {
+     "keyword": "ai note taking",
+     "volume": 27100,
+     "difficulty": 67,
+     "position": 22,
+     "url": "https://tldv.io/blog/free-ai-note-taking/"
+    },
+    {
+     "keyword": "ai notes taker",
+     "volume": 27100,
+     "difficulty": 66,
+     "position": 13,
+     "url": "https://tldv.io/blog/free-ai-note-taking/"
+    },
+    {
+     "keyword": "read ai",
+     "volume": 27100,
+     "difficulty": 14,
+     "position": 15,
+     "url": "https://tldv.io/blog/read-ai-review-alternatives/"
+    },
+    {
+     "keyword": "read.ai",
+     "volume": 27100,
+     "difficulty": 18,
+     "position": 18,
+     "url": "https://tldv.io/blog/read-ai-review-alternatives/"
+    },
+    {
+     "keyword": "zoom test",
+     "volume": 27100,
+     "difficulty": 13,
+     "position": 37,
+     "url": "https://tldv.io/blog/zoom-test-call/"
+    },
+    {
+     "keyword": "zoom testing",
+     "volume": 27100,
+     "difficulty": 18,
+     "position": 37,
+     "url": "https://tldv.io/blog/zoom-test-call/"
+    },
+    {
+     "keyword": "fireflies ai",
+     "volume": 22200,
+     "difficulty": 41,
+     "position": 18,
+     "url": "https://tldv.io/blog/fireflies-review/"
+    },
+    {
+     "keyword": "fireflies.ai",
+     "volume": 22200,
+     "difficulty": 53,
+     "position": 28,
+     "url": "https://tldv.io/blog/fireflies-review/"
+    },
+    {
+     "keyword": "note taker app",
+     "volume": 22200,
+     "difficulty": 49,
+     "position": 15,
+     "url": "https://tldv.io/blog/free-ai-note-taking/"
+    },
+    {
+     "keyword": "zoom test meeting",
+     "volume": 22200,
+     "difficulty": 12,
+     "position": 38,
+     "url": "https://tldv.io/blog/zoom-test-call/"
+    },
+    {
+     "keyword": "chatgpt pricing",
+     "volume": 18100,
+     "difficulty": 38,
+     "position": 8,
+     "url": "https://tldv.io/blog/chatgpt-pricing/"
+    },
+    {
+     "keyword": "claude ai pricing",
+     "volume": 14800,
+     "difficulty": 34,
+     "position": 37,
+     "url": "https://tldv.io/blog/claude-enterprise-pricing/"
+    },
+    {
+     "keyword": "claude.ai pricing",
+     "volume": 14800,
+     "difficulty": 34,
+     "position": 37,
+     "url": "https://tldv.io/blog/claude-enterprise-pricing/"
+    },
+    {
+     "keyword": "funniest background",
+     "volume": 14800,
+     "difficulty": 0,
+     "position": 10,
+     "url": "https://tldv.io/blog/funny-zoom-backgrounds-for-your-next-zoom-meeting/"
+    },
+    {
+     "keyword": "how to cancel chatgpt subscription",
+     "volume": 14800,
+     "difficulty": 8,
+     "position": 38,
+     "url": "https://tldv.io/blog/how-to-cancel-chatgpt-subscription/"
+    },
+    {
+     "keyword": "note takers",
+     "volume": 14800,
+     "difficulty": 49,
+     "position": 3,
+     "url": "https://tldv.io/blog/free-ai-note-taking/"
+    },
+    {
+     "keyword": "chatgpt plan",
+     "volume": 12100,
+     "difficulty": 57,
+     "position": 19,
+     "url": "https://tldv.io/blog/chatgpt-pricing/"
+    },
+    {
+     "keyword": "cluely a i",
+     "volume": 12100,
+     "difficulty": 15,
+     "position": 24,
+     "url": "https://tldv.io/blog/cluely-review/"
+    },
+    {
+     "keyword": "coconote",
+     "volume": 12100,
+     "difficulty": 8,
+     "position": 5,
+     "url": "https://tldv.io/blog/coconote-review/"
+    },
+    {
+     "keyword": "cold calling",
+     "volume": 12100,
+     "difficulty": 39,
+     "position": 33,
+     "url": "https://tldv.io/blog/cold-calling/"
+    },
+    {
+     "keyword": "meddpicc",
+     "volume": 12100,
+     "difficulty": 7,
+     "position": 18,
+     "url": "https://tldv.io/blog/meddpicc-sales-methodology-and-sales-meddpicc-process/"
+    },
+    {
+     "keyword": "zoom phone",
+     "volume": 12100,
+     "difficulty": 25,
+     "position": 23,
+     "url": "https://tldv.io/blog/zoom-phone/"
+    },
+    {
+     "keyword": "chatgpt subscriptions",
+     "volume": 9900,
+     "difficulty": 49,
+     "position": 39,
+     "url": "https://tldv.io/blog/chatgpt-pricing/"
+    },
+    {
+     "keyword": "fathom ai",
+     "volume": 9900,
+     "difficulty": 31,
+     "position": 14,
+     "url": "https://tldv.io/blog/honest-review-of-fathom/"
+    },
+    {
+     "keyword": "fyxer ai",
+     "volume": 9900,
+     "difficulty": 0,
+     "position": 6,
+     "url": "https://tldv.io/blog/fyxer-ai-review/"
+    },
+    {
+     "keyword": "fyxerai",
+     "volume": 9900,
+     "difficulty": 0,
+     "position": 6,
+     "url": "https://tldv.io/blog/fyxer-ai-review/"
+    },
+    {
+     "keyword": "zoom pro plan",
+     "volume": 9900,
+     "difficulty": 13,
+     "position": 11,
+     "url": "https://tldv.io/blog/zoom-pricing/"
+    },
+    {
+     "keyword": "fathom note taker",
+     "volume": 8100,
+     "difficulty": 18,
+     "position": 8,
+     "url": "https://tldv.io/blog/honest-review-of-fathom/"
+    },
+    {
+     "keyword": "fathom notetaker",
+     "volume": 8100,
+     "difficulty": 21,
+     "position": 7,
+     "url": "https://tldv.io/blog/honest-review-of-fathom/"
+    },
+    {
+     "keyword": "fyxer",
+     "volume": 8100,
+     "difficulty": 0,
+     "position": 13,
+     "url": "https://tldv.io/blog/fyxer-ai-review/"
+    },
+    {
+     "keyword": "google duo effects",
+     "volume": 8100,
+     "difficulty": 8,
+     "position": 75,
+     "url": "https://tldv.io/blog/6-google-meet-visual-effects-tools-chrome-extensions/"
+    },
+    {
+     "keyword": "happy scribe",
+     "volume": 8100,
+     "difficulty": 9,
+     "position": 8,
+     "url": "https://tldv.io/blog/happy-scribe-review/"
+    },
+    {
+     "keyword": "notta",
+     "volume": 8100,
+     "difficulty": 75,
+     "position": 12,
+     "url": "https://tldv.io/blog/notta-ai-review/"
+    },
+    {
+     "keyword": "tactiq",
+     "volume": 8100,
+     "difficulty": 9,
+     "position": 7,
+     "url": "https://tldv.io/blog/tactiq-alternatives/"
+    },
+    {
+     "keyword": "what is cold contact",
+     "volume": 8100,
+     "difficulty": 3,
+     "position": 37,
+     "url": "https://tldv.io/blog/cold-calling/"
+    },
+    {
+     "keyword": "costs zoom",
+     "volume": 6600,
+     "difficulty": 40,
+     "position": 31,
+     "url": "https://tldv.io/blog/zoom-pricing/"
+    },
+    {
+     "keyword": "free app for note taking",
+     "volume": 6600,
+     "difficulty": 49,
+     "position": 25,
+     "url": "https://tldv.io/blog/free-ai-note-taking/"
+    },
+    {
+     "keyword": "fun zoom background",
+     "volume": 6600,
+     "difficulty": 13,
+     "position": 8,
+     "url": "https://tldv.io/blog/funny-zoom-backgrounds-for-your-next-zoom-meeting/"
+    },
+    {
+     "keyword": "funny zoom backgrounds",
+     "volume": 6600,
+     "difficulty": 17,
+     "position": 7,
+     "url": "https://tldv.io/blog/funny-zoom-backgrounds-for-your-next-zoom-meeting/"
+    },
+    {
+     "keyword": "how much is chatgpt",
+     "volume": 6600,
+     "difficulty": 19,
+     "position": 20,
+     "url": "https://tldv.io/blog/chatgpt-pricing/"
+    },
+    {
+     "keyword": "prices for zoom",
+     "volume": 6600,
+     "difficulty": 25,
+     "position": 29,
+     "url": "https://tldv.io/blog/zoom-pricing/"
+    },
+    {
+     "keyword": "zoom pricing",
+     "volume": 6600,
+     "difficulty": 27,
+     "position": 13,
+     "url": "https://tldv.io/blog/zoom-pricing/"
+    },
+    {
+     "keyword": "ai note",
+     "volume": 5400,
+     "difficulty": 49,
+     "position": 14,
+     "url": "https://tldv.io/blog/free-ai-note-taking/"
+    },
+    {
+     "keyword": "chatgpt paid plans",
+     "volume": 5400,
+     "difficulty": 38,
+     "position": 39,
+     "url": "https://tldv.io/blog/chatgpt-pricing/"
+    },
+    {
+     "keyword": "chatgpt professional plan",
+     "volume": 5400,
+     "difficulty": 42,
+     "position": 29,
+     "url": "https://tldv.io/blog/chatgpt-pricing/"
+    }
+   ]
+  }
+ }
+}

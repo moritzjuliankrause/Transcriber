@@ -1,0 +1,1160 @@
+{
+ "fetchedAt": "2026-09-08T09:16:47.099Z",
+ "seeds": {
+  "record zoom call mac": [
+   {
+    "keyword": "how to record a zoom call on mac",
+    "volume": 30,
+    "difficulty": 6,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record zoom call on mac",
+    "volume": 20,
+    "difficulty": 36,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record zoom video call on mac",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record a zoom call on mac",
+    "volume": 10,
+    "difficulty": 45,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record zoom call on mac",
+    "volume": 10,
+    "difficulty": 45,
+    "intent": "informational"
+   }
+  ],
+  "record teams meeting mac": [
+   {
+    "keyword": "how to record teams meeting on mac",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record a teams meeting on mac",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record teams meeting mac",
+    "volume": 10,
+    "difficulty": 1,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "how to record microsoft teams meeting on mac",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   }
+  ],
+  "transcribe google meet": [
+   {
+    "keyword": "does google meet transcribe",
+    "volume": 70,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "transcribe google meet",
+    "volume": 70,
+    "difficulty": 4,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can google meet transcribe",
+    "volume": 50,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to transcribe google meet",
+    "volume": 40,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to transcribe a google meet",
+    "volume": 30,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "transcribe google meet recording",
+    "volume": 20,
+    "difficulty": 10,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to transcribe a google meet recording",
+    "volume": 20,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "google meet auto transcribe",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "google meet record and transcribe",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "transcribe a google meet recording",
+    "volume": 10,
+    "difficulty": 19,
+    "intent": "informational"
+   },
+   {
+    "keyword": "transcribe google meet recording free",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "record and transcribe google meet",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "ai transcribe google meet",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "auto transcribe google meet",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can google meet transcribe in real time",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "how to transcribe google meet recording for free",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "how to record and transcribe on google meet",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to transcribe google meet recording",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "google meet transcribe meetings",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "google meet transcribe extension",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to transcribe google meet recordings",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "transcribe audio to text google meet",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to transcribe a google meet video",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "google meet transcribe meeting notes",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "transcribe google meet extension",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "tactiq transcribe google meet and zoom",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "transcribe google meet calls",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "transcribe google meet free",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record transcribe & chatgpt for google meet",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   }
+  ],
+  "record facetime call": [
+   {
+    "keyword": "how to record a facetime call",
+    "volume": 1900,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how do you record a facetime call",
+    "volume": 1900,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how do i record a facetime call",
+    "volume": 1900,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how can i record a facetime call",
+    "volume": 1900,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record facetime call",
+    "volume": 1900,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how can you record a facetime call",
+    "volume": 1900,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can you record a facetime call",
+    "volume": 1900,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "longest facetime call world record",
+    "volume": 880,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "world record for longest facetime call",
+    "volume": 880,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can i record a facetime call",
+    "volume": 720,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how can i record a facetime call on iphone",
+    "volume": 480,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how do you record a facetime call on iphone",
+    "volume": 480,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record a facetime call on iphone",
+    "volume": 480,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record a facetime call",
+    "volume": 480,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record facetime call",
+    "volume": 480,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can you record facetime call",
+    "volume": 390,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can you record a facetime call on iphone",
+    "volume": 390,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can i screen record a facetime call",
+    "volume": 260,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to screen record a facetime call with audio",
+    "volume": 210,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "longest facetime call record",
+    "volume": 210,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can you screen record a facetime call",
+    "volume": 170,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "world record longest facetime call",
+    "volume": 170,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can i record facetime call",
+    "volume": 140,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record facetime call with audio",
+    "volume": 140,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record a facetime call with audio",
+    "volume": 140,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "what is the world record for the longest facetime call",
+    "volume": 140,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "what is the world record for longest facetime call",
+    "volume": 140,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "can you record a facetime call without them knowing iphone",
+    "volume": 140,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record a facetime call with sound",
+    "volume": 110,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "world record facetime call",
+    "volume": 110,
+    "difficulty": 0,
+    "intent": "informational"
+   }
+  ],
+  "meeting transcription without bot": [],
+  "offline transcription mac": [],
+  "local transcription": [
+   {
+    "keyword": "local ai transcription",
+    "volume": 40,
+    "difficulty": 9,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local transcription software",
+    "volume": 40,
+    "difficulty": 3,
+    "intent": "commercial"
+   },
+   {
+    "keyword": "best local transcription model",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "commercial"
+   },
+   {
+    "keyword": "local audio transcription",
+    "volume": 20,
+    "difficulty": 4,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local llm transcription",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "local transcription service",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local ai transcription software",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "commercial"
+   },
+   {
+    "keyword": "local medical transcription jobs",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local transcription copy of birth certificate sample",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "local transcription jobs",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local eyes transcription",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "whisper ai transcription local",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "local and global regulation of transcription initiation in bacteria",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "zoom audio transcription for local recording",
+    "volume": 10,
+    "difficulty": 1,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "premiere pro initializing local transcription engine",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "zoom transcription for local recording",
+    "volume": 10,
+    "difficulty": 5,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "local transcription copy of birth certificate",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "local meeting transcription",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "zoom transcription local recording",
+    "volume": 10,
+    "difficulty": 5,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "local transcription services",
+    "volume": 10,
+    "difficulty": 23,
+    "intent": "commercial"
+   },
+   {
+    "keyword": "ai transcription local whisper",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "whisper transcription local",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local ai video transcription",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "initializing local transcription engine",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local audio transcription ai",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "initializing local transcription engine stuck",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local transcription model",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local ai audio transcription",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "local video transcription",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   }
+  ],
+  "summarize meeting transcript": [
+   {
+    "keyword": "how to summarize teams meeting transcript with copilot",
+    "volume": 30,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to summarize teams meeting transcript",
+    "volume": 30,
+    "difficulty": 6,
+    "intent": "informational"
+   },
+   {
+    "keyword": "chatgpt prompt to summarize meeting transcript",
+    "volume": 20,
+    "difficulty": 0,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "ai prompt to summarize meeting transcript",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "best prompt to summarize meeting transcript",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "summarize teams meeting transcript",
+    "volume": 20,
+    "difficulty": 10,
+    "intent": "informational"
+   },
+   {
+    "keyword": "copilot prompt to summarize meeting transcript",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "summarize meeting transcript free",
+    "volume": 20,
+    "difficulty": 75,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "ai to summarize meeting transcript",
+    "volume": 10,
+    "difficulty": 40,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "summarize meeting transcript ai",
+    "volume": 10,
+    "difficulty": 40,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to use chatgpt to summarize meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "use ai to summarize meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "how to use copilot to summarize a meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "free ai tool to summarize meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "commercial"
+   },
+   {
+    "keyword": "copilot summarize meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "how to summarize meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "summarize meeting transcript chatgpt",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "summarize meeting transcript",
+    "volume": 10,
+    "difficulty": 30,
+    "intent": "informational"
+   },
+   {
+    "keyword": "use chatgpt to summarize meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "best ai to summarize meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "commercial"
+   },
+   {
+    "keyword": "chat gpt prompt to summarize meeting transcript",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "chatgpt summarize meeting transcript too long",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "chatgpt summarize meeting transcript",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "ai summarize meeting transcript",
+    "volume": 10,
+    "difficulty": 40,
+    "intent": "informational"
+   }
+  ],
+  "transcript to srt": [
+   {
+    "keyword": "srt to transcript",
+    "volume": 20,
+    "difficulty": 21,
+    "intent": "informational"
+   },
+   {
+    "keyword": "youtube transcript to srt converter",
+    "volume": 10,
+    "difficulty": 50,
+    "intent": "informational"
+   },
+   {
+    "keyword": "convert transcript to srt",
+    "volume": 10,
+    "difficulty": 42,
+    "intent": "informational"
+   },
+   {
+    "keyword": "convert youtube transcript to srt",
+    "volume": 10,
+    "difficulty": 50,
+    "intent": "informational"
+   },
+   {
+    "keyword": "transcript to srt",
+    "volume": 10,
+    "difficulty": 21,
+    "intent": "informational"
+   },
+   {
+    "keyword": "youtube transcript to srt",
+    "volume": 10,
+    "difficulty": 50,
+    "intent": "informational"
+   },
+   {
+    "keyword": "convert srt to transcript",
+    "volume": 10,
+    "difficulty": 42,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to convert youtube transcript to srt",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   }
+  ],
+  "call transcription app mac": [],
+  "record system audio mac": [
+   {
+    "keyword": "record mac system audio",
+    "volume": 390,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record system audio mac",
+    "volume": 390,
+    "difficulty": 0,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "how to record system audio mac",
+    "volume": 260,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record mac system audio",
+    "volume": 260,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record system audio on mac",
+    "volume": 260,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "mac audacity record system audio",
+    "volume": 70,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "audacity record system audio mac",
+    "volume": 70,
+    "difficulty": 0,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "audacity mac record system audio",
+    "volume": 70,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record system audio audacity mac",
+    "volume": 70,
+    "difficulty": 0,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "record system audio mac audacity",
+    "volume": 70,
+    "difficulty": 0,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "how to record system audio with audacity mac",
+    "volume": 70,
+    "difficulty": 1,
+    "intent": "informational"
+   },
+   {
+    "keyword": "mac record system audio",
+    "volume": 50,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "screen record with system audio mac",
+    "volume": 30,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to screen record with system audio on mac",
+    "volume": 30,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "mac record screen with system audio",
+    "volume": 20,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "mac screen record with system audio",
+    "volume": 20,
+    "difficulty": 12,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to screen record on mac with system audio",
+    "volume": 20,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record system audio on mac",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record screen and system audio mac",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record system audio mac quicktime",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record system audio on mac screen recording",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "mac record screen and system audio",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "screen record system audio mac",
+    "volume": 10,
+    "difficulty": 12,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record screen with system audio mac",
+    "volume": 10,
+    "difficulty": 12,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record mac screen with system audio",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record screen with system audio mac",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "record mac screen with system audio",
+    "volume": 10,
+    "difficulty": 12,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record screen on mac with system audio",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "how to record system audio in mac",
+    "volume": 10,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "mac record system audio quicktime",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   }
+  ],
+  "speaker diarization": [
+   {
+    "keyword": "speaker diarization",
+    "volume": 880,
+    "difficulty": 23,
+    "intent": "informational"
+   },
+   {
+    "keyword": "pyannote/speaker diarization",
+    "volume": 140,
+    "difficulty": 15,
+    "intent": "informational"
+   },
+   {
+    "keyword": "pyannote/speaker-diarization",
+    "volume": 140,
+    "difficulty": 16,
+    "intent": "informational"
+   },
+   {
+    "keyword": "pyannote-audio speaker diarization",
+    "volume": 90,
+    "difficulty": 14,
+    "intent": "informational"
+   },
+   {
+    "keyword": "what is speaker diarization",
+    "volume": 90,
+    "difficulty": 8,
+    "intent": "informational"
+   },
+   {
+    "keyword": "assemblyai speaker diarization",
+    "volume": 90,
+    "difficulty": 0,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "pyannote/speaker diarization-community-1",
+    "volume": 70,
+    "difficulty": 7,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "nvidia nemo speaker diarization",
+    "volume": 50,
+    "difficulty": 0,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "whisper speaker diarization",
+    "volume": 50,
+    "difficulty": 2,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization api",
+    "volume": 30,
+    "difficulty": 23,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization meaning",
+    "volume": 30,
+    "difficulty": 11,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization whisper",
+    "volume": 30,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization software",
+    "volume": 30,
+    "difficulty": 12,
+    "intent": "commercial"
+   },
+   {
+    "keyword": "speaker diarization model",
+    "volume": 20,
+    "difficulty": 3,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization models",
+    "volume": 20,
+    "difficulty": 3,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization-community-1",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "assembly ai speaker diarization",
+    "volume": 20,
+    "difficulty": 0,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization tools",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "deepgram speaker diarization",
+    "volume": 20,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization free",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "end to end speaker diarization",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization online",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "diarizationlm: speaker diarization post processing with large language models",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "commercial"
+   },
+   {
+    "keyword": "whisper diarization speaker diarization using openai/whisper",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   },
+   {
+    "keyword": "faster-whisper speaker diarization",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "speaker diarization python",
+    "volume": 10,
+    "difficulty": 1,
+    "intent": "informational"
+   },
+   {
+    "keyword": "pyannote/speaker-diarization offline",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "speaker diarization open source",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "navigational"
+   },
+   {
+    "keyword": "speaker-diarization huggingface",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "informational"
+   },
+   {
+    "keyword": "pyannote speaker diarization precision 2",
+    "volume": 10,
+    "difficulty": null,
+    "intent": "transactional"
+   }
+  ]
+ }
+}

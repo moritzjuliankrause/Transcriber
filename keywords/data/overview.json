@@ -1,0 +1,2300 @@
+{
+ "fetchedAt": "2026-09-08T09:16:47.099Z",
+ "keywords": [
+  {
+   "keyword": "ai prompt to summarize meeting transcript",
+   "volume": 20,
+   "cpc": 7.96,
+   "competition": "MEDIUM",
+   "difficulty": null,
+   "intent": "navigational",
+   "trend": [
+    10,
+    10,
+    20,
+    10,
+    20,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "ai to summarize meeting transcript",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": 40,
+   "intent": "transactional",
+   "trend": [
+    0,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "ai transcribe google meet",
+   "volume": 10,
+   "cpc": 4.71,
+   "competition": "MEDIUM",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    0,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "auto transcribe google meet",
+   "volume": 10,
+   "cpc": 11.8,
+   "competition": "HIGH",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "best local transcription model",
+   "volume": 20,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "commercial",
+   "trend": [
+    30,
+    30,
+    20,
+    30,
+    20,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "best prompt to summarize meeting transcript",
+   "volume": 20,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    40,
+    20,
+    40,
+    30,
+    40,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "can google meet transcribe",
+   "volume": 50,
+   "cpc": 27.12,
+   "competition": "MEDIUM",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    40,
+    50,
+    40,
+    50,
+    70,
+    70
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "can google meet transcribe in real time",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    0,
+    0
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "can i record a facetime call",
+   "volume": 720,
+   "cpc": 1.61,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    590,
+    720,
+    720,
+    720,
+    720,
+    720
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "can you record a facetime call",
+   "volume": 1900,
+   "cpc": 0.54,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1900,
+    1900,
+    1600,
+    1900,
+    1900,
+    1900
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "chatgpt prompt to summarize meeting transcript",
+   "volume": 20,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    30,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "convert srt to transcript",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 42,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "convert transcript to srt",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 42,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    0
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "convert youtube transcript to srt",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 50,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "copilot prompt to summarize meeting transcript",
+   "volume": 20,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    20,
+    20,
+    30,
+    30,
+    30,
+    40
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "copilot summarize meeting transcript",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "navigational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "does google meet transcribe",
+   "volume": 70,
+   "cpc": 20.13,
+   "competition": "MEDIUM",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    50,
+    50,
+    50,
+    70,
+    70,
+    70
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "fireflies alternative",
+   "volume": 90,
+   "cpc": 30.95,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    210,
+    140,
+    90,
+    90,
+    110,
+    50
+   ],
+   "source": "backlog"
+  },
+  {
+   "keyword": "free ai tool to summarize meeting transcript",
+   "volume": 10,
+   "cpc": 5.35,
+   "competition": "HIGH",
+   "difficulty": null,
+   "intent": "commercial",
+   "trend": [
+    10,
+    0,
+    10,
+    10,
+    10,
+    0
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "google meet auto transcribe",
+   "volume": 20,
+   "cpc": null,
+   "competition": "MEDIUM",
+   "difficulty": null,
+   "intent": "navigational",
+   "trend": [
+    20,
+    20,
+    20,
+    10,
+    20,
+    30
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "google meet record and transcribe",
+   "volume": 20,
+   "cpc": 18.02,
+   "competition": "MEDIUM",
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    20,
+    20,
+    30,
+    20,
+    30,
+    30
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "granola alternative",
+   "volume": 320,
+   "cpc": 20.94,
+   "competition": "MEDIUM",
+   "difficulty": 0,
+   "intent": "transactional",
+   "trend": [
+    390,
+    390,
+    320,
+    390,
+    390,
+    320
+   ],
+   "source": "backlog"
+  },
+  {
+   "keyword": "how can i record a facetime call",
+   "volume": 1900,
+   "cpc": 1.16,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1600,
+    1900,
+    1900,
+    1900,
+    1900,
+    1900
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how can i record a facetime call on iphone",
+   "volume": 480,
+   "cpc": 1.11,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    590,
+    480,
+    590,
+    480,
+    590,
+    480
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how can you record a facetime call",
+   "volume": 1900,
+   "cpc": 1.16,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1600,
+    1900,
+    1900,
+    1900,
+    1900,
+    1900
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how do i record a facetime call",
+   "volume": 1900,
+   "cpc": 1.16,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1600,
+    1900,
+    1900,
+    1900,
+    1900,
+    1900
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how do you record a facetime call",
+   "volume": 1900,
+   "cpc": 1.16,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1600,
+    1900,
+    1900,
+    1900,
+    1900,
+    1900
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how do you record a facetime call on iphone",
+   "volume": 480,
+   "cpc": 1.11,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    590,
+    480,
+    590,
+    480,
+    590,
+    480
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to convert youtube transcript to srt",
+   "volume": 10,
+   "cpc": 2.51,
+   "competition": "HIGH",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    0,
+    0,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record a facetime call",
+   "volume": 1900,
+   "cpc": 1.16,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1600,
+    1900,
+    1900,
+    1900,
+    1900,
+    1900
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record a facetime call on iphone",
+   "volume": 480,
+   "cpc": 1.11,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    590,
+    480,
+    590,
+    480,
+    590,
+    480
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record a teams meeting on mac",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record a zoom call on mac",
+   "volume": 30,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 6,
+   "intent": "informational",
+   "trend": [
+    10,
+    30,
+    30,
+    30,
+    20,
+    40
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record facetime call",
+   "volume": 1900,
+   "cpc": 1.16,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1600,
+    1900,
+    1900,
+    1900,
+    1900,
+    1900
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record microsoft teams meeting on mac",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    0,
+    0,
+    10,
+    10,
+    0,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record teams meeting on mac",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record zoom call on mac",
+   "volume": 20,
+   "cpc": 22.36,
+   "competition": "LOW",
+   "difficulty": 36,
+   "intent": "informational",
+   "trend": [
+    10,
+    20,
+    20,
+    20,
+    30,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record zoom video call on mac",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    0,
+    10,
+    0,
+    10,
+    0,
+    0
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to summarize teams meeting transcript",
+   "volume": 30,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 6,
+   "intent": "informational",
+   "trend": [
+    20,
+    20,
+    20,
+    20,
+    40,
+    50
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to summarize teams meeting transcript with copilot",
+   "volume": 30,
+   "cpc": 9.35,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    20,
+    10,
+    10,
+    30,
+    50,
+    50
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to transcribe a google meet",
+   "volume": 30,
+   "cpc": 10.21,
+   "competition": "HIGH",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    30,
+    20,
+    20,
+    40,
+    40,
+    30
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to transcribe a google meet recording",
+   "volume": 20,
+   "cpc": 15.81,
+   "competition": "HIGH",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    20,
+    10,
+    10,
+    30,
+    30,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to transcribe google meet",
+   "volume": 40,
+   "cpc": 9.41,
+   "competition": "HIGH",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    30,
+    40,
+    40,
+    40,
+    50,
+    50
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to use chatgpt to summarize meeting transcript",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    0,
+    10,
+    0,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to use copilot to summarize a meeting transcript",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "is it legal to record a call",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 32,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    20,
+    20
+   ],
+   "source": "backlog"
+  },
+  {
+   "keyword": "local ai transcription",
+   "volume": 40,
+   "cpc": 5.17,
+   "competition": "LOW",
+   "difficulty": 9,
+   "intent": "informational",
+   "trend": [
+    30,
+    30,
+    50,
+    70,
+    40,
+    30
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local ai transcription software",
+   "volume": 10,
+   "cpc": 4.51,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "commercial",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local and global regulation of transcription initiation in bacteria",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    0,
+    10,
+    0,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local audio transcription",
+   "volume": 20,
+   "cpc": 4.56,
+   "competition": "MEDIUM",
+   "difficulty": 4,
+   "intent": "informational",
+   "trend": [
+    20,
+    20,
+    30,
+    30,
+    30,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local eyes transcription",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local llm transcription",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local medical transcription jobs",
+   "volume": 10,
+   "cpc": 0.17,
+   "competition": "HIGH",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    0,
+    0
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local transcription copy of birth certificate sample",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local transcription jobs",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local transcription service",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "local transcription software",
+   "volume": 40,
+   "cpc": 5.68,
+   "competition": "MEDIUM",
+   "difficulty": 3,
+   "intent": "commercial",
+   "trend": [
+    50,
+    40,
+    70,
+    40,
+    30,
+    30
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "longest facetime call world record",
+   "volume": 880,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1300,
+    1000,
+    1000,
+    1000,
+    880,
+    880
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "macwhisper alternative",
+   "volume": 30,
+   "cpc": 4.97,
+   "competition": "MEDIUM",
+   "difficulty": 0,
+   "intent": "commercial",
+   "trend": [
+    30,
+    40,
+    40,
+    20,
+    40,
+    20
+   ],
+   "source": "backlog"
+  },
+  {
+   "keyword": "otter ai alternative",
+   "volume": 390,
+   "cpc": 12.36,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    480,
+    390,
+    390,
+    390,
+    480,
+    320
+   ],
+   "source": "backlog"
+  },
+  {
+   "keyword": "premiere pro initializing local transcription engine",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "navigational",
+   "trend": [
+    0,
+    10,
+    0,
+    0,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record a facetime call",
+   "volume": 480,
+   "cpc": 1.77,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    390,
+    390,
+    390,
+    480,
+    480,
+    480
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record a zoom call on mac",
+   "volume": 10,
+   "cpc": null,
+   "competition": "MEDIUM",
+   "difficulty": 45,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record and transcribe google meet",
+   "volume": 10,
+   "cpc": null,
+   "competition": "MEDIUM",
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record facetime call",
+   "volume": 480,
+   "cpc": 1.77,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    390,
+    390,
+    390,
+    480,
+    480,
+    480
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record google meet mac",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    0,
+    10,
+    10
+   ],
+   "source": "backlog"
+  },
+  {
+   "keyword": "record mac system audio",
+   "volume": 390,
+   "cpc": 3.48,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    320,
+    390,
+    390,
+    390,
+    390,
+    390
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record podcast interview remotely",
+   "volume": 10,
+   "cpc": null,
+   "competition": "MEDIUM",
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    10,
+    0,
+    10,
+    0,
+    10,
+    10
+   ],
+   "source": "backlog"
+  },
+  {
+   "keyword": "record system audio mac",
+   "volume": 390,
+   "cpc": 3.48,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "transactional",
+   "trend": [
+    320,
+    390,
+    390,
+    390,
+    390,
+    390
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record teams meeting mac",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": 1,
+   "intent": "navigational",
+   "trend": [
+    0,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record whatsapp call mac",
+   "volume": null,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "informational",
+   "trend": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "source": "backlog"
+  },
+  {
+   "keyword": "record zoom call on mac",
+   "volume": 10,
+   "cpc": null,
+   "competition": "MEDIUM",
+   "difficulty": 45,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "speaker diarization",
+   "volume": 880,
+   "cpc": 69.62,
+   "competition": "LOW",
+   "difficulty": 23,
+   "intent": "informational",
+   "trend": [
+    880,
+    720,
+    880,
+    1000,
+    880,
+    880
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "srt to transcript",
+   "volume": 20,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 21,
+   "intent": "informational",
+   "trend": [
+    10,
+    20,
+    20,
+    30,
+    30,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "summarize meeting transcript ai",
+   "volume": 10,
+   "cpc": 25.04,
+   "competition": "HIGH",
+   "difficulty": 40,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    0,
+    0,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "summarize meeting transcript free",
+   "volume": 20,
+   "cpc": 11.4,
+   "competition": "HIGH",
+   "difficulty": 75,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "summarize teams meeting transcript",
+   "volume": 20,
+   "cpc": 5.03,
+   "competition": "MEDIUM",
+   "difficulty": 10,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    20,
+    20,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "transcribe a google meet recording",
+   "volume": 10,
+   "cpc": 16.72,
+   "competition": "HIGH",
+   "difficulty": 19,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "transcribe google meet",
+   "volume": 70,
+   "cpc": 27.21,
+   "competition": "MEDIUM",
+   "difficulty": 4,
+   "intent": "informational",
+   "trend": [
+    50,
+    70,
+    70,
+    90,
+    70,
+    70
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "transcribe google meet recording",
+   "volume": 20,
+   "cpc": 15.79,
+   "competition": "HIGH",
+   "difficulty": 10,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    20,
+    20,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "transcribe google meet recording free",
+   "volume": 10,
+   "cpc": null,
+   "competition": null,
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    0,
+    0,
+    10,
+    10,
+    0,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "transcript to srt",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 21,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "use ai to summarize meeting transcript",
+   "volume": 10,
+   "cpc": 3.19,
+   "competition": "HIGH",
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "whisper ai transcription local",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": null,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    0
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "world record for longest facetime call",
+   "volume": 880,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    1300,
+    1000,
+    1000,
+    1000,
+    880,
+    880
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "youtube transcript to srt",
+   "volume": 10,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 50,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "youtube transcript to srt converter",
+   "volume": 10,
+   "cpc": 2.3,
+   "competition": "LOW",
+   "difficulty": 50,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "zoom audio transcription for local recording",
+   "volume": 10,
+   "cpc": 4.69,
+   "competition": "HIGH",
+   "difficulty": 1,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "ai note taker",
+   "volume": 27100,
+   "cpc": 13.61,
+   "competition": "HIGH",
+   "difficulty": 31,
+   "intent": "transactional",
+   "trend": [
+    18100,
+    18100,
+    18100,
+    22200,
+    27100,
+    27100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "ai note taking",
+   "volume": 27100,
+   "cpc": 13.61,
+   "competition": "HIGH",
+   "difficulty": 67,
+   "intent": "commercial",
+   "trend": [
+    18100,
+    18100,
+    18100,
+    22200,
+    27100,
+    27100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "ai notes taker",
+   "volume": 27100,
+   "cpc": 13.61,
+   "competition": "HIGH",
+   "difficulty": 28,
+   "intent": "transactional",
+   "trend": [
+    18100,
+    18100,
+    18100,
+    22200,
+    27100,
+    27100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "assemblyai speaker diarization",
+   "volume": 90,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "navigational",
+   "trend": [
+    320,
+    210,
+    110,
+    20,
+    110,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "audacity mac record system audio",
+   "volume": 70,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    70,
+    50,
+    70,
+    90,
+    70,
+    90
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "audacity record system audio mac",
+   "volume": 70,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "transactional",
+   "trend": [
+    70,
+    50,
+    70,
+    90,
+    70,
+    90
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "claude pricing",
+   "volume": 40500,
+   "cpc": 7.28,
+   "competition": "LOW",
+   "difficulty": 34,
+   "intent": "commercial",
+   "trend": [
+    49500,
+    60500,
+    60500,
+    74000,
+    74000,
+    49500
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "cluely",
+   "volume": 60500,
+   "cpc": 7.05,
+   "competition": "LOW",
+   "difficulty": 14,
+   "intent": "informational",
+   "trend": [
+    27100,
+    33100,
+    40500,
+    74000,
+    60500,
+    49500
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "fathom",
+   "volume": 90500,
+   "cpc": 5.49,
+   "competition": "LOW",
+   "difficulty": 47,
+   "intent": "informational",
+   "trend": [
+    90500,
+    90500,
+    110000,
+    110000,
+    90500,
+    90500
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "gong",
+   "volume": 74000,
+   "cpc": 3.17,
+   "competition": "MEDIUM",
+   "difficulty": 45,
+   "intent": "informational",
+   "trend": [
+    60500,
+    60500,
+    60500,
+    74000,
+    74000,
+    74000
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "granola ai",
+   "volume": 33100,
+   "cpc": 4.72,
+   "competition": "MEDIUM",
+   "difficulty": 11,
+   "intent": "transactional",
+   "trend": [
+    49500,
+    49500,
+    49500,
+    49500,
+    49500,
+    33100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "how to get effects on google duo",
+   "volume": 60500,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 18,
+   "intent": "informational",
+   "trend": [
+    90500,
+    90500,
+    74000,
+    74000,
+    60500,
+    49500
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "how to record mac system audio",
+   "volume": 260,
+   "cpc": 1.82,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    210,
+    210,
+    260,
+    320,
+    320,
+    260
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record system audio mac",
+   "volume": 260,
+   "cpc": 1.82,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    210,
+    210,
+    260,
+    320,
+    320,
+    260
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record system audio on mac",
+   "volume": 260,
+   "cpc": 1.82,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    210,
+    210,
+    260,
+    320,
+    320,
+    260
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to record system audio with audacity mac",
+   "volume": 70,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 1,
+   "intent": "informational",
+   "trend": [
+    70,
+    50,
+    70,
+    70,
+    90,
+    90
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "how to screen record with system audio on mac",
+   "volume": 30,
+   "cpc": 1.97,
+   "competition": "MEDIUM",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    20,
+    20,
+    20,
+    30,
+    30,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "jamie",
+   "volume": 33100,
+   "cpc": 4.07,
+   "competition": "LOW",
+   "difficulty": 11,
+   "intent": "informational",
+   "trend": [
+    27100,
+    27100,
+    33100,
+    33100,
+    33100,
+    33100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "mac audacity record system audio",
+   "volume": 70,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    70,
+    50,
+    70,
+    90,
+    70,
+    90
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "mac record screen with system audio",
+   "volume": 20,
+   "cpc": 4.63,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    20,
+    20,
+    20,
+    20,
+    20,
+    20
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "mac record system audio",
+   "volume": 50,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    30,
+    40,
+    40,
+    50,
+    50,
+    50
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "nvidia nemo speaker diarization",
+   "volume": 50,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "transactional",
+   "trend": [
+    10,
+    10,
+    140,
+    170,
+    40,
+    70
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "otter a i",
+   "volume": 165000,
+   "cpc": 1.66,
+   "competition": "MEDIUM",
+   "difficulty": 46,
+   "intent": "informational",
+   "trend": [
+    135000,
+    135000,
+    165000,
+    201000,
+    201000,
+    201000
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "otter ai",
+   "volume": 165000,
+   "cpc": 1.66,
+   "competition": "MEDIUM",
+   "difficulty": 30,
+   "intent": "informational",
+   "trend": [
+    135000,
+    135000,
+    165000,
+    201000,
+    201000,
+    201000
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "otter.ai",
+   "volume": 165000,
+   "cpc": 1.66,
+   "competition": "MEDIUM",
+   "difficulty": 56,
+   "intent": "navigational",
+   "trend": [
+    135000,
+    135000,
+    165000,
+    201000,
+    201000,
+    201000
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "pyannote-audio speaker diarization",
+   "volume": 90,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 14,
+   "intent": "informational",
+   "trend": [
+    90,
+    110,
+    70,
+    170,
+    110,
+    70
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "pyannote/speaker diarization",
+   "volume": 140,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 15,
+   "intent": "informational",
+   "trend": [
+    140,
+    210,
+    170,
+    90,
+    170,
+    140
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "pyannote/speaker diarization-community-1",
+   "volume": 70,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 7,
+   "intent": "navigational",
+   "trend": [
+    90,
+    110,
+    90,
+    110,
+    110,
+    70
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "pyannote/speaker-diarization",
+   "volume": 140,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 16,
+   "intent": "informational",
+   "trend": [
+    140,
+    210,
+    170,
+    90,
+    170,
+    140
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "read ai",
+   "volume": 27100,
+   "cpc": 2.36,
+   "competition": "MEDIUM",
+   "difficulty": 14,
+   "intent": "informational",
+   "trend": [
+    27100,
+    27100,
+    22200,
+    27100,
+    27100,
+    27100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "read.ai",
+   "volume": 27100,
+   "cpc": 2.36,
+   "competition": "MEDIUM",
+   "difficulty": 18,
+   "intent": "navigational",
+   "trend": [
+    27100,
+    27100,
+    22200,
+    27100,
+    27100,
+    27100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "record system audio audacity mac",
+   "volume": 70,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "transactional",
+   "trend": [
+    70,
+    50,
+    70,
+    90,
+    70,
+    90
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "record system audio mac audacity",
+   "volume": 70,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "transactional",
+   "trend": [
+    70,
+    50,
+    70,
+    90,
+    70,
+    90
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "screen record with system audio mac",
+   "volume": 30,
+   "cpc": 3.53,
+   "competition": "MEDIUM",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    20,
+    30,
+    40,
+    40,
+    30,
+    30
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "speaker diarization api",
+   "volume": 30,
+   "cpc": 28.48,
+   "competition": "LOW",
+   "difficulty": 23,
+   "intent": "informational",
+   "trend": [
+    20,
+    90,
+    30,
+    20,
+    30,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "speaker diarization meaning",
+   "volume": 30,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 11,
+   "intent": "informational",
+   "trend": [
+    30,
+    40,
+    40,
+    50,
+    20,
+    30
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "speaker diarization model",
+   "volume": 20,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 3,
+   "intent": "informational",
+   "trend": [
+    20,
+    30,
+    20,
+    20,
+    20,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "speaker diarization models",
+   "volume": 20,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 3,
+   "intent": "informational",
+   "trend": [
+    20,
+    10,
+    20,
+    10,
+    20,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "speaker diarization software",
+   "volume": 30,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 12,
+   "intent": "commercial",
+   "trend": [
+    10,
+    90,
+    40,
+    20,
+    20,
+    10
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "speaker diarization whisper",
+   "volume": 30,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 0,
+   "intent": "informational",
+   "trend": [
+    10,
+    10,
+    10,
+    20,
+    20,
+    30
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "turbo ai",
+   "volume": 110000,
+   "cpc": 3.85,
+   "competition": "LOW",
+   "difficulty": 15,
+   "intent": "transactional",
+   "trend": [
+    18100,
+    27100,
+    74000,
+    90500,
+    110000,
+    165000
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "user interviews",
+   "volume": 49500,
+   "cpc": 5.36,
+   "competition": "LOW",
+   "difficulty": 27,
+   "intent": "informational",
+   "trend": [
+    60500,
+    60500,
+    60500,
+    49500,
+    49500,
+    40500
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "w f h meaning",
+   "volume": 33100,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 1,
+   "intent": "informational",
+   "trend": [
+    33100,
+    33100,
+    33100,
+    40500,
+    33100,
+    33100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "wfh meaning",
+   "volume": 33100,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 2,
+   "intent": "informational",
+   "trend": [
+    33100,
+    33100,
+    33100,
+    40500,
+    33100,
+    33100
+   ],
+   "source": "competitor"
+  },
+  {
+   "keyword": "what is speaker diarization",
+   "volume": 90,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 8,
+   "intent": "informational",
+   "trend": [
+    110,
+    90,
+    90,
+    110,
+    70,
+    90
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "whisper speaker diarization",
+   "volume": 50,
+   "cpc": 10.6,
+   "competition": "LOW",
+   "difficulty": 2,
+   "intent": "informational",
+   "trend": [
+    30,
+    20,
+    30,
+    50,
+    50,
+    70
+   ],
+   "source": "suggestion"
+  },
+  {
+   "keyword": "zoom test",
+   "volume": 27100,
+   "cpc": null,
+   "competition": "LOW",
+   "difficulty": 13,
+   "intent": "informational",
+   "trend": [
+    27100,
+    27100,
+    27100,
+    27100,
+    33100,
+    27100
+   ],
+   "source": "competitor"
+  }
+ ]
+}
