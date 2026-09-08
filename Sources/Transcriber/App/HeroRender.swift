@@ -66,7 +66,10 @@ enum HeroRender {
         let g = CGGradient(colorsSpace: sRGB, colors: [rgb(0xf4, 0xf5, 0xf8), rgb(0xe3, 0xe6, 0xec)] as CFArray, locations: [0, 1])!
         ctx.drawLinearGradient(g, start: CGPoint(x: 0, y: H), end: CGPoint(x: W, y: 0), options: [])
 
-        let menuH = 24 * scale
+        // The menu bar is as tall as the real one (24 pt); the pill is drawn at its rendered size but
+        // never taller than the bar, exactly like the status item in the menu bar.
+        let pillSize0 = CGSize(width: CGFloat(pillImg.width), height: CGFloat(pillImg.height))
+        let menuH = max(24 * scale, pillSize0.height + 4 * scale)
         ctx.setFillColor(rgb(255, 255, 255, 0.55)); ctx.fill(CGRect(x: 0, y: H - menuH, width: W, height: menuH))
         ctx.setFillColor(rgb(0, 0, 0, 0.10)); ctx.fill(CGRect(x: 0, y: H - menuH, width: W, height: 1.5 * scale / 2))
         // faint placeholders for other menu bar items to the right of the pill
