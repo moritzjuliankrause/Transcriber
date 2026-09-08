@@ -125,17 +125,37 @@ final class SystemAudioCapture {
         aggregateID = newAggregateID
 
         // 4. Install an IOProc that receives the tapped audio as input.
+        // The tap's buffers are the last ones in the input list: 1 for interleaved audio,
+        // one per channel otherwise.
+        let tapBufferCount = format.isInterleaved ? 1 : Int(format.channelCount)
         let procStatus = AudioDeviceCreateIOProcIDWithBlock(&ioProcID, aggregateID, options.useQueue ? queue : nil) { [weak self] _, inInputData, _, _, _ in
             guard let self, let format = self.tapFormat else { return }
             let hostTime = mach_absolute_time()
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, bufferListNoCopy: inInputData, deallocator: nil) else {
+            // The aggregate's input side lists the output device's own input streams first (a USB
+            // interface such as a Scarlett has microphone inputs; built-in speakers have none), then
+            // the tap. Using the whole list as-is would read the interface's silent inputs.
+            let all = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inInputData))
+            let total = all.count
+            let tapBuffers: UnsafeMutablePointer<AudioBufferList>
+            var owned: UnsafeMutablePointer<AudioBufferList>?
+            if total > tapBufferCount {
+                let list = AudioBufferList.allocate(maximumBuffers: tapBufferCount)
+                for (i, index) in ((total - tapBufferCount)..<total).enumerated() { list[i] = all[index] }
+                tapBuffers = list.unsafeMutablePointer
+                owned = tapBuffers
+            } else {
+                tapBuffers = UnsafeMutablePointer(mutating: inInputData)
+            }
+            defer { owned?.deallocate() }
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, bufferListNoCopy: tapBuffers, deallocator: nil) else {
                 AppLog.write("SystemAudioCapture: could not wrap buffer list")
                 return
             }
             let samples = self.resampler.convert(buffer)
             self.callbackCount += 1
             if self.callbackCount == 1 {
-                AppLog.write("SystemAudioCapture: first callback, \(buffer.frameLength) frames → \(samples.count) samples at 16 kHz")
+                let channels = (0..<total).map { "\(all[$0].mNumberChannels)ch" }.joined(separator: ",")
+                AppLog.write("SystemAudioCapture: first callback, \(total) input buffer(s) [\(channels)], using the last \(tapBufferCount); \(buffer.frameLength) frames → \(samples.count) samples at 16 kHz")
             }
             self.handler(samples, hostTime)
         }
