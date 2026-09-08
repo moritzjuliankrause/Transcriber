@@ -17,7 +17,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   title: How to record a Microsoft Teams meeting on a Mac and get a transcript
   keyword: record teams meeting mac
   angle: Teams is the corporate default and its own recording depends on admin policy; local recording works regardless. Same structure as the Zoom post, Teams-specific quirks (recording policy, Teams in the browser vs the app).
-  status: todo
+  status: drafted 2026-09-08
 
 - slug: record-google-meet-mac-transcript
   type: guide
