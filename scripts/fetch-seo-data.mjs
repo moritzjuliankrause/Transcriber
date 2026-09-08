@@ -24,6 +24,9 @@ const save = (name, data) => { writeFileSync(join(OUT, name), JSON.stringify({ f
 const SEEDS = ['record zoom call mac', 'record teams meeting mac', 'transcribe google meet', 'record facetime call', 'meeting transcription without bot', 'offline transcription mac', 'local transcription', 'summarize meeting transcript', 'transcript to srt', 'call transcription app mac', 'record system audio mac', 'speaker diarization'];
 const COMPETITORS = ['otter.ai', 'fireflies.ai', 'tldv.io', 'fathom.video', 'granola.ai', 'krisp.ai', 'goodsnooze.gumroad.com'];
 
+// Relevance filter for candidates: competitor domains rank for their own brand and for unrelated terms.
+const TOPIC = /\b(record|recording|transcri|meeting|call|calls|note|notes|audio|speaker|diariz|subtitle|srt|summar|zoom|teams|meet|facetime|whatsapp|webex|discord|slack|huddle|mac|macos|offline|local|privacy|gdpr|alternative|alternatives|vs|dictat|voice|interview|podcast)\b/i;
+const relevant = k => TOPIC.test(k);
 const backlog = existsSync(join(ROOT, 'website/blog/BACKLOG.md')) ? [...readFileSync(join(ROOT, 'website/blog/BACKLOG.md'), 'utf8').matchAll(/^\s+keyword: (.+)$/gm)].map(m => m[1].trim()) : [];
 const shipped = existsSync(join(ROOT, 'keywords/shipped.json')) ? Object.keys(JSON.parse(readFileSync(join(ROOT, 'keywords/shipped.json'), 'utf8'))) : [];
 
@@ -45,10 +48,10 @@ if (process.env.DATAFORSEO_AUTH) {
   for (const d of Object.values(prev)) for (const k of (d.keywords || []).slice(0, 20)) if (k.keyword) pool.set(k.keyword.toLowerCase(), 'competitor');
   const kws = [...pool.keys()].slice(0, 300);
   const overview = [];
-  for (let i = 0; i < kws.length; i += 100) { const r = run('dataforseo.mjs', ['overview', ...kws.slice(i, i + 100)]); if (r) overview.push(...r.map(x => ({ ...x, source: pool.get(x.keyword.toLowerCase()) }))); }
+  for (let i = 0; i < kws.length; i += 100) { const r = run('dataforseo.mjs', ['overview', ...kws.slice(i, i + 100)]); if (r) overview.push(...r.map(x => ({ ...x, source: pool.get(x.keyword.toLowerCase()), relevant: relevant(x.keyword) }))); }
   save('overview.json', { keywords: overview });
 
-  const candidates = overview.filter(k => k.volume >= 20 && (k.difficulty ?? 0) <= 30 && !shipped.includes(k.keyword.toLowerCase())).sort((a, b) => b.volume - a.volume).slice(0, 12);
+  const candidates = overview.filter(k => k.relevant && k.volume >= 20 && (k.difficulty ?? 0) <= 30 && !shipped.includes(k.keyword.toLowerCase()) && !COMPETITORS.some(d => k.keyword.toLowerCase().replace(/\s+/g, '').includes(d.split('.')[0]))).sort((a, b) => b.volume - a.volume).slice(0, 12);
   const serp = {};
   for (const c of candidates) { const r = run('dataforseo.mjs', ['serp', c.keyword]); if (r) serp[c.keyword] = r; }
   save('serp.json', { candidates: candidates.map(c => c.keyword), results: serp });
