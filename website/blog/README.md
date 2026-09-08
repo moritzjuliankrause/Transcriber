@@ -50,7 +50,8 @@ Then the body. The first paragraph answers the title directly, H2s are phrased a
 that sounds natural, prose before lists, FAQ goes in the frontmatter (not in the body), and the
 closing paragraph is rendered from `cta` / `ctaText`, so don't write a sales ending in the body.
 No H1 in the body: the title is the H1. Voice and banned words: `VOICE.md` and `writing-rules.md`
-in the SEO folder. The build refuses en/em dashes.
+in the SEO folder, then `website/blog/EDITOR-LEARNINGS.md`, which holds the rules learned from
+Moritz's edits and wins where they conflict. The build refuses en/em dashes.
 
 Supported Markdown: `##`/`###` headings, paragraphs, `**bold**`, `*italic*`, `` `code` ``, links,
 `![alt](img/<slug>/name.webp "optional caption")`, `-` and `1.` lists, `>` quotes, fenced code,
@@ -76,12 +77,16 @@ the feed and the sitemap are built from it.
 2. The GitHub workflow `.github/workflows/blog-publish.yml` rebuilds. The draft appears at
    `/blog/preview/<slug>/` (noindex) once the site deploys, and `notify-slack.mjs` posts it to
    Slack with the preview link and two buttons.
-3. Clicking **Approve and publish** calls the Cloudflare Worker, which verifies Slack's signature
+3. To change something first, click **Edit on GitHub**, edit the Markdown in the browser and commit
+   to `main`. The push rebuilds the preview (no new Slack message, the file is not new). Then approve.
+4. Clicking **Approve and publish** calls the Cloudflare Worker, which verifies Slack's signature
    and sends `repository_dispatch: approve-post {slug}` to GitHub. The workflow sets
    `draft: false`, stamps the date if missing, rebuilds, and commits. The post is now at
    `/blog/<slug>/`, in the index, the feed and the sitemap. The Slack message updates itself with
-   who approved it.
-4. **Reject** renames the file to `<slug>.md.rejected` so it drops out of the build but stays in git.
+   who approved it. The same run saves the original draft, the approved version and their diff to
+   `blog-reviews/<slug>/`, and the writer turns those edits into rules in `EDITOR-LEARNINGS.md`
+   before the next post (see `blog-reviews/README.md`).
+5. **Reject** renames the file to `<slug>.md.rejected` so it drops out of the build but stays in git.
 
 Both actions also exist under Actions › Blog › Run workflow, for approving without Slack.
 

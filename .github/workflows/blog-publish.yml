@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -60,6 +60,20 @@ jobs:
         run: |
           f="website/blog/posts/${{ steps.act.outputs.slug }}.md"
           test -f "$f" || { echo "no such draft: $f"; exit 1; }
+          # Snapshot the writer's original draft next to the approved version, so the writer can
+          # learn from Moritz's edits (see blog-reviews/README.md). Original = the commit that added the file.
+          slug="${{ steps.act.outputs.slug }}"
+          added=$(git log --diff-filter=A --format=%H -- "$f" | tail -1)
+          if [ -n "$added" ]; then
+            d="blog-reviews/$slug"; mkdir -p "$d"
+            git show "$added:$f" > "$d/original.md"
+            cp "$f" "$d/final.md"
+            git diff --no-index --no-color "$d/original.md" "$d/final.md" > "$d/changes.diff" || true
+            edits=$(git log --format='%an' "$added"..HEAD -- "$f" | sort -u | tr '\n' ',' | sed 's/,$//')
+            printf '{"slug":"%s","draftCommit":"%s","approved":"%s","editedBy":"%s","learned":false}\n' \
+              "$slug" "$added" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$edits" > "$d/status.json"
+            if cmp -s "$d/original.md" "$d/final.md"; then echo "approved unchanged"; else echo "approved with edits, review saved to $d"; fi
+          fi
           today=$(date -u +%Y-%m-%d)
           # draft: true -> false; add a date if the draft has none
           if grep -qE '^draft:' "$f"; then sed -i -E 's/^draft:.*/draft: false/' "$f"; else sed -i '2i draft: false' "$f"; fi
@@ -81,7 +95,7 @@ jobs:
         run: |
           git config user.name "blog-bot"
           git config user.email "blog-bot@users.noreply.github.com"
-          git add -A website/blog
+          git add -A website/blog blog-reviews
           if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
           case "${{ steps.act.outputs.action }}" in
             approve) msg="Publish blog post: ${{ steps.act.outputs.slug }}";;
