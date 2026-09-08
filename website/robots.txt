@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /blog/preview/
+
+# AI crawlers are welcome. The plain-text summary for them is at /llms.txt
+User-agent: GPTBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://moritz-krause.com/transcriber/sitemap.xml
