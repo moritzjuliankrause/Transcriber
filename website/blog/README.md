@@ -19,8 +19,7 @@ website/
 └── scripts/
     ├── build-blog.mjs          renders everything above. Node 22, no dependencies.
     ├── notify-slack.mjs        posts a draft to Slack with Approve / Request changes / Edit / Reject buttons
-    ├── slack-approve-worker.js Cloudflare Worker that turns a button click into a GitHub dispatch
-    └── make-hero.swift         renders a 16:9 hero image in the app's design (menu bar pill + transcript bar)
+    └── slack-approve-worker.js Cloudflare Worker that turns a button click into a GitHub dispatch
 ```
 
 ## Writing a post
@@ -60,9 +59,21 @@ tables (`| a | b |`, they stack into cards on phones), `---`.
 
 Facts about Transcriber come from the app's README only. If it's not in there, it doesn't go in a post.
 
-Hero images: a real screenshot when there is something real to show, otherwise render one in the
-app's design: `swift website/scripts/make-hero.swift out.png "Anna: line" "Me: line" "Anna: line" 12:34`,
-then convert to WebP (1600x900, quality ~82) into `img/<slug>/hero.webp`.
+Hero images are rendered by the app itself from its real UI code (`--render-hero`, see
+`Sources/Transcriber/App/HeroRender.swift`), so they look exactly like the menu bar pill and the
+floating bar:
+
+```sh
+swift build -c release
+.build/release/Transcriber --render-hero out.png --timer 12:34 --caption "Text under the bar" --sub "smaller line" \
+  "Anna: first line" "Me: second line" "Anna: third line"
+```
+
+Then convert to WebP, 1600x900, quality about 82, into `img/<slug>/hero.webp`. A real screenshot
+of a real call is still better when there is one.
+
+Every post automatically gets the AI disclaimer from `aiNote` in `config.json` under the closing
+paragraph. Do not write your own disclaimer into the body.
 
 ## Building
 

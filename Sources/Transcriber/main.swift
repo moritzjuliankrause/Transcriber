@@ -12,6 +12,10 @@ if CommandLine.arguments.contains("--capture-test") {
     let code = await CaptureTest.run(arguments: CommandLine.arguments)
     exit(code)
 }
+if CommandLine.arguments.contains("--render-hero") {
+    let code = await HeroRender.run(arguments: CommandLine.arguments)
+    exit(code)
+}
 if CommandLine.arguments.contains("--transcribe") {
     let code = await HeadlessTranscribe.run(arguments: CommandLine.arguments)
     exit(code)

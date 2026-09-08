@@ -60,6 +60,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let name = i + 1 < CommandLine.arguments.count ? CommandLine.arguments[i + 1] : ""
             showSettings(section: SettingsView.Section.allCases.first { $0.rawValue.lowercased() == name.lowercased() })
         }
+        // Development aid: `Transcriber --start` begins recording right after launch.
+        if CommandLine.arguments.contains("--start") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.toggleRecording() }
+        }
         // Development aid: `Transcriber --title-test` shows the bar's save prompt right away.
         if CommandLine.arguments.contains("--title-test") {
             Task { @MainActor in
