@@ -7,6 +7,13 @@
   <description>Notes on recording and transcribing calls on a Mac.</description>
   <language>en</language>
   <item>
+    <title>How Transcriber works, from audio tap to transcript file</title>
+    <link>https://transcriber-x84.pages.dev/blog/how-transcriber-works/</link>
+    <guid isPermaLink="true">https://transcriber-x84.pages.dev/blog/how-transcriber-works/</guid>
+    <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
+    <description>How Transcriber records both sides of a call on a Mac, transcribes them locally and tells speakers apart, explained step by step with the limits included.</description>
+  </item>
+  <item>
     <title>How to record a Zoom call on a Mac and get a transcript</title>
     <link>https://transcriber-x84.pages.dev/blog/record-zoom-call-mac-transcript/</link>
     <guid isPermaLink="true">https://transcriber-x84.pages.dev/blog/record-zoom-call-mac-transcript/</guid>

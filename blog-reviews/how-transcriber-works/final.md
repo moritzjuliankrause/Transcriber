@@ -1,5 +1,4 @@
 ---
-date: 2026-09-08
 title: How Transcriber works, from audio tap to transcript file
 description: How Transcriber records both sides of a call on a Mac, transcribes them locally and tells speakers apart, explained step by step with the limits included.
 author: Moritz Krause
@@ -7,7 +6,7 @@ keyword: how transcriber works
 keywords: [how transcriber works, mac call transcription local, system audio tap macos, speaker diarization call]
 hero: img/how-transcriber-works/hero.webp
 heroAlt: how transcriber works, the live transcript bar showing two channels labelled by speaker
-draft: false
+draft: true
 faq:
   - q: Does it work with every app?
     a: With every app that plays audio through the Mac. Zoom, Teams, Google Meet, WhatsApp, FaceTime, a call in a browser tab and a YouTube video are all the same to it.

@@ -1,0 +1,39 @@
+diff --git a/blog-reviews/how-transcriber-works/original.md b/blog-reviews/how-transcriber-works/final.md
+index a09a3d4..915e75d 100644
+--- a/blog-reviews/how-transcriber-works/original.md
++++ b/blog-reviews/how-transcriber-works/final.md
+@@ -22,11 +22,11 @@ faq:
+     a: macOS 14.2 is the requirement. The transcription models run much better on Apple Silicon, so that is what I recommend.
+ ---
+ 
+-Transcriber records two audio streams on your Mac, the microphone and the system output, transcribes each one locally with a downloaded model, and writes the result to a folder while the call is still going. Speakers are separated because the two streams already are: what the microphone hears is you, what the speakers play is everyone else. This post walks through each step, including the parts that are still rough.
++Transcriber records two audio streams on your Mac, the microphone and the system output, transcribes each one locally with a downloaded model, and writes the result to a folder while the call is still going. Different speakers are already separated: what the microphone hears is you, what the speakers play is everyone else. This post walks through each step, including the parts that are still rough.
+ 
+ ## Where does the audio come from?
+ 
+-From two places that macOS treats very differently. Your own voice arrives through the microphone, which any app can record after you allow it once. The other participants arrive as sound that Zoom, Teams or a browser sends to your speakers, and for years there was no clean way for another app to listen to that. People installed virtual audio drivers, which worked until the next macOS update.
++From two places that macOS treats very differently. Your own voice arrives through the microphone, which any app can record after you allow it once. The other participants arrive as sound that Zoom, Teams, WhatsApp or a browser sends to your speakers, and for years there was no clean way for another app to listen to that. People installed virtual audio drivers, which worked until the next macOS update.
+ 
+ Since macOS 14.2 Apple provides a system audio tap. An app can ask to listen to what other processes play, you grant it once under System Settings, Privacy & Security, and from then on the far end of a call is just another input. Transcriber opens that tap for the system side and your normal input device for your side. Both run in parallel and each one is written to its own WAV file at 16 kHz, flushed every two seconds.
+ 
+@@ -40,9 +40,9 @@ Each channel is fed through voice activity detection, which cuts the stream into
+ 
+ ## How does it know who said what?
+ 
+-The first split is free. Everything from the microphone channel gets your name, which you set in Settings, and everything from the system channel is the other side. For a one-on-one call that is already the whole answer.
++The first split is naturally free and already in place: Everything from the microphone channel gets your name, which you set in Settings, and everything from the system channel is the other side. For a one-on-one call that is already the whole answer.
+ 
+-When several people are on the far end, the diarization step runs over the system channel after the call. It listens for distinct voices and splits the channel into Speaker 1, Speaker 2 and so on. What it can't do is know their names, because there is no meeting platform telling it who is who. You get labels, and you rename them if you need to.
++When several people are on the far end, the diarization step runs over the system channel after the call. It listens for distinct voices and splits the channel into Speaker 1, Speaker 2 and so on. What it can't do is know their names, because there is no meeting platform telling it who is who. You get labels, and you rename them if you need to (there is an experimental feature which could figure out the names live during the call, but yeah, experimental).
+ 
+ ## What about echo?
+ 
+@@ -60,6 +60,6 @@ You click the menu bar dot again, or press the global shortcut, and Transcriber
+ 
+ ## Where is it rough?
+ 
+-The transcript is a machine transcript. Names, product codes and heavy accents want a read-through. Speaker labels on the far end are labels, not names. The app is signed with a personal certificate rather than a Developer ID, so macOS asks you to confirm the first launch, and permissions are tied to that signature. And it only runs on a Mac, because the whole approach depends on the macOS audio tap.
++The transcript is a machine transcript. Names, product codes and heavy accents want a read-through. Speaker labels on the far end are labels, not names. And it only runs on a Mac, because the whole approach depends on the macOS audio tap.
+ 
+-For a look at the same mechanics from the user's side, the post on [recording a Zoom call on a Mac](https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/) shows what a recording looks like start to finish.
++For a look at the same mechanics from the user's side, the post on [recording a Zoom call on a Mac](/blog/record-zoom-call-mac-transcript/) shows what a recording looks like start to finish.
