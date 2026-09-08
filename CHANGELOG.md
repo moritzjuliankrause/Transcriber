@@ -3,6 +3,9 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.3.5 (2026-09-08)
+- What's New window (Settings → General → Show Changes) listing every version and its changes
+
 ## 0.3.4 (2026-09-08)
 - About section in Settings → General with links to the GitHub repository, issue reporting and GitHub Sponsors
 

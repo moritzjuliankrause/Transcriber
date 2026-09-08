@@ -23,7 +23,8 @@ if ! grep -q "^## $VERSION " CHANGELOG.md; then
     [ -z "$line" ] && continue
     case "$line" in -*) ENTRY+="$line"$'\n' ;; *) ENTRY+="- $line"$'\n' ;; esac
   done <<< "$NOTES"
-  awk -v entry="$ENTRY" 'BEGIN{done=0} /^## / && !done {print entry; done=1} {print}' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+  N=$(grep -n '^## ' CHANGELOG.md | head -1 | cut -d: -f1)
+  { head -n $((N - 1)) CHANGELOG.md; printf '%s\n' "$ENTRY"; tail -n +"$N" CHANGELOG.md; } > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
 fi
 git add Resources/Info.plist CHANGELOG.md
 git commit -q -m "Release $VERSION"
