@@ -22,9 +22,7 @@ faq:
     a: macOS 14.2 or newer, because that's where the system audio tap arrived. An Apple Silicon Mac is recommended for the transcription models.
 ---
 
-You can record a meeting without a bot by recording it on your own machine instead of inside the meeting. Transcriber does this on a Mac: it captures your microphone and the sound the other participants make through your speakers, transcribes both locally, and writes the transcript to a folder while the call is still running. Nobody sees a "Recorder" tile, the host doesn't have to allow anything, and no audio leaves your computer.
-
-This post explains why bots exist in the first place, how recording on your own Mac replaces them, and where that approach has real limits.
+You can record a meeting without a bot by recording it on your own Mac instead of inside the meeting: Transcriber captures your microphone and the sound the other participants make through your speakers, transcribes both locally, and writes the transcript to a folder while the call is still running. Nobody sees a "Recorder" tile, the host doesn't have to allow anything, and no audio leaves your computer.
 
 ## Why do meeting tools use a bot at all?
 
@@ -62,4 +60,4 @@ And the transcription runs on your hardware, so an Apple Silicon Mac is recommen
 
 ## Is it legal to record without telling anyone?
 
-In many places it isn't. Germany's § 201 StGB makes recording a conversation without consent a crime, and other countries have similar rules. The absence of a bot removes the visual reminder, which makes it more important, not less, to say at the start that you're recording. Transcriber shows a consent notice for that reason. Say the sentence, then press record.
+In many places it isn't. Germany's § 201 StGB makes recording a conversation without consent a crime, and other countries have similar rules. The absence of a bot removes the visual reminder, which makes it more important, not less, to say at the start that you're recording. Say the sentence, then press record.
