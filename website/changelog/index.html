@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Transcriber Blog</title>
-<meta name="description" content="Notes on recording and transcribing calls on a Mac.">
-<link rel="canonical" href="https://gettranscriber.com/blog/">
+<title>Transcriber changelog: every macOS release</title>
+<meta name="description" content="All releases of Transcriber for macOS with their notes and downloads, newest first.">
+<link rel="canonical" href="https://gettranscriber.com/changelog/">
 
 <link rel="alternate" type="application/rss+xml" title="Transcriber Blog" href="https://gettranscriber.com/blog/feed.xml">
 <meta property="og:site_name" content="Transcriber">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Transcriber Blog">
-<meta property="og:description" content="Notes on recording and transcribing calls on a Mac.">
-<meta property="og:url" content="https://gettranscriber.com/blog/">
+<meta property="og:title" content="Transcriber changelog">
+<meta property="og:description" content="All releases of Transcriber for macOS with their notes and downloads, newest first.">
+<meta property="og:url" content="https://gettranscriber.com/changelog/">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -165,7 +165,7 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
 .release .meta { color: var(--muted, #767b8a); font-size: 14px; margin: -6px 0 14px; }
 </style>
 
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Blog","name":"Transcriber Blog","url":"https://gettranscriber.com/blog/","description":"Notes on recording and transcribing calls on a Mac.","publisher":{"@type":"Organization","name":"Transcriber","url":"https://gettranscriber.com"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Transcriber","operatingSystem":"macOS 14.2 or newer","applicationCategory":"BusinessApplication","url":"https://gettranscriber.com","downloadUrl":"https://gettranscriber.com/download","softwareVersion":"0.3.7","dateModified":"2026-09-08T08:02:51Z","releaseNotes":"https://gettranscriber.com/changelog/"}</script>
 </head>
 <body>
 <nav>
@@ -176,36 +176,96 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
   <a class="btn sm" href="https://gettranscriber.com/download">Download</a>
 </nav>
 
-<main class="index">
+<main class="article">
   <header class="head">
-    <h1>Transcriber Blog</h1>
-    <p class="lede">Notes on recording and transcribing calls on a Mac.</p>
+    <p class="crumbs"><a href="../">Transcriber</a></p>
+    <h1>Changelog</h1>
+    <p class="lede">Every release of Transcriber for macOS, newest first. The app checks for these once a day and can install them itself.</p>
   </header>
-  <ul class="posts">
-    <li>
-      <a href="how-transcriber-works/">
-        <span class="date">September 8, 2026</span>
-        <span class="title">How Transcriber works, from audio tap to transcript file</span>
-        <span class="desc">How Transcriber records both sides of a call on a Mac, transcribes them locally and tells speakers apart, explained step by step with the limits included.</span>
-        <span class="read">4 min read</span>
-      </a>
-    </li>
-    <li>
-      <a href="record-zoom-call-mac-transcript/">
-        <span class="date">September 8, 2026</span>
-        <span class="title">How to record a Zoom call on a Mac and get a transcript</span>
-        <span class="desc">Record a Zoom call on your Mac, with both sides of the conversation, and turn it into a transcript without sending the audio anywhere.</span>
-        <span class="read">4 min read</span>
-      </a>
-    </li>
-    <li>
-      <a href="transcriber-privacy-what-leaves-your-mac/">
-        <span class="date">September 8, 2026</span>
-        <span class="title">What leaves your Mac when Transcriber records a call</span>
-        <span class="desc">Transcriber privacy in detail. Which network requests the app makes, where audio and transcripts are stored, and what to tell the people on the call.</span>
-        <span class="read">3 min read</span>
-      </a>
-    </li></ul>
+  
+  <section class="release" id="v0.3.7">
+    <h2>Transcriber 0.3.7</h2>
+    <p class="meta"><time datetime="2026-09-08T08:02:51Z">September 8, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.3.7/Transcriber-0.3.7.zip">Transcriber-0.3.7.zip</a></p>
+    <p>The close button of the Settings and What's New windows sits on the left, like the traffic lights.</p>
+  </section>
+  <section class="release" id="v0.3.6">
+    <h2>Transcriber 0.3.6</h2>
+    <p class="meta"><time datetime="2026-09-08T07:55:00Z">September 8, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.3.6/Transcriber-0.3.6.zip">Transcriber-0.3.6.zip</a></p>
+    <p>System audio capture now works when the output device is a USB audio interface with its own inputs (e.g. Focusrite Scarlett): the tap's stream is read instead of the interface's silent input channels.</p>
+  </section>
+  <section class="release" id="v0.3.5">
+    <h2>Transcriber 0.3.5</h2>
+    <p class="meta"><time datetime="2026-09-08T07:25:40Z">September 8, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.3.5/Transcriber-0.3.5.zip">Transcriber-0.3.5.zip</a></p>
+    <p>New What's New window (Settings → General → Show Changes) listing every version and its changes.</p>
+  </section>
+  <section class="release" id="v0.3.4">
+    <h2>Transcriber 0.3.4</h2>
+    <p class="meta"><time datetime="2026-09-08T07:22:35Z">September 8, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.3.4/Transcriber-0.3.4.zip">Transcriber-0.3.4.zip</a></p>
+    <p>Settings → General gains an About section with links to the GitHub repository, issue reporting and GitHub Sponsors.</p>
+  </section>
+  <section class="release" id="v0.3.3">
+    <h2>Transcriber 0.3.3</h2>
+    <p class="meta"><time datetime="2026-09-08T07:10:32Z">September 8, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.3.3/Transcriber-0.3.3.zip">Transcriber-0.3.3.zip</a></p>
+    <p>Fixes a recording start failure (coreaudio error -10868) after Apple voice processing falls back to plain capture, and removes the dark rectangle that could linger behind the floating bar after the save prompt.</p>
+  </section>
+  <section class="release" id="v0.3.2">
+    <h2>Transcriber 0.3.2</h2>
+    <p class="meta"><time datetime="2026-09-08T04:33:51Z">September 8, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.3.2/Transcriber-0.3.2.zip">Transcriber-0.3.2.zip</a></p>
+    <p>Copy Prompt no longer resizes the template field and shows a short “Prompt copied” pill instead.</p>
+  </section>
+  <section class="release" id="v0.3.1">
+    <h2>Transcriber 0.3.1</h2>
+    <p class="meta"><time datetime="2026-09-08T04:29:57Z">September 8, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.3.1/Transcriber-0.3.1.zip">Transcriber-0.3.1.zip</a></p>
+    <p>Adds a Copy Prompt button below the prompt template in Settings → AI.</p>
+  </section>
+  <section class="release" id="v0.3.0">
+    <h2>Transcriber 0.3.0</h2>
+    <p class="meta"><time datetime="2026-09-08T04:24:02Z">September 8, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.3.0/Transcriber-0.3.0.zip">Transcriber-0.3.0.zip</a></p>
+    <p>Redesigned Settings window with light and dark mode (new Theme setting under General). The recording title is now entered directly in the floating bar, which morphs into a save prompt after stopping; all bar buttons are pill-shaped.</p>
+  </section>
+  <section class="release" id="v0.2.4">
+    <h2>Transcriber 0.2.4</h2>
+    <p class="meta"><time datetime="2026-09-07T21:09:55Z">September 7, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.2.4/Transcriber-0.2.4.zip">Transcriber-0.2.4.zip</a></p>
+    <p>Security hardening release.</p>
+<ul><li><strong>Verified updates:</strong> the built-in updater now checks that a downloaded update is signed by the same identity as the installed app before installing it, and no longer removes the quarantine flag. Ad-hoc signed builds cannot self-update; sign with a stable identity (see README).</li><li><strong>Private clipboard hand-off:</strong> when a transcript is handed to your AI tool, it is marked as concealed/transient on the clipboard (skipped by clipboard managers and Universal Clipboard) and cleared shortly after the automatic paste.</li><li><strong>Hardened runtime:</strong> the app is signed with the hardened runtime and the unused library-validation bypass entitlement is gone.</li><li><strong>Logs</strong> no longer contain transcript fragments or guessed speaker names.</li><li>Relaunch after an update no longer goes through a shell.</li></ul>
+<p>No changes to recording, transcription or output formats.</p>
+  </section>
+  <section class="release" id="v0.2.3">
+    <h2>Transcriber 0.2.3</h2>
+    <p class="meta"><time datetime="2026-09-07T20:17:22Z">September 7, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.2.3/Transcriber-0.2.3.zip">Transcriber-0.2.3.zip</a></p>
+    <p>On first launch Transcriber now offers to download the speech models right away instead of at the start of the first recording. The automatic update check interval is configurable in Settings: never, every launch, daily, weekly or monthly.</p>
+  </section>
+  <section class="release" id="v0.2.2">
+    <h2>Transcriber 0.2.2</h2>
+    <p class="meta"><time datetime="2026-09-07T19:56:09Z">September 7, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.2.2/Transcriber-0.2.2.zip">Transcriber-0.2.2.zip</a></p>
+    <p>New update window in the style of the Settings window: app icon, installed and available version, full release notes and an Install and Relaunch button, replacing the small popup. Checking, up-to-date and error states use the same window.</p>
+  </section>
+  <section class="release" id="v0.2.1">
+    <h2>Transcriber 0.2.1</h2>
+    <p class="meta"><time datetime="2026-09-07T19:48:35Z">September 7, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.2.1/Transcriber-0.2.1.zip">Transcriber-0.2.1.zip</a></p>
+    <p>Fixes: the Name-this-recording dialog could get stuck when a recording was started while the previous one was still being saved. The floating bar no longer shows a faint rectangular backing on some Macs. The menu bar icon is white on a dark menu bar. Quitting during a recording no longer hangs for 15 seconds.</p>
+  </section>
+  <section class="release" id="v0.2.0">
+    <h2>Transcriber 0.2.0</h2>
+    <p class="meta"><time datetime="2026-09-07T18:54:04Z">September 7, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.2.0/Transcriber-0.2.0.zip">Transcriber-0.2.0.zip</a></p>
+    <h2 id="transcriber-0-2-0">Transcriber 0.2.0</h2>
+<p>The app is now called <strong>Transcriber</strong> (repository renamed from AnyRecord; existing installs keep updating).</p>
+<h3 id="live-transcript-bar">Live transcript bar</h3>
+<ul><li>Calm, stable text: words never jump lines or repeat, speaker names only when the speaker really changes</li><li>Echo of the far end no longer shows up under your name; wrongly shown words are taken back</li><li>The bar morphs: compact pill while loading / paused, full width with text, and it turns into the &quot;Stop recording?&quot; confirmation when you click the menu bar icon</li></ul>
+<h3 id="faster-start">Faster start</h3>
+<ul><li>Speech and VAD models are loaded once at launch and kept in memory – recording starts immediately instead of after &quot;Loading models…&quot;</li></ul>
+<h3 id="menu-bar">Menu bar</h3>
+<ul><li>New glyph after the app icon; pulses red while recording</li><li>Smoother expand / collapse animation</li><li>Stop confirmation instead of stopping on a stray click</li></ul>
+<h3 id="ai-hand-off">AI hand-off</h3>
+<ul><li>transcript.md is attached as a file, the prompt is pasted as text</li><li>New default prompt: meeting type, summary, to-dos by person and urgency, open questions</li></ul>
+<h3 id="other">Other</h3>
+<ul><li>&quot;Open Last Transcript&quot; reveals the file in Finder and opens Quick Look</li><li>Experimental: guess remote speakers' names from the conversation (&quot;[Anna]&quot;)</li><li>Redesigned Settings; options for Dock icon and app-wide sound effects</li><li>Title dialog focuses its text field</li></ul>
+  </section>
+  <section class="release" id="v0.1.1">
+    <h2>AnyRecord 0.1.1</h2>
+    <p class="meta"><time datetime="2026-09-07T12:07:05Z">September 7, 2026</time> · <a href="https://github.com/moritzjuliankrause/Transcriber/releases/download/v0.1.1/AnyRecord-0.1.1.zip">AnyRecord-0.1.1.zip</a></p>
+    <p>First tagged release: local call transcription with echo gate, pause button and in-app updates.</p>
+  </section>
 </main>
 <footer>
   <div class="in">

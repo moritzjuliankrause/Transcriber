@@ -157,6 +157,12 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
 /* AI disclaimer under every post */
 .ai-note { margin: 28px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted, #767b8a); }
 .ai-note em { font-style: italic; }
+
+/* FAQ hub and changelog */
+.faq-group { margin-top: 40px; }
+.faq-group h2 a { text-decoration: none; }
+.release { margin-top: 44px; padding-top: 28px; border-top: 1px solid rgba(0,0,0,0.08); }
+.release .meta { color: var(--muted, #767b8a); font-size: 14px; margin: -6px 0 14px; }
 </style>
 
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","headline":"How to record a Zoom call on a Mac and get a transcript","description":"Record a Zoom call on your Mac, with both sides of the conversation, and turn it into a transcript without sending the audio anywhere.","datePublished":"2026-09-08T12:00:00.000Z","dateModified":"2026-09-08T12:00:00.000Z","author":{"@type":"Person","name":"Moritz Krause","url":"https://moritz-krause.com"},"publisher":{"@type":"Organization","name":"Transcriber","url":"https://gettranscriber.com"},"mainEntityOfPage":"https://gettranscriber.com/blog/record-zoom-call-mac-transcript/","keywords":"record zoom call mac, zoom call transcript, transcribe zoom call, system audio mac","wordCount":854,"inLanguage":"en"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Transcriber","item":"https://gettranscriber.com"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://gettranscriber.com/blog/"},{"@type":"ListItem","position":3,"name":"How to record a Zoom call on a Mac and get a transcript","item":"https://gettranscriber.com/blog/record-zoom-call-mac-transcript/"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does Zoom have to be set to record for this to work?","acceptedAnswer":{"@type":"Answer","text":"No. Transcriber listens to what your Mac plays and what your microphone hears, so it doesn't matter whether Zoom's own recording is on, off, or locked by the host."}},{"@type":"Question","name":"Will the other person be transcribed as well?","acceptedAnswer":{"@type":"Answer","text":"Yes. The far end comes in through your Mac's audio output and is captured as its own channel, so their words land in the transcript with a separate speaker label."}},{"@type":"Question","name":"Does any audio leave my Mac?","acceptedAnswer":{"@type":"Answer","text":"No. Transcription runs on your machine with a downloaded model. The only network access is the one-time download of that model and the update check against GitHub."}},{"@type":"Question","name":"Which macOS version do I need?","acceptedAnswer":{"@type":"Answer","text":"macOS 14.2 or newer, because that's where Apple added the audio tap that makes recording another app's sound possible. An Apple Silicon Mac is recommended."}},{"@type":"Question","name":"Is it legal to record a call?","acceptedAnswer":{"@type":"Answer","text":"That depends on where you and the other people are. In many places, including Germany, recording without consent is a crime. Tell everyone before you press record."}}]}]}</script>
@@ -216,6 +222,8 @@ footer .legal { max-width: 980px; margin: 14px auto 0; padding-top: 12px; border
     <span class="links">
       <a href="../../blog/">Blog</a>
       <a href="https://gettranscriber.com/blog/feed.xml">RSS</a>
+      <a href="../../changelog/">Changelog</a>
+      <a href="../../blog/faq/">FAQ</a>
       <a href="https://gettranscriber.com/download">Latest release</a>
       <a href="https://github.com/moritzjuliankrause/Transcriber">Source code</a>
     </span>
