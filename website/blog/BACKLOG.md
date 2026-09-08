@@ -24,7 +24,7 @@ Facts about Transcriber: repo README only. Slugs are final URLs.
   title: How to record a Google Meet call on a Mac with a transcript
   keyword: record google meet mac
   angle: Meet runs in a browser tab, so the system audio tap catches it like any other tab. Meet's own recording needs a Workspace plan; local recording does not.
-  status: todo
+  status: drafted 2026-09-08
 
 - slug: record-facetime-call-mac
   type: guide
