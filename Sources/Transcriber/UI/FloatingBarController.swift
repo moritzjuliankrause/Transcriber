@@ -8,6 +8,9 @@ import Combine
 /// pill around the status text while paused / loading / stopping.
 @MainActor
 final class FloatingBarController {
+    /// The app's one bar, so the recording finaliser can ask for a title inside it.
+    static weak var shared: FloatingBarController?
+
     private var panel: NSPanel?
     private let state: AppState
     private let settings: AppSettings
@@ -23,15 +26,15 @@ final class FloatingBarController {
     /// The panel never changes size: it is as large as the widest / tallest capsule plus
     /// shadow margin, and fully transparent. Only the SwiftUI capsule inside it morphs,
     /// so its size, contents and shadow animate as one.
-    static let panelSize = NSSize(width: max(FloatingBarView.width, FloatingBarView.confirmSize.width) + 2 * shadowPadding,
-                                  height: max(FloatingBarView.height(forLines: FloatingBarModel.maxLines), FloatingBarView.confirmSize.height) + 2 * shadowPadding)
+    static let panelSize = NSSize(width: max(FloatingBarView.width, FloatingBarView.confirmSize.width, FloatingBarView.titleSize.width) + 2 * shadowPadding,
+                                  height: max(FloatingBarView.height(forLines: FloatingBarModel.maxLines), FloatingBarView.confirmSize.height, FloatingBarView.titleSize.height) + 2 * shadowPadding)
 
     init(state: AppState, settings: AppSettings) {
         self.state = state
         self.settings = settings
-        Publishers.CombineLatest3(state.$phase, settings.$showFloatingBar, model.$confirmingStop)
+        Publishers.CombineLatest4(state.$phase, settings.$showFloatingBar, model.$confirmingStop, model.$askingTitle)
             .receive(on: RunLoop.main)
-            .map { phase, show, confirming in (show && phase != .idle) || confirming }
+            .map { phase, show, confirming, asking in (show && phase != .idle) || confirming || asking }
             .removeDuplicates()
             .sink { [weak self] visible in visible ? self?.show() : self?.hide() }
             .store(in: &cancellables)
@@ -51,7 +54,10 @@ final class FloatingBarController {
         let p = FloatingPanel(contentRect: NSRect(origin: .zero, size: FloatingBarController.panelSize),
                               styleMask: [.borderless, .nonactivatingPanel],
                               backing: .buffered, defer: false)
-        p.onCancel = { [weak self] in self?.cancelStopConfirmation() }
+        p.onCancel = { [weak self] in
+            guard let self else { return }
+            if self.model.askingTitle { self.model.onSkipTitle?() } else { self.cancelStopConfirmation() }
+        }
         p.level = .statusBar
         p.isOpaque = false
         p.backgroundColor = .clear
@@ -157,6 +163,46 @@ final class FloatingBarController {
         if panel?.isKeyWindow == true { panel?.resignKey() }
     }
 
+    // MARK: - Title prompt
+
+    /// Morphs the bar into the "Name this recording" prompt and waits for the answer.
+    /// Enter saves, Escape skips. The bar is shown even if it is disabled in Settings.
+    func askTitle(defaultTitle: String) async -> TitlePrompt.Answer {
+        if model.askingTitle { model.onSkipTitle?() }
+        cancelStopConfirmation()
+        return await withCheckedContinuation { continuation in
+            var finished = false
+            let finish: (TitlePrompt.Answer) -> Void = { [weak self] answer in
+                guard !finished else { return }
+                finished = true
+                guard let self else { continuation.resume(returning: answer); return }
+                self.model.askingTitle = false
+                self.model.onSaveTitle = nil
+                self.model.onSkipTitle = nil
+                (self.panel as? FloatingPanel)?.allowsKey = false
+                if self.panel?.isKeyWindow == true { self.panel?.resignKey() }
+                continuation.resume(returning: answer)
+            }
+            model.title = defaultTitle
+            model.onSaveTitle = { [weak self] openInAI in
+                let text = (self?.model.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                finish(TitlePrompt.Answer(title: text.isEmpty ? nil : text, openInAI: openInAI))
+            }
+            model.onSkipTitle = { finish(TitlePrompt.Answer(title: nil, openInAI: false)) }
+            if panel == nil { prepare() }
+            model.animated = panel?.isVisible == true
+            model.askingTitle = true
+            (panel as? FloatingPanel)?.allowsKey = true
+            // The panel does not activate the app; making it key is enough for typing.
+            for delay in [0.0, 0.4, 0.8] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    guard let self, self.model.askingTitle else { return }
+                    self.panel?.makeKey()
+                }
+            }
+        }
+    }
+
     /// Builds the panel ahead of time (see makePanel).
     func prepare() {
         if panel == nil {
@@ -254,6 +300,11 @@ final class FloatingBarModel: ObservableObject {
     @Published var confirmingStop = false
     var onConfirmStop: (() -> Void)?
     var onCancelStop: (() -> Void)?
+    /// The bar is morphed into the "Name this recording" prompt.
+    @Published var askingTitle = false
+    @Published var title = ""
+    var onSaveTitle: ((_ openInAI: Bool) -> Void)?
+    var onSkipTitle: (() -> Void)?
 
     static let maxLines = 3
 
@@ -483,15 +534,21 @@ struct FloatingBarView: View {
 
     /// Size of the bar when morphed into the stop confirmation.
     static let confirmSize = CGSize(width: 470, height: height(forLines: FloatingBarModel.maxLines) - 2)   // exactly the 3-line bar
+    /// Size of the bar when morphed into the title prompt.
+    static let titleSize = CGSize(width: 640, height: confirmSize.height)
 
     static func size(for model: FloatingBarModel) -> CGSize {
+        if model.askingTitle { return titleSize }
         if model.confirmingStop { return confirmSize }
         return CGSize(width: width(forMessage: model.message), height: height(forLines: model.visibleLineCount) - 2)
     }
 
+    @FocusState private var titleFocused: Bool
+
     var body: some View {
         let size = FloatingBarView.size(for: model)
         let confirming = model.confirmingStop
+        let asking = model.askingTitle
         // Always a capsule – the confirmation is just a taller, wider pill.
         let shape = Capsule()
         HStack(alignment: .center, spacing: 8) {
@@ -499,7 +556,40 @@ struct FloatingBarView: View {
             WaveformView(levels: Array(state.levelHistory.suffix(10)), color: .white)
                 .frame(width: 22, height: 10)
 
-            if confirming {
+            if asking {
+                TextField("", text: $model.title)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white)
+                    .focused($titleFocused)
+                    .onSubmit { model.onSaveTitle?(false) }
+                    .overlay(alignment: .leading) {
+                        if model.title.isEmpty {
+                            Text("Name this recording (optional)")
+                                .font(.system(size: 12)).foregroundStyle(.white.opacity(0.45))
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(height: 26)
+                    .background(.white.opacity(0.12), in: Capsule())
+                    .overlay(Capsule().stroke(.white.opacity(titleFocused ? 0.35 : 0.15)))
+                    .padding(.leading, 4)
+                    .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { titleFocused = true } }
+                HStack(spacing: 6) {
+                    Button("Skip") { model.onSkipTitle?() }
+                        .buttonStyle(PillButtonStyle())
+                    if AITool.isConfigured {
+                        Button("Save & Open in \(AITool.toolDisplayName)") { model.onSaveTitle?(true) }
+                            .buttonStyle(PillButtonStyle())
+                    }
+                    Button("Save") { model.onSaveTitle?(false) }
+                        .keyboardShortcut(.defaultAction)
+                        .buttonStyle(PillButtonStyle(prominent: true))
+                }
+                .fixedSize()
+                .transition(.opacity)
+            } else if confirming {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Stop recording?")
                         .font(.system(size: 12, weight: .semibold))
@@ -512,14 +602,14 @@ struct FloatingBarView: View {
                 .fixedSize()
                 .padding(.leading, 4)
                 Spacer(minLength: 12)
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Button("Cancel") { model.onCancelStop?() }
                         .keyboardShortcut(.cancelAction)
+                        .buttonStyle(PillButtonStyle())
                     Button("Stop & Save") { model.onConfirmStop?() }
                         .keyboardShortcut(.defaultAction)
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(PillButtonStyle(prominent: true))
                 }
-                .controlSize(.small)
                 .fixedSize()
                 .transition(.opacity)
             } else if let message = model.message {
@@ -560,8 +650,8 @@ struct FloatingBarView: View {
             Spacer(minLength: 0)
         }
         .font(.system(size: 11))
-        .padding(.leading, confirming ? 20 : FloatingBarView.leadingPadding)
-        .padding(.trailing, confirming ? 16 : FloatingBarView.trailingPadding)
+        .padding(.leading, (confirming || asking) ? 20 : FloatingBarView.leadingPadding)
+        .padding(.trailing, (confirming || asking) ? 12 : FloatingBarView.trailingPadding)
         .padding(.vertical, FloatingBarView.verticalPadding)
         .frame(width: size.width, height: size.height, alignment: .leading)
         .environment(\.colorScheme, .dark)
@@ -572,6 +662,7 @@ struct FloatingBarView: View {
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: size)
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: model.message == nil)
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: confirming)
+        .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: asking)
         // Centred at the top of the fixed-size, transparent panel.
         .padding(FloatingBarController.shadowPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -580,5 +671,21 @@ struct FloatingBarView: View {
     private func color(for token: FloatingBarModel.Token) -> Color {
         guard let speaker = token.speaker else { return .white }
         return speaker == settings.myName ? .cyan : .orange
+    }
+}
+
+/// Capsule buttons for the floating bar: translucent white, or solid white for the default action.
+struct PillButtonStyle: ButtonStyle {
+    var prominent = false
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(prominent ? Color.black : Color.white)
+            .lineLimit(1)
+            .padding(.horizontal, 12)
+            .frame(height: 26)
+            .background(prominent ? Color.white.opacity(configuration.isPressed ? 0.75 : 1) : Color.white.opacity(configuration.isPressed ? 0.25 : 0.14),
+                        in: Capsule())
+            .contentShape(Capsule())
     }
 }

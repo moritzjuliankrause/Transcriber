@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DockIcon.apply(settings.showDockIcon)
+        AppSettings.applyAppearance(settings.appearance)
         statusItemController = StatusItemController(
             state: state,
             onToggleRecording: { [weak self] in self?.toggleRecording() },
@@ -26,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         floatingBar = FloatingBarController(state: state, settings: settings)
+        FloatingBarController.shared = floatingBar
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.floatingBar?.prepare() }
 
         hotKey = HotKey(keyCode: UInt32(kVK_ANSI_R), modifiers: UInt32(controlKey | optionKey | cmdKey)) { [weak self] in
@@ -52,6 +54,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if settings.outputDirectory.isEmpty {
             settings.outputDirectory = AppSettings.defaultOutputDirectory.path
+        }
+        // Development aid: `Transcriber --settings` opens the Settings window right away.
+        if let i = CommandLine.arguments.firstIndex(of: "--settings") {
+            let name = i + 1 < CommandLine.arguments.count ? CommandLine.arguments[i + 1] : ""
+            showSettings(section: SettingsView.Section.allCases.first { $0.rawValue.lowercased() == name.lowercased() })
+        }
+        // Development aid: `Transcriber --title-test` shows the bar's save prompt right away.
+        if CommandLine.arguments.contains("--title-test") {
+            Task { @MainActor in
+                let answer = await TitlePrompt.ask(defaultTitle: "")
+                AppLog.write("Title test: \(answer.title ?? "<none>") openInAI=\(answer.openInAI)")
+            }
         }
     }
 

@@ -54,7 +54,7 @@ enum RecordingFinalizer {
         var openInAI = false
         if askTitle {
             state.phase = .stopping("Waiting for title…")
-            let answer = TitlePrompt.ask(defaultTitle: "")
+            let answer = await TitlePrompt.ask(defaultTitle: "")
             if let title = answer.title { store.setTitle(title) }
             openInAI = answer.openInAI
         }
@@ -80,8 +80,17 @@ enum TitlePrompt {
         var openInAI: Bool
     }
 
+    /// Asks inside the floating bar; falls back to an alert when there is no bar (headless runs).
     @MainActor
-    static func ask(defaultTitle: String) -> Answer {
+    static func ask(defaultTitle: String) async -> Answer {
+        if let bar = FloatingBarController.shared {
+            return await bar.askTitle(defaultTitle: defaultTitle)
+        }
+        return askWithAlert(defaultTitle: defaultTitle)
+    }
+
+    @MainActor
+    static func askWithAlert(defaultTitle: String) -> Answer {
         // Never nest modal sessions: a second alert on top of a running one leaves the first
         // unresponsive (and the app must be force-quit). Save without a title instead.
         guard NSApp.modalWindow == nil else {

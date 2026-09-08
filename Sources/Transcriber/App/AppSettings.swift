@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Combine
 
@@ -27,6 +28,8 @@ final class AppSettings: ObservableObject {
     @Published var updateCheckInterval: String { didSet { defaults.set(updateCheckInterval, forKey: "updateCheckInterval") } }
     @Published var modelsPromptShown: Bool { didSet { defaults.set(modelsPromptShown, forKey: "modelsPromptShown") } }
     @Published var includePreReleases: Bool { didSet { defaults.set(includePreReleases, forKey: "includePreReleases") } }
+    /// system | light | dark – applied to every window of the app.
+    @Published var appearance: String { didSet { defaults.set(appearance, forKey: "appearance"); let a = appearance; Task { @MainActor in AppSettings.applyAppearance(a) } } }
 
     // AI hand-off
     @Published var aiToolMode: String { didSet { defaults.set(aiToolMode, forKey: "aiToolMode") } }        // website | app
@@ -81,6 +84,7 @@ final class AppSettings: ObservableObject {
         updateCheckInterval = str("updateCheckInterval", bool("autoCheckUpdates", true) ? "daily" : "never")
         modelsPromptShown = bool("modelsPromptShown", false)
         includePreReleases = bool("includePreReleases", false)
+        appearance = str("appearance", "system")
 
         aiToolMode = str("aiToolMode", "website")
         aiToolURL = str("aiToolURL", "https://claude.ai/new?q={prompt}")
@@ -110,6 +114,15 @@ final class AppSettings: ObservableObject {
         keepAudio = bool("keepAudio", true)
         askForTitle = bool("askForTitle", true)
         minFreeDiskGB = dbl("minFreeDiskGB", 2)
+    }
+
+    @MainActor
+    static func applyAppearance(_ value: String) {
+        switch value {
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        default: NSApp.appearance = nil
+        }
     }
 
     var outputDirectoryURL: URL {
