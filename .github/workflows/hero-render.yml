@@ -1,0 +1,78 @@
+name: Hero images
+
+# Renders blog hero images from the app's real UI code on a macOS runner.
+# A writer (routine or human) drops website/blog/img/<slug>/hero.json:
+#   { "lines": ["Anna: …", "Me: …", "Anna: …"], "caption": "…", "sub": "…", "timer": "12:34" }
+# This job builds the app once (cached), runs `Transcriber --render-hero`, writes hero.webp next to
+# the json, sets `hero:` and `heroAlt:` in the post's frontmatter if missing, and commits.
+
+on:
+  push:
+    branches: [main]
+    paths: ['website/blog/img/**/hero.json', 'Sources/Transcriber/App/HeroRender.swift']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hero
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find specs without an image
+        id: find
+        run: |
+          list=""
+          for j in website/blog/img/*/hero.json; do
+            [ -f "$j" ] || continue
+            d=$(dirname "$j")
+            if [ ! -f "$d/hero.webp" ] || [ "$j" -nt "$d/hero.webp" ]; then list="$list $j"; fi
+          done
+          echo "specs=$list" >> "$GITHUB_OUTPUT"
+          echo "to render:$list"
+      - name: Cache Swift build
+        if: steps.find.outputs.specs != ''
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: swift-build-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Sources/**/*.swift') }}
+          restore-keys: swift-build-${{ runner.os }}-
+      - name: Build
+        if: steps.find.outputs.specs != ''
+        run: swift build -c release 2>&1 | grep -E "error|Build complete" || true
+      - name: Render
+        if: steps.find.outputs.specs != ''
+        run: |
+          pip3 install --quiet --break-system-packages pillow
+          B=.build/release/Transcriber
+          for j in ${{ steps.find.outputs.specs }}; do
+            d=$(dirname "$j"); slug=$(basename "$d")
+            timer=$(jq -r '.timer // "12:34"' "$j"); cap=$(jq -r '.caption // ""' "$j"); sub=$(jq -r '.sub // ""' "$j")
+            args=(); while IFS= read -r l; do args+=("$l"); done < <(jq -r '.lines[]' "$j")
+            "$B" --render-hero "$d/hero.png" --timer "$timer" --caption "$cap" --sub "$sub" "${args[@]}"
+            python3 - "$d" <<'PY'
+          import sys; from PIL import Image
+          d=sys.argv[1]; im=Image.open(f'{d}/hero.png').convert('RGB').resize((1600,900),Image.LANCZOS)
+          im.save(f'{d}/hero.webp','WEBP',quality=85,method=6)
+          PY
+            rm -f "$d/hero.png"
+            p="website/blog/posts/$slug.md"
+            if [ -f "$p" ] && ! grep -qE '^hero:' "$p"; then
+              kw=$(grep -m1 -E '^keyword:' "$p" | sed 's/^keyword:[[:space:]]*//')
+              sed -i '' "s|^draft:|hero: img/$slug/hero.webp\nheroAlt: $kw, the Transcriber recording pill and live transcript bar\ndraft:|" "$p"
+            fi
+            echo "rendered $slug"
+          done
+      - name: Commit
+        if: steps.find.outputs.specs != ''
+        run: |
+          git config user.name "hero-bot"; git config user.email "hero-bot@users.noreply.github.com"
+          git add website/blog/img website/blog/posts
+          git diff --cached --quiet && exit 0
+          git commit -m "Hero images rendered from the app UI"
+          for i in 1 2 3; do git push && break; git pull --rebase -X theirs origin main; sleep 3; done

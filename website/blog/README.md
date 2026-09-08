@@ -59,18 +59,18 @@ tables (`| a | b |`, they stack into cards on phones), `---`.
 
 Facts about Transcriber come from the app's README only. If it's not in there, it doesn't go in a post.
 
-Hero images are rendered by the app itself from its real UI code (`--render-hero`, see
-`Sources/Transcriber/App/HeroRender.swift`), so they look exactly like the menu bar pill and the
-floating bar:
+Hero images are rendered from the app's real UI code (`--render-hero`, `Sources/Transcriber/App/HeroRender.swift`).
+A writer does not need a Mac for that: drop `website/blog/img/<slug>/hero.json` next to the post,
 
-```sh
-swift build -c release
-.build/release/Transcriber --render-hero out.png --timer 12:34 --caption "Text under the bar" --sub "smaller line" \
-  "Anna: first line" "Me: second line" "Anna: third line"
+```json
+{ "lines": ["Anna: Can we move the launch?", "Me: If design signs off by Friday, yes.", "Anna: Then the 21st it is"],
+  "caption": "Recorded on your Mac. Nobody joins the call.", "sub": "Zoom · Teams · Meet · FaceTime", "timer": "23:41" }
 ```
 
-Then convert to WebP, 1600x900, quality about 82, into `img/<slug>/hero.webp`. A real screenshot
-of a real call is still better when there is one.
+and the GitHub workflow `hero-render.yml` (macOS runner) renders `hero.webp`, adds `hero:` and `heroAlt:` to the
+post's frontmatter and commits. Three lines of realistic call dialogue, one of them from "Me"; the caption is
+the post's promise in five to eight words; the sub line is optional. Locally: `swift build -c release` and
+`.build/release/Transcriber --render-hero out.png --timer 12:34 --caption "…" --sub "…" "Anna: …" "Me: …" "Anna: …"`.
 
 Every post automatically gets the AI disclaimer from `aiNote` in `config.json` under the closing
 paragraph. Do not write your own disclaimer into the body.
