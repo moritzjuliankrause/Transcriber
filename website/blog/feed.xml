@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>Transcriber Blog</title>
+  <link>https://moritz-krause.com/transcriber/blog/</link>
+  <atom:link href="https://moritz-krause.com/transcriber/blog/feed.xml" rel="self" type="application/rss+xml"/>
+  <description>Notes on recording and transcribing calls on a Mac.</description>
+  <language>en</language>
+  <item>
+    <title>How to record a Zoom call on a Mac and get a transcript</title>
+    <link>https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/</link>
+    <guid isPermaLink="true">https://moritz-krause.com/transcriber/blog/record-zoom-call-mac-transcript/</guid>
+    <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
+    <description>Record a Zoom call on your Mac, with both sides of the conversation, and turn it into a transcript without sending the audio anywhere.</description>
+  </item>
+</channel>
+</rss>

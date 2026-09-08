@@ -1,0 +1,104 @@
+name: Blog
+
+# Three ways in:
+#  - a push that touches website/blog/posts/**  -> rebuild (drafts land under blog/preview/) and, for new drafts, notify Slack
+#  - repository_dispatch approve-post {slug}    -> flip draft: false, stamp the date, rebuild, commit   (sent by the Slack worker)
+#  - repository_dispatch reject-post  {slug}    -> retire the draft (renamed to .md.rejected), rebuild, commit
+#  - workflow_dispatch                          -> the same two actions by hand from the Actions tab
+
+on:
+  push:
+    branches: [main]
+    paths: ['website/blog/posts/**', 'website/blog/img/**', 'website/blog/config.json', 'website/blog/blog.css', 'website/scripts/build-blog.mjs']
+  repository_dispatch:
+    types: [approve-post, reject-post]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: approve or reject
+        required: true
+        default: approve
+        type: choice
+        options: [approve, reject]
+      slug:
+        description: post slug (file name without .md)
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blog
+  cancel-in-progress: false
+
+jobs:
+  blog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve action
+        id: act
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "action=${{ github.event.action == 'approve-post' && 'approve' || 'reject' }}" >> "$GITHUB_OUTPUT"
+            echo "slug=${{ github.event.client_payload.slug }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "action=${{ github.event.inputs.action }}" >> "$GITHUB_OUTPUT"
+            echo "slug=${{ github.event.inputs.slug }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "action=build" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Approve
+        if: steps.act.outputs.action == 'approve'
+        run: |
+          f="website/blog/posts/${{ steps.act.outputs.slug }}.md"
+          test -f "$f" || { echo "no such draft: $f"; exit 1; }
+          today=$(date -u +%Y-%m-%d)
+          # draft: true -> false; add a date if the draft has none
+          if grep -qE '^draft:' "$f"; then sed -i -E 's/^draft:.*/draft: false/' "$f"; else sed -i '2i draft: false' "$f"; fi
+          grep -qE '^date:' "$f" || sed -i "2i date: $today" "$f"
+          echo "published $f"
+
+      - name: Reject
+        if: steps.act.outputs.action == 'reject'
+        run: |
+          f="website/blog/posts/${{ steps.act.outputs.slug }}.md"
+          test -f "$f" || { echo "no such draft: $f"; exit 1; }
+          git mv "$f" "$f.rejected"
+          echo "retired $f"
+
+      - name: Build
+        run: node website/scripts/build-blog.mjs
+
+      - name: Commit
+        run: |
+          git config user.name "blog-bot"
+          git config user.email "blog-bot@users.noreply.github.com"
+          git add -A website/blog
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          case "${{ steps.act.outputs.action }}" in
+            approve) msg="Publish blog post: ${{ steps.act.outputs.slug }}";;
+            reject)  msg="Retire blog draft: ${{ steps.act.outputs.slug }}";;
+            *)       msg="Rebuild blog";;
+          esac
+          git commit -m "$msg"
+          git push
+
+      # New drafts pushed by the writing routine get announced once, with a preview link and buttons.
+      - name: Notify Slack about new drafts
+        if: steps.act.outputs.action == 'build' && env.SLACK_BOT_TOKEN != ''
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+        run: |
+          for f in $(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'website/blog/posts/*.md' 2>/dev/null); do
+            slug=$(basename "$f" .md)
+            node website/scripts/notify-slack.mjs "$slug" || echo "slack notification failed for $slug"
+          done

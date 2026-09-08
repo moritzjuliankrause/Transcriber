@@ -1,0 +1,11 @@
+{
+  "siteUrl": "https://moritz-krause.com/transcriber",
+  "siteName": "Transcriber",
+  "blogTitle": "Transcriber Blog",
+  "blogTagline": "Notes on recording and transcribing calls on a Mac.",
+  "language": "en",
+  "author": { "name": "Moritz Krause", "url": "https://moritz-krause.com" },
+  "downloadUrl": "https://github.com/moritzjkr/Transcriber/releases/latest",
+  "repoUrl": "https://github.com/moritzjkr/Transcriber",
+  "ctaText": "If that sounds like how you'd want to work, Transcriber is free and runs on your Mac. If not, no hard feelings, there are plenty of other ways to get a transcript."
+}
