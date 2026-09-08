@@ -23,8 +23,27 @@ final class MicrophoneCapture {
             try startEngine(deviceUID: deviceUID, echoCancellation: echoCancellation)
         } catch where echoCancellation {
             AppLog.write("Voice processing engine failed (\(error)), falling back to plain capture")
-            try startEngine(deviceUID: deviceUID, echoCancellation: false)
+            try startPlainWithRetry(deviceUID: deviceUID)
         }
+    }
+
+    /// After a failed voice-processing engine the HAL briefly hands the next engine's input
+    /// node no device (id 0) with a stale 44.1 kHz stereo format; engine.start then fails with
+    /// -10868 (kAudioUnitErr_FormatNotSupported). Retry a few times with a short pause.
+    private func startPlainWithRetry(deviceUID: String?, attempts: Int = 3) throws {
+        var lastError: Error?
+        for attempt in 1...attempts {
+            do {
+                try startEngine(deviceUID: deviceUID, echoCancellation: false)
+                return
+            } catch {
+                lastError = error
+                AppLog.write("Plain capture attempt \(attempt) failed: \(error)")
+                stop()
+                Thread.sleep(forTimeInterval: 0.25 * Double(attempt))
+            }
+        }
+        throw lastError!
     }
 
     private func startEngine(deviceUID: String?, echoCancellation: Bool) throws {
@@ -32,9 +51,18 @@ final class MicrophoneCapture {
         let engine = AVAudioEngine()
         let input = engine.inputNode
 
-        if let uid = deviceUID, !uid.isEmpty, let device = AudioDevices.device(forUID: uid), let unit = input.audioUnit {
-            var id = device.id
-            AudioUnitSetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &id, UInt32(MemoryLayout<AudioDeviceID>.size))
+        if let unit = input.audioUnit {
+            // Bind the device explicitly: the user's pinned device, or – when the HAL has not
+            // assigned one yet (id 0, seen right after a voice-processing engine went away) –
+            // the current default input. Without this the node keeps a stale format and the
+            // engine fails to start with -10868.
+            let pinned = (deviceUID?.isEmpty == false) ? AudioDevices.device(forUID: deviceUID!) : nil
+            var current = AudioDeviceID(0); var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+            AudioUnitGetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &current, &size)
+            if let target = pinned ?? (current == 0 ? AudioDevices.defaultInputDevice() : nil) {
+                var id = target.id
+                AudioUnitSetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &id, UInt32(MemoryLayout<AudioDeviceID>.size))
+            }
         }
 
         if echoCancellation {
