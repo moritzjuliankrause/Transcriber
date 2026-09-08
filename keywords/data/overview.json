@@ -1,5 +1,5 @@
 {
- "fetchedAt": "2026-09-08T09:16:47.099Z",
+ "fetchedAt": "2026-09-08T09:19:21.935Z",
  "keywords": [
   {
    "keyword": "ai prompt to summarize meeting transcript",
@@ -16,7 +16,8 @@
     20,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "ai to summarize meeting transcript",
@@ -33,7 +34,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "ai transcribe google meet",
@@ -50,7 +52,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "auto transcribe google meet",
@@ -67,7 +70,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "best local transcription model",
@@ -84,7 +88,8 @@
     20,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "best prompt to summarize meeting transcript",
@@ -101,7 +106,8 @@
     40,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "can google meet transcribe",
@@ -118,7 +124,8 @@
     70,
     70
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "can google meet transcribe in real time",
@@ -135,7 +142,8 @@
     0,
     0
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "can i record a facetime call",
@@ -152,7 +160,8 @@
     720,
     720
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "can you record a facetime call",
@@ -169,7 +178,8 @@
     1900,
     1900
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "chatgpt prompt to summarize meeting transcript",
@@ -186,7 +196,8 @@
     30,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "convert srt to transcript",
@@ -203,7 +214,8 @@
     10,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "convert transcript to srt",
@@ -220,7 +232,8 @@
     10,
     0
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "convert youtube transcript to srt",
@@ -237,7 +250,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "copilot prompt to summarize meeting transcript",
@@ -254,7 +268,8 @@
     30,
     40
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "copilot summarize meeting transcript",
@@ -271,7 +286,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "does google meet transcribe",
@@ -288,7 +304,8 @@
     70,
     70
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "fireflies alternative",
@@ -305,7 +322,8 @@
     110,
     50
    ],
-   "source": "backlog"
+   "source": "backlog",
+   "relevant": true
   },
   {
    "keyword": "free ai tool to summarize meeting transcript",
@@ -322,7 +340,8 @@
     10,
     0
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "google meet auto transcribe",
@@ -339,7 +358,8 @@
     20,
     30
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "google meet record and transcribe",
@@ -356,7 +376,8 @@
     30,
     30
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "granola alternative",
@@ -373,7 +394,8 @@
     390,
     320
    ],
-   "source": "backlog"
+   "source": "backlog",
+   "relevant": true
   },
   {
    "keyword": "how can i record a facetime call",
@@ -390,7 +412,8 @@
     1900,
     1900
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how can i record a facetime call on iphone",
@@ -407,7 +430,8 @@
     590,
     480
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how can you record a facetime call",
@@ -424,7 +448,8 @@
     1900,
     1900
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how do i record a facetime call",
@@ -441,7 +466,8 @@
     1900,
     1900
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how do you record a facetime call",
@@ -458,7 +484,8 @@
     1900,
     1900
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how do you record a facetime call on iphone",
@@ -475,7 +502,8 @@
     590,
     480
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to convert youtube transcript to srt",
@@ -492,7 +520,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record a facetime call",
@@ -509,7 +538,8 @@
     1900,
     1900
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record a facetime call on iphone",
@@ -526,7 +556,8 @@
     590,
     480
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record a teams meeting on mac",
@@ -543,7 +574,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record a zoom call on mac",
@@ -560,7 +592,8 @@
     20,
     40
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record facetime call",
@@ -577,7 +610,8 @@
     1900,
     1900
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record microsoft teams meeting on mac",
@@ -594,7 +628,8 @@
     0,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record teams meeting on mac",
@@ -611,7 +646,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record zoom call on mac",
@@ -628,7 +664,8 @@
     30,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record zoom video call on mac",
@@ -645,7 +682,8 @@
     0,
     0
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to summarize teams meeting transcript",
@@ -662,7 +700,8 @@
     40,
     50
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to summarize teams meeting transcript with copilot",
@@ -679,7 +718,8 @@
     50,
     50
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to transcribe a google meet",
@@ -696,7 +736,8 @@
     40,
     30
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to transcribe a google meet recording",
@@ -713,7 +754,8 @@
     30,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to transcribe google meet",
@@ -730,7 +772,8 @@
     50,
     50
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to use chatgpt to summarize meeting transcript",
@@ -747,7 +790,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to use copilot to summarize a meeting transcript",
@@ -764,7 +808,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "is it legal to record a call",
@@ -781,7 +826,8 @@
     20,
     20
    ],
-   "source": "backlog"
+   "source": "backlog",
+   "relevant": true
   },
   {
    "keyword": "local ai transcription",
@@ -798,7 +844,8 @@
     40,
     30
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local ai transcription software",
@@ -815,7 +862,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local and global regulation of transcription initiation in bacteria",
@@ -832,7 +880,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local audio transcription",
@@ -849,7 +898,8 @@
     30,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local eyes transcription",
@@ -866,7 +916,8 @@
     0,
     0
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local llm transcription",
@@ -883,7 +934,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local medical transcription jobs",
@@ -900,7 +952,8 @@
     0,
     0
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local transcription copy of birth certificate sample",
@@ -917,7 +970,8 @@
     0,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local transcription jobs",
@@ -934,7 +988,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local transcription service",
@@ -951,7 +1006,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "local transcription software",
@@ -968,7 +1024,8 @@
     30,
     30
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "longest facetime call world record",
@@ -985,7 +1042,8 @@
     880,
     880
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "macwhisper alternative",
@@ -1002,7 +1060,8 @@
     40,
     20
    ],
-   "source": "backlog"
+   "source": "backlog",
+   "relevant": true
   },
   {
    "keyword": "otter ai alternative",
@@ -1019,7 +1078,8 @@
     480,
     320
    ],
-   "source": "backlog"
+   "source": "backlog",
+   "relevant": true
   },
   {
    "keyword": "premiere pro initializing local transcription engine",
@@ -1036,7 +1096,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record a facetime call",
@@ -1053,7 +1114,8 @@
     480,
     480
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record a zoom call on mac",
@@ -1070,7 +1132,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record and transcribe google meet",
@@ -1087,7 +1150,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record facetime call",
@@ -1104,7 +1168,8 @@
     480,
     480
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record google meet mac",
@@ -1121,7 +1186,8 @@
     10,
     10
    ],
-   "source": "backlog"
+   "source": "backlog",
+   "relevant": true
   },
   {
    "keyword": "record mac system audio",
@@ -1138,7 +1204,8 @@
     390,
     390
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record podcast interview remotely",
@@ -1155,7 +1222,8 @@
     10,
     10
    ],
-   "source": "backlog"
+   "source": "backlog",
+   "relevant": true
   },
   {
    "keyword": "record system audio mac",
@@ -1172,7 +1240,8 @@
     390,
     390
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record teams meeting mac",
@@ -1189,7 +1258,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record whatsapp call mac",
@@ -1206,7 +1276,8 @@
     0,
     0
    ],
-   "source": "backlog"
+   "source": "backlog",
+   "relevant": true
   },
   {
    "keyword": "record zoom call on mac",
@@ -1223,7 +1294,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "speaker diarization",
@@ -1240,7 +1312,8 @@
     880,
     880
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "srt to transcript",
@@ -1257,7 +1330,8 @@
     30,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "summarize meeting transcript ai",
@@ -1274,7 +1348,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "summarize meeting transcript free",
@@ -1291,7 +1366,8 @@
     10,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "summarize teams meeting transcript",
@@ -1308,7 +1384,8 @@
     20,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "transcribe a google meet recording",
@@ -1325,7 +1402,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "transcribe google meet",
@@ -1342,7 +1420,8 @@
     70,
     70
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "transcribe google meet recording",
@@ -1359,7 +1438,8 @@
     20,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "transcribe google meet recording free",
@@ -1376,7 +1456,8 @@
     0,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "transcript to srt",
@@ -1393,7 +1474,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "use ai to summarize meeting transcript",
@@ -1410,7 +1492,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "whisper ai transcription local",
@@ -1427,7 +1510,8 @@
     10,
     0
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "world record for longest facetime call",
@@ -1444,7 +1528,8 @@
     880,
     880
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "youtube transcript to srt",
@@ -1461,7 +1546,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "youtube transcript to srt converter",
@@ -1478,7 +1564,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "zoom audio transcription for local recording",
@@ -1495,7 +1582,8 @@
     10,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "ai note taker",
@@ -1512,7 +1600,8 @@
     27100,
     27100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": true
   },
   {
    "keyword": "ai note taking",
@@ -1529,7 +1618,8 @@
     27100,
     27100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": true
   },
   {
    "keyword": "ai notes taker",
@@ -1546,7 +1636,8 @@
     27100,
     27100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": true
   },
   {
    "keyword": "assemblyai speaker diarization",
@@ -1563,7 +1654,8 @@
     110,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "audacity mac record system audio",
@@ -1580,7 +1672,8 @@
     70,
     90
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "audacity record system audio mac",
@@ -1597,7 +1690,8 @@
     70,
     90
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "claude pricing",
@@ -1614,7 +1708,8 @@
     74000,
     49500
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "cluely",
@@ -1631,7 +1726,8 @@
     60500,
     49500
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "fathom",
@@ -1648,7 +1744,8 @@
     90500,
     90500
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "gong",
@@ -1665,7 +1762,8 @@
     74000,
     74000
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "granola ai",
@@ -1682,7 +1780,8 @@
     49500,
     33100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "how to get effects on google duo",
@@ -1699,7 +1798,8 @@
     60500,
     49500
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "how to record mac system audio",
@@ -1716,7 +1816,8 @@
     320,
     260
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record system audio mac",
@@ -1733,7 +1834,8 @@
     320,
     260
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record system audio on mac",
@@ -1750,7 +1852,8 @@
     320,
     260
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to record system audio with audacity mac",
@@ -1767,7 +1870,8 @@
     90,
     90
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "how to screen record with system audio on mac",
@@ -1784,7 +1888,8 @@
     30,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "jamie",
@@ -1801,7 +1906,8 @@
     33100,
     33100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "mac audacity record system audio",
@@ -1818,7 +1924,8 @@
     70,
     90
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "mac record screen with system audio",
@@ -1835,7 +1942,8 @@
     20,
     20
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "mac record system audio",
@@ -1852,7 +1960,8 @@
     50,
     50
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "nvidia nemo speaker diarization",
@@ -1869,7 +1978,8 @@
     40,
     70
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "otter a i",
@@ -1886,7 +1996,8 @@
     201000,
     201000
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "otter ai",
@@ -1903,7 +2014,8 @@
     201000,
     201000
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "otter.ai",
@@ -1920,7 +2032,8 @@
     201000,
     201000
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "pyannote-audio speaker diarization",
@@ -1937,7 +2050,8 @@
     110,
     70
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "pyannote/speaker diarization",
@@ -1954,7 +2068,8 @@
     170,
     140
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "pyannote/speaker diarization-community-1",
@@ -1971,7 +2086,8 @@
     110,
     70
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "pyannote/speaker-diarization",
@@ -1988,7 +2104,8 @@
     170,
     140
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "read ai",
@@ -2005,7 +2122,8 @@
     27100,
     27100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "read.ai",
@@ -2022,7 +2140,8 @@
     27100,
     27100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "record system audio audacity mac",
@@ -2039,7 +2158,8 @@
     70,
     90
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "record system audio mac audacity",
@@ -2056,7 +2176,8 @@
     70,
     90
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "screen record with system audio mac",
@@ -2073,7 +2194,8 @@
     30,
     30
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "speaker diarization api",
@@ -2090,7 +2212,8 @@
     30,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "speaker diarization meaning",
@@ -2107,7 +2230,8 @@
     20,
     30
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "speaker diarization model",
@@ -2124,7 +2248,8 @@
     20,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "speaker diarization models",
@@ -2141,7 +2266,8 @@
     20,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "speaker diarization software",
@@ -2158,7 +2284,8 @@
     20,
     10
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "speaker diarization whisper",
@@ -2175,7 +2302,8 @@
     20,
     30
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "turbo ai",
@@ -2192,7 +2320,8 @@
     110000,
     165000
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "user interviews",
@@ -2209,7 +2338,8 @@
     49500,
     40500
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "w f h meaning",
@@ -2226,7 +2356,8 @@
     33100,
     33100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "wfh meaning",
@@ -2243,7 +2374,8 @@
     33100,
     33100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": false
   },
   {
    "keyword": "what is speaker diarization",
@@ -2260,7 +2392,8 @@
     70,
     90
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "whisper speaker diarization",
@@ -2277,7 +2410,8 @@
     50,
     70
    ],
-   "source": "suggestion"
+   "source": "suggestion",
+   "relevant": true
   },
   {
    "keyword": "zoom test",
@@ -2294,7 +2428,8 @@
     33100,
     27100
    ],
-   "source": "competitor"
+   "source": "competitor",
+   "relevant": true
   }
  ]
 }
