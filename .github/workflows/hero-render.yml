@@ -5,7 +5,8 @@ name: Hero images
 # The renderer needs the app code, so the job stays here.
 #
 # A writer drops website/blog/img/<slug>/hero.json in the transcriber-blog repo:
-#   { "lines": ["Anna: …", "Me: …", "Anna: …"], "caption": "…", "sub": "…", "timer": "12:34" }
+#   { "lines": ["Anna: …", "Me: …", "Anna: …"], "caption": "…", "sub": "…", "timer": "12:34",
+#     "scene": "zoom|teams|meet|facetime" (optional; omit for the plain gradient), "title": "meeting name" (optional) }
 # Then trigger this workflow: from transcriber-blog via repository_dispatch (type render-heroes),
 # or by hand here (workflow_dispatch). It builds the app once (cached), runs `Transcriber
 # --render-hero`, writes hero.webp next to the json, sets hero:/heroAlt: in the post frontmatter
@@ -66,8 +67,9 @@ jobs:
           for j in ${{ steps.find.outputs.specs }}; do
             d=$(dirname "$j"); slug=$(basename "$d")
             timer=$(jq -r '.timer // "12:34"' "$j"); cap=$(jq -r '.caption // ""' "$j"); sub=$(jq -r '.sub // ""' "$j")
+            scene=$(jq -r '.scene // "plain"' "$j"); title=$(jq -r '.title // ""' "$j")
             args=(); while IFS= read -r l; do args+=("$l"); done < <(jq -r '.lines[]' "$j")
-            "$B" --render-hero "$d/hero.png" --timer "$timer" --caption "$cap" --sub "$sub" "${args[@]}"
+            "$B" --render-hero "$d/hero.png" --timer "$timer" --caption "$cap" --sub "$sub" --scene "$scene" --title "$title" "${args[@]}"
             python3 - "$d" <<'PY'
           import sys; from PIL import Image
           d=sys.argv[1]; im=Image.open(f'{d}/hero.png').convert('RGB').resize((1600,900),Image.LANCZOS)

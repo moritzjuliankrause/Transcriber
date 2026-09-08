@@ -19,11 +19,14 @@ enum HeroRender {
         args.remove(at: i)
         let out = args.remove(at: i)
         var timer = "12:47", caption = "Recorded on your Mac. Nobody joins the call.", sub = "Zoom  ·  Teams  ·  Meet  ·  FaceTime  ·  WhatsApp  ·  any app that plays audio"
+        var sceneName = "plain", title = ""
         func take(_ flag: String, into: inout String) {
             if let j = args.firstIndex(of: flag), j + 1 < args.count { into = args[j + 1]; args.removeSubrange(j...j + 1) }
         }
         take("--timer", into: &timer); take("--caption", into: &caption); take("--sub", into: &sub)
+        take("--scene", into: &sceneName); take("--title", into: &title)
         let lines = args
+        let scene = HeroScene(name: sceneName)
 
         // Fake state: recording for `timer`, a live waveform, the given lines as final transcript lines.
         let state = AppState()
@@ -83,21 +86,52 @@ enum HeroRender {
         ctx.draw(pillImg, in: CGRect(x: gx - 8 * scale - pillSize.width, y: H - menuH / 2 - pillSize.height / 2, width: pillSize.width, height: pillSize.height))
 
         let barSize = CGSize(width: CGFloat(barImg.width), height: CGFloat(barImg.height))
-        let barRect = CGRect(x: (W - barSize.width) / 2, y: H - menuH - 8 * scale - barSize.height, width: barSize.width, height: barSize.height)
-        ctx.saveGState()
-        ctx.setShadow(offset: CGSize(width: 0, height: -6 * scale / 2), blur: 24 * scale / 2, color: rgb(0, 0, 0, 0.35))
-        ctx.draw(barImg, in: barRect)
-        ctx.restoreGState()
+        let barShadow: () -> Void = { ctx.setShadow(offset: CGSize(width: 0, height: -6 * scale / 2), blur: 24 * scale / 2, color: rgb(0, 0, 0, 0.35)) }
 
-        if !caption.isEmpty {
-            let capAttrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 17 * scale, weight: .medium), .foregroundColor: NSColor(srgbRed: 0x17/255, green: 0x19/255, blue: 0x1f/255, alpha: 1)]
+        func drawCaption(centreY: CGFloat, capSize: CGFloat, subSize: CGFloat) {
+            guard !caption.isEmpty else { return }
+            let capAttrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: capSize * scale, weight: .medium), .foregroundColor: NSColor(srgbRed: 0x17/255, green: 0x19/255, blue: 0x1f/255, alpha: 1)]
             let csz = (caption as NSString).size(withAttributes: capAttrs)
-            (caption as NSString).draw(at: CGPoint(x: (W - csz.width) / 2, y: H * 0.42), withAttributes: capAttrs)
+            (caption as NSString).draw(at: CGPoint(x: (W - csz.width) / 2, y: centreY), withAttributes: capAttrs)
             if !sub.isEmpty {
-                let subAttrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 12 * scale), .foregroundColor: NSColor(srgbRed: 0x76/255, green: 0x7b/255, blue: 0x8a/255, alpha: 1)]
+                let subAttrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: subSize * scale), .foregroundColor: NSColor(srgbRed: 0x76/255, green: 0x7b/255, blue: 0x8a/255, alpha: 1)]
                 let ssz = (sub as NSString).size(withAttributes: subAttrs)
-                (sub as NSString).draw(at: CGPoint(x: (W - ssz.width) / 2, y: H * 0.42 - 10 * scale - ssz.height), withAttributes: subAttrs)
+                (sub as NSString).draw(at: CGPoint(x: (W - ssz.width) / 2, y: centreY - 10 * scale - ssz.height), withAttributes: subAttrs)
             }
+        }
+
+        if scene.isMeeting {
+            // Fictional meeting window behind the app's bar. Participants come from the dialogue.
+            let myName = settings.myName
+            func isMe(_ s: String) -> Bool { s.lowercased() == myName.lowercased() || s.lowercased() == "me" }
+            var remotes: [String] = [], seen = Set<String>(), lastRemote: String? = nil
+            for raw in lines {
+                let p = raw.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+                let speaker = p.count == 2 ? p[0] : "Guest"
+                if isMe(speaker) { continue }
+                lastRemote = speaker
+                if !seen.contains(speaker) { seen.insert(speaker); remotes.append(speaker) }
+            }
+            if remotes.isEmpty { remotes = ["Alex", "Sam"] }
+            var people = remotes.prefix(3).map { HeroParticipant(name: $0, isSelf: false) }
+            people.append(HeroParticipant(name: myName == "Me" ? "You" : myName, isSelf: true))
+            let activeIndex = remotes.firstIndex(where: { $0 == lastRemote }) ?? 0
+
+            let theme = SceneTheme.of(scene)
+            let margin = 0.055 * W
+            let winTop = H - menuH - 26 * scale
+            let winBottom = 0.185 * H
+            let winRect = CGRect(x: margin, y: winBottom, width: W - 2 * margin, height: winTop - winBottom)
+            let barCenterY = HeroScenes.drawMeeting(ctx, winRect: winRect, scale: scale, theme: theme,
+                                                    participants: Array(people), activeIndex: activeIndex,
+                                                    title: title.isEmpty ? theme.appName : title, timer: timer)
+            let barRect = CGRect(x: (W - barSize.width) / 2, y: barCenterY - barSize.height / 2, width: barSize.width, height: barSize.height)
+            ctx.saveGState(); barShadow(); ctx.draw(barImg, in: barRect); ctx.restoreGState()
+            drawCaption(centreY: 0.115 * H, capSize: 15, subSize: 11)
+        } else {
+            let barRect = CGRect(x: (W - barSize.width) / 2, y: H - menuH - 8 * scale - barSize.height, width: barSize.width, height: barSize.height)
+            ctx.saveGState(); barShadow(); ctx.draw(barImg, in: barRect); ctx.restoreGState()
+            drawCaption(centreY: 0.42 * H, capSize: 17, subSize: 12)
         }
         img.unlockFocus()
 
