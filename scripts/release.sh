@@ -15,7 +15,17 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" Resources/Info.plist
-git add Resources/Info.plist
+# Add the release notes to CHANGELOG.md (shown in the app under Settings → Show Changes),
+# unless a section for this version was written by hand already.
+if ! grep -q "^## $VERSION " CHANGELOG.md; then
+  ENTRY="## $VERSION ($(date +%Y-%m-%d))"$'\n'
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    case "$line" in -*) ENTRY+="$line"$'\n' ;; *) ENTRY+="- $line"$'\n' ;; esac
+  done <<< "$NOTES"
+  awk -v entry="$ENTRY" 'BEGIN{done=0} /^## / && !done {print entry; done=1} {print}' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+fi
+git add Resources/Info.plist CHANGELOG.md
 git commit -q -m "Release $VERSION"
 git tag -a "v$VERSION" -m "Transcriber $VERSION"
 

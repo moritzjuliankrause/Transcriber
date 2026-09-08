@@ -22,6 +22,7 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
 fi
 for b in .build/$CONFIG/*.bundle; do [ -d "$b" ] && cp -R "$b" "$APP/Contents/Resources/"; done
 [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$APP/Contents/Resources/"
+cp CHANGELOG.md "$APP/Contents/Resources/CHANGELOG.md"
 echo -n "APPL????" > "$APP/Contents/PkgInfo"
 
 # Sign. A self-signed "Transcriber Dev" identity gives a stable designated requirement so

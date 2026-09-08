@@ -60,6 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let name = i + 1 < CommandLine.arguments.count ? CommandLine.arguments[i + 1] : ""
             showSettings(section: SettingsView.Section.allCases.first { $0.rawValue.lowercased() == name.lowercased() })
         }
+        if CommandLine.arguments.contains("--changelog") { ChangelogWindowController.shared.show() }
         // Development aid: `Transcriber --start` begins recording right after launch.
         if CommandLine.arguments.contains("--start") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.toggleRecording() }

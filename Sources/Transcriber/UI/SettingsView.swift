@@ -471,6 +471,8 @@ struct GeneralSettings: View {
                         Button("Check Now") { Task { await updater.check(interactive: true) } }
                             .buttonStyle(SoftButtonStyle())
                             .disabled(updater.status == .checking)
+                        Button("Show Changes") { ChangelogWindowController.shared.show() }
+                            .buttonStyle(SoftButtonStyle())
                     }
                 }
                 SettingRow(title: "Check automatically", caption: "When the app has been running for a while and the interval has passed") {
