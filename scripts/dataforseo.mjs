@@ -20,9 +20,11 @@ const auth = process.env.DATAFORSEO_AUTH || '';
 if (!auth) { console.error('DATAFORSEO_AUTH missing (login:password)'); process.exit(2); }
 const basic = /^[A-Za-z0-9+/=]+$/.test(auth) && !auth.includes(':') ? auth : Buffer.from(auth).toString('base64');
 
-async function post(path, body) {
+async function post(path, body, attempt = 1) {
   const r = await fetch(API + path, { method: 'POST', headers: { Authorization: 'Basic ' + basic, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json();
+  // 40104 ("verify your account") and 5xx show up intermittently right after signup; retry a few times.
+  if ((j.status_code === 40104 || j.status_code >= 50000) && attempt < 5) { await new Promise(res => setTimeout(res, 1500 * attempt)); return post(path, body, attempt + 1); }
   if (j.status_code !== 20000) throw new Error('DataForSEO ' + j.status_code + ' ' + j.status_message);
   const task = j.tasks && j.tasks[0];
   if (!task || task.status_code !== 20000) throw new Error('DataForSEO task ' + (task ? task.status_code + ' ' + task.status_message : 'missing'));
