@@ -3,6 +3,9 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.3.7 (2026-09-08)
+- The close button of the Settings and What's New windows sits on the left, like the traffic lights.
+
 ## 0.3.6 (2026-09-08)
 - System audio capture now works when the output device is a USB audio interface with its own inputs (e.g. Focusrite Scarlett): the tap's stream is read instead of the interface's silent input channels.
 
