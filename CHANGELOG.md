@@ -3,6 +3,9 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.3.10 (2026-09-09)
+- Floating bar now appears every time you start a recording with the setting enabled, including when the first recording after launch has to load the speech model.
+
 ## 0.3.9 (2026-09-08)
 - Floating bar: no more faint rectangle behind the paused pill; the capsule shadow stays
 
