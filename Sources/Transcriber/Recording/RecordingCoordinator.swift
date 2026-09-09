@@ -32,6 +32,11 @@ final class RecordingCoordinator {
     private var sessionStartHostTime: UInt64 = 0
     private var silentMicCallbacks = 0
     private var micRestartAttempts = 0
+    /// Wall-clock time of the last microphone buffer (levelLock-guarded). Used by the
+    /// stall watchdog to notice when the input engine stops delivering buffers entirely –
+    /// a case the per-buffer silence watchdog cannot see because it never runs then.
+    private var micBufferAt: Date?
+    private var micStallRestarting = false
     private var statsTimer: Timer?
     /// Recent partial word lists per channel, used to decide when a displayed word is settled.
     private var partialHistory: [Channel: [[String]]] = [:]
@@ -187,6 +192,7 @@ final class RecordingCoordinator {
                 micWav = wav
                 let capture = MicrophoneCapture { [weak self] rawSamples, hostTime in
                     guard let self, !self.pausedFlag else { return }
+                    self.noteMicBuffer()
                     self.watchMicSilence(rawSamples)
                     let t = self.seconds(fromHostTime: hostTime, sampleCount: 0)
                     let samples = gate?.processMic(rawSamples, at: t) ?? rawSamples
@@ -197,6 +203,8 @@ final class RecordingCoordinator {
                 let uid = settings.inputDeviceUID, aec = settings.echoCancellation
                 try await offMain { try capture.start(deviceUID: uid, echoCancellation: aec) }
                 mic = capture
+                noteMicBuffer()   // baseline so the stall watchdog waits for the first buffer, not forever
+                micStallRestarting = false
             }
 
             if settings.captureSystemAudio {
@@ -312,7 +320,15 @@ final class RecordingCoordinator {
     /// (a device switch or voice-processing hiccup can leave AVAudioEngine delivering silence).
     private func watchMicSilence(_ samples: [Float]) {
         let silent = !samples.contains { $0 != 0 }
-        if !silent { silentMicCallbacks = 0; return }
+        if !silent {
+            silentMicCallbacks = 0
+            // The mic is delivering real audio again; give any future glitch a fresh set of
+            // restart attempts instead of exhausting the lifetime budget on one recovered hiccup.
+            if micRestartAttempts != 0 {
+                DispatchQueue.main.async { [weak self] in self?.micRestartAttempts = 0 }
+            }
+            return
+        }
         silentMicCallbacks += 1
         guard silentMicCallbacks == 50 else { return }   // ~5 s of buffers at 100 ms
         silentMicCallbacks = 0
@@ -325,6 +341,32 @@ final class RecordingCoordinator {
             } else if self.micRestartAttempts == 4 {
                 self.state.lastError = "Microphone delivers silence. Check the input device in Settings › Audio and the system microphone permission."
             }
+        }
+    }
+
+    /// Records that the microphone just delivered a buffer (any content). Thread-safe:
+    /// called from the Core Audio thread.
+    private func noteMicBuffer() {
+        levelLock.lock(); micBufferAt = Date(); levelLock.unlock()
+    }
+
+    /// Detects the input engine going completely silent at the *transport* level – no buffers
+    /// arriving at all (device reconfigured, aggregate torn down, voice-processing unit stalled).
+    /// The per-buffer `watchMicSilence` cannot see this because it only runs when a buffer is
+    /// delivered. Runs on the main thread from the level timer.
+    private func checkMicStall() {
+        guard settings.captureMicrophone, state.isRecording, !state.isPaused,
+              let mic, mic.isRunning, !micStallRestarting else { return }
+        levelLock.lock(); let last = micBufferAt; levelLock.unlock()
+        guard let last, Date().timeIntervalSince(last) > 4.0 else { return }
+        micStallRestarting = true
+        noteMicBuffer()   // reset the clock so we wait out the restart before judging again
+        micRestartAttempts += 1
+        AppLog.write("Microphone stopped delivering buffers for 4 s (attempt \(micRestartAttempts)) – restarting input engine")
+        if micRestartAttempts <= 3 {
+            restartMicrophone(useDefault: micRestartAttempts >= 2)
+        } else if micRestartAttempts == 4 {
+            state.lastError = "Microphone stopped delivering audio. Check the input device in Settings › Audio and the system microphone permission."
         }
     }
 
@@ -345,6 +387,7 @@ final class RecordingCoordinator {
             self.micPeak = 0; self.systemPeak = 0
             self.levelLock.unlock()
             self.state.pushLevel(mic: AudioResampler.displayLevel(rms: m), system: AudioResampler.displayLevel(rms: s))
+            self.checkMicStall()
         }
         statsTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             guard let self else { return }
@@ -388,8 +431,11 @@ final class RecordingCoordinator {
             guard let self, self.state.isRecording else { return }
             do {
                 try mic.start(deviceUID: uid, echoCancellation: self.settings.echoCancellation)
+                self.noteMicBuffer()   // give the fresh engine a full grace window to produce its first buffer
+                self.micStallRestarting = false
                 AppLog.write("Microphone restarted on \(uid.isEmpty ? "default input (\(AudioDevices.defaultInputDevice()?.name ?? "-"))" : uid)")
             } catch {
+                self.micStallRestarting = false
                 AppLog.write("Microphone restart failed: \(error)")
                 self.state.lastError = "Microphone restart failed: \(error.localizedDescription)"
             }

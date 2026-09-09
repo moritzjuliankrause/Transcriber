@@ -53,6 +53,28 @@ enum HeadlessTranscribe {
             }
 
             let store = try SessionStore(root: outRoot, myName: "Me", otherName: "Speaker", language: language ?? "")
+
+            // `--longwindow`: offline re-pass. Feed the engine large spans (it slides its own
+            // 15 s window with context inside each call) instead of the live path's short
+            // VAD-cut fragments. Use this to A/B the transcript quality against the default.
+            if arguments.contains("--longwindow") {
+                let t1 = Date()
+                var opts = OfflineRetranscribe.Options()
+                if let wi = arguments.firstIndex(of: "--window"), wi + 1 < arguments.count,
+                   let w = Double(arguments[wi + 1]) { opts.windowSeconds = w }
+                let entries = try await OfflineRetranscribe.run(
+                    samples: samples, channel: .them, speaker: "Speaker", language: language, engine: engine, options: opts)
+                for e in entries {
+                    store.append(e)
+                    print(String(format: "[%6.2f – %6.2f] %@", e.start, e.end, e.text))
+                }
+                print("Long-window pass: \(entries.count) entries in \(String(format: "%.1f", Date().timeIntervalSince(t1))) s")
+                store.exportExtras(json: true, srt: true)
+                store.markComplete(); store.close()
+                print("Done in \(String(format: "%.1f", Date().timeIntervalSince(t0))) s → \(store.directory.path)")
+                return 0
+            }
+
             let queue = TranscriptionQueue(engine: engine, language: language) { segment, result in
                 let entry = TranscriptEntry(channel: .them, speaker: "Speaker", start: segment.start, end: segment.end,
                                             text: result.text, confidence: result.confidence, createdAt: Date(),

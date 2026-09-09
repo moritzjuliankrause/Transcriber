@@ -642,6 +642,7 @@ struct TranscriptionSettings: View {
                             .frame(width: 34, alignment: .trailing)
                     }
                 }
+                ToggleRow(title: "Re-transcribe after the call", caption: "When recording stops, transcribe the recorded audio again in long context windows and replace the live transcript. More accurate on back-and-forth speech; adds a short pass at the end of the call.", isOn: $settings.reTranscribeOffline)
             }
             SettingsCard(title: "Speakers", footer: "Your own voice is identified by the microphone channel and never needs diarization.") {
                 ToggleRow(title: "Separate remote speakers", caption: "Diarization runs after the call on the system audio", isOn: $settings.diarizeRemote)

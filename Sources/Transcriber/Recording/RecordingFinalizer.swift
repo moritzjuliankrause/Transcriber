@@ -8,6 +8,13 @@ enum RecordingFinalizer {
     static func finish(store: SessionStore, settings: AppSettings, state: AppState, askTitle: Bool) async {
         store.markFinalizing()
 
+        // Offline re-pass: re-transcribe the kept audio in long context windows and replace the
+        // live transcript before dedup / diarization run on it. Same model as live, but each word
+        // is decoded in the surrounding sentence instead of as an isolated VAD fragment.
+        if settings.reTranscribeOffline {
+            await reTranscribe(store: store, settings: settings, state: state)
+        }
+
         // Text-level echo removal over the whole session (order of arrival does not matter here).
         let deduped = EchoDeduplicator.dedupe(store.entries)
         if deduped.count != store.entries.count {
@@ -71,6 +78,38 @@ enum RecordingFinalizer {
         state.currentSessionURL = finalURL
         if settings.soundEffects { NSSound(named: "Glass")?.play() }
         if openInAI { AITool.open(session: finalURL) }
+    }
+
+    /// Re-runs ASR over each channel's kept WAV with long context windows and replaces the live
+    /// entries. Keeps the original transcript if anything fails (the live pass is never worse).
+    @MainActor
+    private static func reTranscribe(store: SessionStore, settings: AppSettings, state: AppState) async {
+        let channels: [(Channel, URL, String)] = [
+            (.me, store.micWavURL, settings.myName),
+            (.them, store.systemWavURL, settings.otherName),
+        ].filter { FileManager.default.fileExists(atPath: $0.1.path) }
+        guard !channels.isEmpty else { return }
+        state.phase = .stopping("Re-transcribing…")
+        do {
+            let engine = try await ModelCache.shared.engine(precision: ModelManager.shared.precision)
+            let language = settings.languageCode.isEmpty ? nil : settings.languageCode
+            var entries: [TranscriptEntry] = []
+            for (channel, url, speaker) in channels {
+                let samples = (try? WavWriter.readSamples(url: url)) ?? []
+                guard !samples.isEmpty else { continue }
+                entries += try await OfflineRetranscribe.run(samples: samples, channel: channel,
+                                                             speaker: speaker, language: language, engine: engine)
+            }
+            entries.sort { $0.start < $1.start }
+            guard !entries.isEmpty else {
+                AppLog.write("Offline re-pass produced no entries – keeping the live transcript")
+                return
+            }
+            AppLog.write("Offline re-pass: \(store.entries.count) live → \(entries.count) entries")
+            store.replaceEntries(entries)
+        } catch {
+            AppLog.write("Offline re-pass failed, keeping live transcript: \(error)")
+        }
     }
 }
 

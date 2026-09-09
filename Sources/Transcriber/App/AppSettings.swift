@@ -55,6 +55,10 @@ final class AppSettings: ObservableObject {
     /// Guess remote speakers' names from how people address each other ("Speaker 1 [Anna]").
     @Published var guessSpeakerNames: Bool { didSet { defaults.set(guessSpeakerNames, forKey: "guessSpeakerNames") } }
     @Published var vadThreshold: Double { didSet { defaults.set(vadThreshold, forKey: "vadThreshold") } }
+    /// After a recording stops, re-transcribe the kept audio in long context windows and replace
+    /// the live transcript. More accurate on conversational speech, at the cost of a short pass
+    /// at the end of the call. Needs the raw audio, so it implies keeping audio for the re-pass.
+    @Published var reTranscribeOffline: Bool { didSet { defaults.set(reTranscribeOffline, forKey: "reTranscribeOffline") } }
 
     // Output
     @Published var outputDirectory: String { didSet { defaults.set(outputDirectory, forKey: "outputDirectory") } }
@@ -106,6 +110,7 @@ final class AppSettings: ObservableObject {
         maxRemoteSpeakers = int("maxRemoteSpeakers", 4)
         guessSpeakerNames = bool("guessSpeakerNames", false)
         vadThreshold = dbl("vadThreshold", 0.6)
+        reTranscribeOffline = bool("reTranscribeOffline", false)
 
         outputDirectory = str("outputDirectory", AppSettings.defaultOutputDirectory.path)
         exportMarkdown = bool("exportMarkdown", true)

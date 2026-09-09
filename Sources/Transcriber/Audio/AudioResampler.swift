@@ -48,18 +48,30 @@ final class AudioResampler {
               let monoFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: buffer.format.sampleRate, channels: 1, interleaved: false),
               let mono = AVAudioPCMBuffer(pcmFormat: monoFormat, frameCapacity: AVAudioFrameCount(frames)),
               let dst = mono.floatChannelData else { return nil }
-        let scale = 1 / Float(channels)
-        if buffer.format.isInterleaved {
-            let data = src[0]
-            for i in 0..<frames {
-                var sum: Float = 0
-                for c in 0..<channels { sum += data[i * channels + c] }
-                dst[0][i] = sum * scale
-            }
+        // Per-channel energy. Some inputs (a voice-processing aggregate, a multi-channel USB
+        // interface) carry the voice on ONE channel and leave the rest near silent; averaging
+        // then attenuates real speech by 1/channels and can push it below the noise floor. When
+        // one channel clearly dominates, use it alone; otherwise average as before.
+        func sampleAt(_ c: Int, _ i: Int) -> Float {
+            buffer.format.isInterleaved ? src[0][i * channels + c] : src[c][i]
+        }
+        var energy = [Float](repeating: 0, count: channels)
+        for c in 0..<channels {
+            var e: Float = 0
+            for i in 0..<frames { let v = sampleAt(c, i); e += v * v }
+            energy[c] = e
+        }
+        let loudest = energy.indices.max(by: { energy[$0] < energy[$1] }) ?? 0
+        let others = energy.enumerated().reduce(Float(0)) { $1.offset == loudest ? $0 : $0 + $1.element }
+        let dominant = energy[loudest] > 0 && energy[loudest] >= 8 * others
+
+        if dominant {
+            for i in 0..<frames { dst[0][i] = sampleAt(loudest, i) }
         } else {
+            let scale = 1 / Float(channels)
             for i in 0..<frames {
                 var sum: Float = 0
-                for c in 0..<channels { sum += src[c][i] }
+                for c in 0..<channels { sum += sampleAt(c, i) }
                 dst[0][i] = sum * scale
             }
         }

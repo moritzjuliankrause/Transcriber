@@ -3,6 +3,11 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.4.0 (2026-09-09)
+- Your side of a call no longer goes silent after a mid-call audio-device switch: the microphone is restarted automatically when it stops delivering audio, not only when it delivers silence.
+- Better microphone level on multi-channel input devices (e.g. aggregate devices): when the voice sits on one channel, that channel is used instead of an average that buried it.
+- New "Re-transcribe after the call" option (Settings → Transcription, off by default): re-runs the speech model over the recorded audio in long context windows and replaces the live transcript. More accurate on quick back-and-forth speech.
+
 ## 0.3.10 (2026-09-09)
 - Floating bar now appears every time you start a recording with the setting enabled, including when the first recording after launch has to load the speech model.
 

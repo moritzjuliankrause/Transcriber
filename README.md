@@ -44,7 +44,10 @@ identity, e.g. a Developer ID.
 ### Logs and self-tests
 
 The app writes `~/Library/Logs/Transcriber.log` (device, formats, tap, echo-gate stats
-every 30 s, restarts). Two self-tests exist:
+every 30 s, restarts). The microphone engine is watched two ways: a buffer that is all
+zeros for 5 s and a total stop in delivered buffers for 4 s both trigger an automatic
+restart of the input engine (logged), so a mid-call device switch does not silently end
+your side of the recording. Two self-tests exist:
 
 ```sh
 # full recording session without UI (uses the real coordinator, echo gate, ASR)
@@ -80,6 +83,13 @@ the app bundle.
 - **⌃⌥⌘R**: global shortcut to start / stop.
 - A floating bar below the menu bar / notch shows the live transcript (can be
   turned off in Settings).
+- **Re-transcribe after the call** (Settings › Transcription, off by default):
+  when a recording stops, the recorded audio is transcribed again in long context
+  windows and replaces the live transcript. The live pass cuts speech into short
+  fragments at every pause and recognises each in isolation; the re-pass feeds the
+  same model minutes at a time, so each word is heard in its sentence. It is noticeably
+  more accurate on quick back-and-forth speech and runs in well under a minute for an
+  hour-long call.
 
 ## Output
 
