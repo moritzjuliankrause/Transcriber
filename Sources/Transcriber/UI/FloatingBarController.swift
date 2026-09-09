@@ -108,24 +108,28 @@ final class FloatingBarController {
         guard let panel else { return }
         FloatingBarController.dismissTextInputHelperWindows()
         showGeneration += 1
-        let generation = showGeneration
-        // Snap to the initial size without animation while still invisible.
+        // Snap to the initial size without animation while still invisible, then order the
+        // panel on screen and commit the fade-in right now, in this run-loop pass.
+        //
+        // Ordering used to be deferred 0.35 s (so the bar arrived just after the menu-bar pill
+        // had finished expanding). But that made appearing depend on a main-thread timer firing
+        // later, and a slow recording start starves the main thread: a cold model load can take
+        // >20 s right after the click, during which the deferred block never ran and the bar
+        // simply never appeared. We now order it front while the main thread is still free
+        // (this runs during the short sleep at the top of RecordingCoordinator.start(), before
+        // any model work), so Core Animation finishes the fade on the render server even if the
+        // main thread stalls afterwards. The bar now appears on every click with the setting on.
         model.animated = false
         relayout()
+        model.animated = true
         collapseTimer?.invalidate()
         collapseTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.relayout() }
         }
-        // Appear only after the menu bar pill has finished expanding, with a short fade
-        // (alpha is animated by Core Animation, so it stays smooth regardless of main-thread load).
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
-            guard let self, self.showGeneration == generation else { return }
-            self.model.animated = true
-            panel.orderFrontRegardless()
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.25
-                panel.animator().alphaValue = 1
-            }
+        panel.orderFrontRegardless()
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.25
+            panel.animator().alphaValue = 1
         }
     }
 
