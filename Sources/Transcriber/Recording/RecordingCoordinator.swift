@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import Combine
 import FluidAudio
 
 /// Orchestrates a recording session: audio capture → WAV + VAD → ASR → store.
@@ -19,6 +20,10 @@ final class RecordingCoordinator {
     private var engine: FluidAudioEngine?
     private var power: PowerAssertion?
     private var deviceListeners: [AudioPropertyListener] = []
+    /// Persists speaker names entered in the floating bar into the current session while recording.
+    private var speakerNameCancellable: AnyCancellable?
+    /// Experimental online diarization of the system channel; nil unless enabled in Settings.
+    private var liveDiarizer: LiveDiarizer?
     private var levelTimer: Timer?
     private var micPeak: Float = 0
     private var systemPeak: Float = 0
@@ -94,13 +99,31 @@ final class RecordingCoordinator {
             let store = try SessionStore(root: root, myName: settings.myName, otherName: settings.otherName, language: settings.languageCode)
             self.store = store
             store.registerAudioFiles(mic: settings.captureMicrophone, system: settings.captureSystemAudio)
+            // A name typed into the floating bar lands in AppState; mirror it into the saved transcript.
+            speakerNameCancellable = state.$speakerNames
+                .dropFirst()
+                .sink { [weak store] names in store?.setSpeakerNames(names) }
             let language = settings.languageCode.isEmpty ? nil : settings.languageCode
             let myName = settings.myName
             let otherName = settings.otherName
+            // The remote side starts as "Speaker 1"; post-call diarization may split it into
+            // "Speaker 1", "Speaker 2", … The user can rename any of these in the floating bar.
+            let remoteBase = "\(otherName) 1"
             let state = self.state
 
+            // Experimental live diarization: assigns "Speaker N" per remote turn as the call runs.
+            let liveDiarizer: LiveDiarizer? = (settings.liveDiarization && settings.captureSystemAudio)
+                ? LiveDiarizer(otherName: otherName) : nil
+            self.liveDiarizer = liveDiarizer
+            if let liveDiarizer {
+                Task { do { try await liveDiarizer.prepare() } catch { AppLog.write("Live diarization unavailable: \(error)") } }
+            }
+
             let queue = TranscriptionQueue(engine: engine, language: language) { segment, result in
-                let label = segment.channel == .me ? myName : otherName
+                var label = myName
+                if segment.channel == .them {
+                    label = await liveDiarizer?.label(for: segment.samples, duration: segment.end - segment.start) ?? remoteBase
+                }
                 let entry = TranscriptEntry(channel: segment.channel, speaker: label,
                                             start: segment.start, end: segment.end,
                                             text: result.text, confidence: result.confidence, createdAt: Date(),
@@ -118,10 +141,11 @@ final class RecordingCoordinator {
                 store.append(entry)
                 await MainActor.run {
                     self.partialHistory[segment.channel] = nil
+                    if segment.channel == .them { state.noteRemoteSpeaker(label) }
                     state.appendLive(TranscriptLine(channel: segment.channel, speaker: label, text: result.text, start: segment.start), channel: segment.channel)
                 }
             } onPartial: { segment, result in
-                let label = segment.channel == .me ? myName : otherName
+                let label = segment.channel == .me ? myName : remoteBase
                 let recentThem = store.entries.suffix(12).filter { $0.channel == .them }
                 await MainActor.run {
                     // Residual echo shows up on the mic while the far end talks. Do not show such
@@ -233,6 +257,9 @@ final class RecordingCoordinator {
             state.recordingStartedAt = Date()
             state.currentSessionURL = store.directory
             state.phase = .recording
+            // Offer the remote side for naming from the first moment (hover pills), instead of only
+            // once the far end's first final line has arrived. Live diarization may add more later.
+            if settings.captureSystemAudio { state.noteRemoteSpeaker(remoteBase) }
         } catch {
             AppLog.write("Recording start failed: \(error)")
             state.lastError = error.localizedDescription
@@ -298,6 +325,8 @@ final class RecordingCoordinator {
         levelTimer?.invalidate(); levelTimer = nil
         statsTimer?.invalidate(); statsTimer = nil
         diskTimer?.invalidate(); diskTimer = nil
+        speakerNameCancellable = nil
+        liveDiarizer = nil
         deviceListeners = []
         mic?.stop(); mic = nil
         system?.stop(); system = nil

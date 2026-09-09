@@ -645,10 +645,8 @@ struct TranscriptionSettings: View {
                 ToggleRow(title: "Re-transcribe after the call", caption: "When recording stops, transcribe the recorded audio again in long context windows and replace the live transcript. More accurate on back-and-forth speech; adds a short pass at the end of the call.", isOn: $settings.reTranscribeOffline)
             }
             SettingsCard(title: "Speakers", footer: "Your own voice is identified by the microphone channel and never needs diarization.") {
-                ToggleRow(title: "Separate remote speakers", caption: "Diarization runs after the call on the system audio", isOn: $settings.diarizeRemote)
-                SettingRow(title: "Max remote speakers") {
-                    Stepper("\(settings.maxRemoteSpeakers)", value: $settings.maxRemoteSpeakers, in: 1...8)
-                }
+                ToggleRow(title: "Separate remote speakers", caption: "Diarization runs after the call on the system audio and finds how many people spoke on its own", isOn: $settings.diarizeRemote)
+                ToggleRow(title: "Live speaker separation (experimental)", caption: "Tell remote speakers apart during the call, labelling them Speaker 1, 2, … as they appear, so you can name them live. Less accurate than the after-call pass — labels are decided without hearing the rest of the call — and it downloads a diarization model on first use. Replaces the after-call pass.", isOn: $settings.liveDiarization)
                 ToggleRow(title: "Guess speaker names", caption: "Experimental. When someone is addressed by name (\"…, Anna?\") or introduces themselves, the remote speaker who answers is labelled \"[Anna]\". Needs at least two matching mentions.", isOn: $settings.guessSpeakerNames)
             }
         }

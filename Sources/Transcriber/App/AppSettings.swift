@@ -51,7 +51,8 @@ final class AppSettings: ObservableObject {
     @Published var languageCode: String { didSet { defaults.set(languageCode, forKey: "languageCode") } }   // "" = auto
     @Published var encoderPrecision: String { didSet { defaults.set(encoderPrecision, forKey: "encoderPrecision") } } // int8 / int4
     @Published var diarizeRemote: Bool { didSet { defaults.set(diarizeRemote, forKey: "diarizeRemote") } }
-    @Published var maxRemoteSpeakers: Int { didSet { defaults.set(maxRemoteSpeakers, forKey: "maxRemoteSpeakers") } }
+    /// Experimental: separate remote speakers live during the call (instead of only afterwards).
+    @Published var liveDiarization: Bool { didSet { defaults.set(liveDiarization, forKey: "liveDiarization") } }
     /// Guess remote speakers' names from how people address each other ("Speaker 1 [Anna]").
     @Published var guessSpeakerNames: Bool { didSet { defaults.set(guessSpeakerNames, forKey: "guessSpeakerNames") } }
     @Published var vadThreshold: Double { didSet { defaults.set(vadThreshold, forKey: "vadThreshold") } }
@@ -107,7 +108,7 @@ final class AppSettings: ObservableObject {
         languageCode = str("languageCode", "")
         encoderPrecision = str("encoderPrecision", "int8")
         diarizeRemote = bool("diarizeRemote", true)
-        maxRemoteSpeakers = int("maxRemoteSpeakers", 4)
+        liveDiarization = bool("liveDiarization", false)
         guessSpeakerNames = bool("guessSpeakerNames", false)
         vadThreshold = dbl("vadThreshold", 0.6)
         reTranscribeOffline = bool("reTranscribeOffline", false)

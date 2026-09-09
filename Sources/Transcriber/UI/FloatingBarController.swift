@@ -32,8 +32,13 @@ final class FloatingBarController {
     /// The panel never changes size: it is as large as the widest / tallest capsule plus
     /// shadow margin, and fully transparent. Only the SwiftUI capsule inside it morphs,
     /// so its size, contents and shadow animate as one.
+    /// Room reserved below the capsule for the speaker-naming pills, so the panel never has to
+    /// resize when they appear (which made the capsule visibly jump). The extra area is fully
+    /// transparent and clicks through to whatever is underneath.
+    static let maxNamingPills = 5
     static let panelSize = NSSize(width: max(FloatingBarView.width, FloatingBarView.confirmSize.width, FloatingBarView.titleSize.width) + 2 * shadowPadding,
-                                  height: max(FloatingBarView.height(forLines: FloatingBarModel.maxLines), FloatingBarView.confirmSize.height, FloatingBarView.titleSize.height) + 2 * shadowPadding)
+                                  height: max(FloatingBarView.height(forLines: FloatingBarModel.maxLines), FloatingBarView.confirmSize.height, FloatingBarView.titleSize.height)
+                                      + FloatingBarView.pillsAreaHeight(count: maxNamingPills) + 2 * shadowPadding)
 
     init(state: AppState, settings: AppSettings) {
         self.state = state
@@ -52,6 +57,7 @@ final class FloatingBarController {
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .sink { [weak self] _ in self?.reposition() }
             .store(in: &cancellables)
+        configureModelCallbacks()
     }
 
     /// Creates the (hidden) panel. Called once at launch so the first recording start does not
@@ -71,6 +77,7 @@ final class FloatingBarController {
         p.hidesOnDeactivate = false
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         p.isMovableByWindowBackground = true
+        p.acceptsMouseMovedEvents = true
         p.alphaValue = 0
         let host = CapsuleHostingView(rootView: FloatingBarView(state: state, settings: settings, model: model), model: model)
         // Make the transparent margin explicit on every layer: some systems / displays otherwise
@@ -202,6 +209,11 @@ final class FloatingBarController {
                 guard !finished else { return }
                 finished = true
                 guard let self else { continuation.resume(returning: answer); return }
+                // Commit any names still sitting unconfirmed in the pills, then close them.
+                for base in self.model.pillSpeakers { self.state.setSpeakerName(self.model.pillNames[base] ?? "", for: base) }
+                self.model.pillSpeakers = []
+                self.model.pillFocus = nil
+                self.model.pillTitleContext = false
                 self.model.askingTitle = false
                 self.model.onSaveTitle = nil
                 self.model.onSkipTitle = nil
@@ -219,6 +231,8 @@ final class FloatingBarController {
             if panel == nil { prepare() }
             model.animated = panel?.isVisible == true
             model.askingTitle = true
+            // Show the call's speakers as naming pills under the prompt (Tab reaches them).
+            if !state.remoteSpeakers.isEmpty { showPills(state.remoteSpeakers, titleContext: true) }
             (panel as? FloatingPanel)?.allowsKey = true
             // The panel does not activate the app; making it key is enough for typing.
             for delay in [0.0, 0.4, 0.8] {
@@ -258,6 +272,121 @@ final class FloatingBarController {
         let y = visible.maxY - size.height - 8 + FloatingBarController.shadowPadding - FloatingBarController.devOffset
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
+
+    // MARK: - Speaker-naming pills
+
+    private var hoverHideWork: DispatchWorkItem?
+
+    private func configureModelCallbacks() {
+        model.onHoverPills = { [weak self] inside in self?.handleHover(inside) }
+        model.onPillSubmit = { [weak self] index in self?.pillSubmit(index) }
+        model.onPillTab = { [weak self] index, back in self?.pillTab(from: index, backwards: back) }
+        model.onPillCancel = { [weak self] in self?.pillCancel() }
+        model.onPillEdit = { [weak self] base, name in self?.state.setSpeakerName(name, for: base) }
+    }
+
+    /// Live naming is offered while recording, once a remote speaker has been heard, and the bar
+    /// is not already morphed into another prompt.
+    private var liveNamingAvailable: Bool {
+        state.isRecording && !state.remoteSpeakers.isEmpty && !model.askingTitle && !model.confirmingStop
+    }
+
+    private func handleHover(_ inside: Bool) {
+        hoverHideWork?.cancel()
+        if inside {
+            if model.pillSpeakers.isEmpty, liveNamingAvailable { showPills(state.remoteSpeakers, titleContext: false) }
+        } else {
+            guard !model.pillSpeakers.isEmpty, !model.pillTitleContext else { return }
+            // The pills stay until the pointer leaves the bar (then close, committing what was
+            // typed). The short delay bridges the gap between the capsule and the pills so moving
+            // the pointer onto a pill does not close them.
+            let work = DispatchWorkItem { [weak self] in self?.hidePills() }
+            hoverHideWork = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
+        }
+    }
+
+    /// Shows the naming pills below the capsule and (for live hover) focuses the first one.
+    func showPills(_ speakers: [String], titleContext: Bool) {
+        guard panel != nil else { return }
+        model.myNameForColor = settings.myName
+        model.pillTitleContext = titleContext
+        model.pillNames = Dictionary(uniqueKeysWithValues: speakers.map { ($0, state.speakerNames[$0] ?? "") })
+        model.pillSpeakers = speakers
+        model.pillFocus = titleContext ? nil : (speakers.isEmpty ? nil : 0)
+        (panel as? FloatingPanel)?.allowsKey = true
+        for delay in [0.0, 0.4, 0.8] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, !self.model.pillSpeakers.isEmpty else { return }
+                self.panel?.makeKey()
+            }
+        }
+    }
+
+    /// Closes the naming pills, committing whatever was typed.
+    func hidePills() {
+        guard !model.pillSpeakers.isEmpty else { return }
+        for base in model.pillSpeakers { state.setSpeakerName(model.pillNames[base] ?? "", for: base) }
+        let wasTitle = model.pillTitleContext
+        model.pillSpeakers = []
+        model.pillFocus = nil
+        model.pillTitleContext = false
+        if !model.askingTitle, !model.confirmingStop {
+            (panel as? FloatingPanel)?.allowsKey = false
+            if panel?.isKeyWindow == true { panel?.resignKey() }
+        } else if wasTitle {
+            // Back to the title field.
+            panel?.makeKey()
+        }
+    }
+
+    private func pillSubmit(_ index: Int) {
+        commitPill(index)
+        let count = model.pillSpeakers.count
+        if model.pillTitleContext {
+            // Enter in a name field jumps to the next name; after the last, back to the title field.
+            model.pillFocus = index + 1 < count ? index + 1 : nil
+        } else if count <= 1 {
+            hidePills()
+        } else {
+            model.pillFocus = (index + 1) % count
+        }
+    }
+
+    private func pillTab(from index: Int, backwards: Bool) {
+        commitPill(index)
+        let count = model.pillSpeakers.count
+        guard count > 0 else { return }
+        if model.pillTitleContext {
+            // Ring including the title field, represented by pillFocus == nil.
+            if backwards {
+                model.pillFocus = index == 0 ? nil : index - 1
+            } else {
+                model.pillFocus = index + 1 < count ? index + 1 : nil
+            }
+            if model.pillFocus == nil { panel?.makeKey() }
+        } else {
+            model.pillFocus = backwards ? (index - 1 + count) % count : (index + 1) % count
+        }
+    }
+
+    private func pillCancel() {
+        if model.pillTitleContext {
+            model.pillFocus = nil        // back to the title field
+            panel?.makeKey()
+        } else {
+            hidePills()
+        }
+    }
+
+    private func commitPill(_ index: Int) {
+        guard index >= 0, index < model.pillSpeakers.count else { return }
+        let base = model.pillSpeakers[index]
+        state.setSpeakerName(model.pillNames[base] ?? "", for: base)
+    }
+
+    /// Called from the title prompt: focus moved to the title field (pillFocus == nil).
+    func focusTitleFromPills() { model.pillFocus = nil; panel?.makeKey() }
 }
 
 /// The bar's panel: never activates the app, takes keyboard focus only while the stop
@@ -283,14 +412,43 @@ private final class CapsuleHostingView: NSHostingView<FloatingBarView> {
     @available(*, unavailable) required init?(coder: NSCoder) { fatalError() }
     @available(*, unavailable) required init(rootView: FloatingBarView) { fatalError() }
 
-    override func hitTest(_ point: NSPoint) -> NSView? {
+    /// The visible region: the capsule at the top plus the naming pills below it (view coords).
+    /// The content is top-aligned; `NSHostingView` is flipped, so the top edge is at y = padding.
+    private var contentRect: NSRect {
         let size = FloatingBarView.size(for: model)
-        let w = size.width, h = size.height
-        let capsule = NSRect(x: bounds.midX - w / 2,
-                             y: bounds.maxY - FloatingBarController.shadowPadding - h,
-                             width: w, height: h)
-        return capsule.contains(convert(point, from: superview)) ? super.hitTest(point) : nil
+        let pills = FloatingBarView.pillsAreaHeight(count: model.pillSpeakers.count)
+        let w = max(size.width, 260), h = size.height + pills
+        let y = isFlipped ? FloatingBarController.shadowPadding
+                          : bounds.maxY - FloatingBarController.shadowPadding - h
+        return NSRect(x: bounds.midX - w / 2, y: y, width: w, height: h)
     }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // Points outside the visible region fall through the transparent panel to what's underneath.
+        contentRect.contains(convert(point, from: superview)) ? super.hitTest(point) : nil
+    }
+
+    // Hover tracking. SwiftUI's `.onHover` only fires while the app is active, but the bar is a
+    // background, non-activating panel — so hover must be tracked with an `.activeAlways` tracking
+    // area instead, or the naming pills never appear on hover during a recording.
+    private var hoverTracking: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverTracking { removeTrackingArea(hoverTracking) }
+        let area = NSTrackingArea(rect: bounds,
+                                  options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverTracking = area
+    }
+
+    private func reportHover(_ event: NSEvent) {
+        model.onHoverPills?(contentRect.contains(convert(event.locationInWindow, from: nil)))
+    }
+    override func mouseEntered(with event: NSEvent) { reportHover(event) }
+    override func mouseMoved(with event: NSEvent) { reportHover(event) }
+    override func mouseExited(with event: NSEvent) { model.onHoverPills?(false) }
 }
 
 /// Display state of the floating bar. Designed to be *calm*: a word that has been
@@ -335,6 +493,27 @@ final class FloatingBarModel: ObservableObject {
     @Published var title = ""
     var onSaveTitle: ((_ openInAI: Bool) -> Void)?
     var onSkipTitle: (() -> Void)?
+
+    // MARK: - Speaker-naming pills (below the capsule)
+
+    /// Remote speaker base labels currently shown as naming pills, in order.
+    @Published var pillSpeakers: [String] = []
+    /// The text typed into each pill, keyed by base label.
+    @Published var pillNames: [String: String] = [:]
+    /// Which pill field has focus. nil = none (live) or the title field (title prompt).
+    @Published var pillFocus: Int?
+    /// The pills accompany the title prompt (Tab bridges to the title field) vs. a live hover.
+    var pillTitleContext = false
+    var showingPills: Bool { !pillSpeakers.isEmpty }
+    /// Colours the pill label like the speaker's text in the transcript.
+    var myNameForColor = "Me"
+    var onHoverPills: ((Bool) -> Void)?
+    var onPillSubmit: ((_ index: Int) -> Void)?
+    var onPillTab: ((_ index: Int, _ backwards: Bool) -> Void)?
+    var onPillCancel: (() -> Void)?
+    /// Called on every keystroke so the typed name is committed to the shared state immediately,
+    /// and never lost when the bar morphs into the stop / title prompt and the pills are rebuilt.
+    var onPillEdit: ((_ base: String, _ name: String) -> Void)?
 
     static let maxLines = 3
 
@@ -555,6 +734,14 @@ struct FloatingBarView: View {
         CGFloat(max(1, n)) * lineHeight + 2 * verticalPadding + 2
     }
 
+    /// Geometry of the smaller naming pills shown below the capsule.
+    static let pillHeight: CGFloat = 28
+    static let pillGap: CGFloat = 7
+    /// Vertical space the pills occupy below the capsule (each pill plus the gap above it).
+    static func pillsAreaHeight(count: Int) -> CGFloat {
+        count > 0 ? CGFloat(count) * (pillHeight + pillGap) : 0
+    }
+
     /// Full width while showing transcript, a compact pill around the status message otherwise.
     static func width(forMessage message: String?) -> CGFloat {
         guard let message else { return width }
@@ -573,29 +760,44 @@ struct FloatingBarView: View {
         return CGSize(width: width(forMessage: model.message), height: height(forLines: model.visibleLineCount) - 2)
     }
 
-    @State private var titleFocused = false
-
     var body: some View {
+        VStack(spacing: FloatingBarView.pillGap) {
+            capsule
+            ForEach(Array(model.pillSpeakers.enumerated()), id: \.element) { index, base in
+                SpeakerPill(base: base, index: index, model: model)
+                    .transition(.scale(scale: 0.2, anchor: .top).combined(with: .opacity))
+            }
+        }
+        // Hover is tracked by CapsuleHostingView's tracking area (SwiftUI .onHover does not fire
+        // for a background, non-activating panel).
+        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: model.pillSpeakers)
+        .padding(FloatingBarController.shadowPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var capsule: some View {
         let size = FloatingBarView.size(for: model)
         let confirming = model.confirmingStop
         let asking = model.askingTitle
         // Always a capsule – the confirmation is just a taller, wider pill.
         let shape = Capsule()
-        HStack(alignment: .center, spacing: 8) {
+        return HStack(alignment: .center, spacing: 8) {
             Circle().fill(Color.red).frame(width: 7, height: 7)
             WaveformView(levels: Array(state.levelHistory.suffix(10)), color: .white)
                 .frame(width: 22, height: 10)
 
             if asking {
-                TitleField(text: $model.title, placeholder: "Name this recording (optional)", focused: $titleFocused,
-                           onSubmit: { model.onSaveTitle?(false) }, onCancel: { model.onSkipTitle?() })
+                TitleField(text: $model.title, placeholder: "Name this recording (optional)",
+                           focused: Binding(get: { model.pillFocus == nil }, set: { if $0 { model.pillFocus = nil } }),
+                           onSubmit: { model.onSaveTitle?(false) },
+                           onCancel: { model.onSkipTitle?() },
+                           onTab: { if !model.pillSpeakers.isEmpty { model.pillFocus = 0 } })
                     .frame(height: 17)
                     .padding(.horizontal, 12)
                     .frame(height: 26)
                     .background(.white.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(.white.opacity(titleFocused ? 0.35 : 0.15)))
+                    .overlay(Capsule().stroke(.white.opacity(model.pillFocus == nil ? 0.35 : 0.15)))
                     .padding(.leading, 4)
-                    .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { titleFocused = true } }
                 HStack(spacing: 6) {
                     Button("Skip") { model.onSkipTitle?() }
                         .buttonStyle(PillButtonStyle())
@@ -644,7 +846,7 @@ struct FloatingBarView: View {
                     ForEach(model.lines) { line in
                         HStack(spacing: FloatingBarView.tokenSpacing) {
                             ForEach(Array(line.tokens.enumerated()), id: \.offset) { _, token in
-                                Text(token.text)
+                                Text(token.speaker != nil ? state.displayName(for: token.speaker!) + ":" : token.text)
                                     .fontWeight(token.speaker != nil ? .semibold : .regular)
                                     .foregroundStyle(color(for: token))
                                     .blur(radius: token.settled ? 0 : 2.2)
@@ -686,9 +888,6 @@ struct FloatingBarView: View {
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: model.message == nil)
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: confirming)
         .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: asking)
-        // Centred at the top of the fixed-size, transparent panel.
-        .padding(FloatingBarController.shadowPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private func color(for token: FloatingBarModel.Token) -> Color {
@@ -722,6 +921,7 @@ private struct TitleField: NSViewRepresentable {
     @Binding var focused: Bool
     var onSubmit: () -> Void
     var onCancel: () -> Void
+    var onTab: (() -> Void)? = nil
 
     func makeNSView(context: Context) -> NSTextField {
         let field = NSTextField()
@@ -782,6 +982,127 @@ private struct TitleField: NSViewRepresentable {
         func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
             switch selector {
             case #selector(NSResponder.insertNewline(_:)): parent.onSubmit(); return true
+            case #selector(NSResponder.cancelOperation(_:)): parent.onCancel(); return true
+            case #selector(NSResponder.insertTab(_:)):
+                if let onTab = parent.onTab { onTab(); return true }
+                return false
+            default: return false
+            }
+        }
+    }
+}
+
+/// One naming pill below the bar: "Speaker N:" in the speaker's colour, a focused text field
+/// (type the name straight away, even while another app is frontmost), and a ⏎ hint. Tab moves
+/// between pills (and the title field), Enter confirms.
+private struct SpeakerPill: View {
+    let base: String
+    let index: Int
+    @ObservedObject var model: FloatingBarModel
+
+    var body: some View {
+        let focused = model.pillFocus == index
+        HStack(spacing: 5) {
+            Text(base + ":")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(base == model.myNameForColor ? Color.cyan : Color.orange)
+                .fixedSize()
+            SpeakerField(
+                text: Binding(get: { model.pillNames[base] ?? "" },
+                              set: { model.pillNames[base] = $0; model.onPillEdit?(base, $0) }),
+                focused: focused,
+                onSubmit: { model.onPillSubmit?(index) },
+                onTab: { model.onPillTab?(index, $0) },
+                onCancel: { model.onPillCancel?() },
+                onFocus: { model.pillFocus = index })
+                .frame(width: 120, height: 18)
+            Text("⏎")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(focused ? 0.9 : 0.3))
+        }
+        .padding(.horizontal, 12)
+        .frame(height: FloatingBarView.pillHeight)
+        .environment(\.colorScheme, .dark)
+        .background(Color.black.opacity(0.85), in: Capsule())
+        .overlay(Capsule().strokeBorder(.white.opacity(focused ? 0.4 : 0.15)))
+        .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+        .fixedSize()
+    }
+}
+
+/// The name field inside a speaker pill. Like TitleField, but auto-capitalises the first letter
+/// and routes Tab / Shift-Tab and Return to the bar's navigation.
+private struct SpeakerField: NSViewRepresentable {
+    @Binding var text: String
+    var focused: Bool
+    var onSubmit: () -> Void
+    var onTab: (_ backwards: Bool) -> Void
+    var onCancel: () -> Void
+    var onFocus: () -> Void
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField()
+        field.isBordered = false
+        field.drawsBackground = false
+        field.focusRingType = .none
+        field.font = .systemFont(ofSize: 11, weight: .medium)
+        field.textColor = .white
+        field.placeholderAttributedString = NSAttributedString(string: "name", attributes: [
+            .foregroundColor: NSColor.white.withAlphaComponent(0.35), .font: NSFont.systemFont(ofSize: 11)])
+        field.isAutomaticTextCompletionEnabled = false
+        field.allowsEditingTextAttributes = false
+        field.lineBreakMode = .byTruncatingTail
+        field.cell?.usesSingleLineMode = true
+        field.cell?.wraps = false
+        field.delegate = context.coordinator
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        if field.stringValue != text { field.stringValue = text }
+        if focused, field.window?.firstResponder !== field.currentEditor(), field.window != nil {
+            field.window?.makeFirstResponder(field)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: SpeakerField
+        init(_ parent: SpeakerField) { self.parent = parent }
+
+        func controlTextDidBeginEditing(_ notification: Notification) {
+            if let editor = (notification.object as? NSTextField)?.currentEditor() as? NSTextView {
+                editor.isAutomaticTextCompletionEnabled = false
+                editor.isContinuousSpellCheckingEnabled = false
+                editor.isAutomaticSpellingCorrectionEnabled = false
+                editor.isGrammarCheckingEnabled = false
+                editor.isAutomaticQuoteSubstitutionEnabled = false
+                editor.isAutomaticDashSubstitutionEnabled = false
+                editor.isAutomaticTextReplacementEnabled = false
+                editor.isAutomaticDataDetectionEnabled = false
+                editor.isAutomaticLinkDetectionEnabled = false
+                if #available(macOS 14, *) { editor.inlinePredictionType = .no }
+                if #available(macOS 15.2, *) { editor.writingToolsBehavior = .none }
+                editor.insertionPointColor = .white
+            }
+            parent.onFocus()
+        }
+        func controlTextDidChange(_ notification: Notification) {
+            guard let field = notification.object as? NSTextField else { return }
+            var s = field.stringValue
+            if let first = s.first, first.isLowercase {      // always start with a capital letter
+                s = first.uppercased() + s.dropFirst()
+                field.stringValue = s
+                field.currentEditor()?.selectedRange = NSRange(location: (s as NSString).length, length: 0)
+            }
+            parent.text = s
+        }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            switch selector {
+            case #selector(NSResponder.insertNewline(_:)): parent.onSubmit(); return true
+            case #selector(NSResponder.insertTab(_:)): parent.onTab(false); return true
+            case #selector(NSResponder.insertBacktab(_:)): parent.onTab(true); return true
             case #selector(NSResponder.cancelOperation(_:)): parent.onCancel(); return true
             default: return false
             }

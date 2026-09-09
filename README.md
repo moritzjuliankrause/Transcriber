@@ -83,6 +83,14 @@ the app bundle.
 - **⌃⌥⌘R**: global shortcut to start / stop.
 - A floating bar below the menu bar / notch shows the live transcript (can be
   turned off in Settings).
+- **Name a speaker** by hovering the floating bar: a small pill zooms out under it
+  for each detected remote speaker ("Speaker 1", "Speaker 2", …). Type the name
+  right away — the bar takes the keyboard even while another app is in front —
+  press Enter to confirm, Tab to move between several. Your own microphone side is
+  never asked for (set your name in Settings). The name replaces the label for the
+  rest of that recording, in the bar and the saved transcript. The same pills
+  appear under the "Name this recording" prompt when a call ends, so you can name
+  or correct speakers before saving.
 - **Re-transcribe after the call** (Settings › Transcription, off by default):
   when a recording stops, the recorded audio is transcribed again in long context
   windows and replaces the live transcript. The live pass cuts speech into short
@@ -119,6 +127,12 @@ the audio that was not processed yet and renders the final files.
   that only contain the far end. A text-level check drops any remaining duplicates.
   On a real 54-minute Zoom call this removed 220 of 225 echo segments.
 - Apple voice processing is available as an experimental alternative (off by default).
+- **Live speaker separation** (Settings › Speakers, experimental, off by default): instead of
+  waiting for the after-call pass, the remote channel is diarized during the call — each speech
+  turn is matched to a running set of voices and labelled Speaker 1, 2, … as they first appear,
+  so the naming pills offer them live. It is less accurate than the after-call pass, because a
+  turn's speaker is decided without hearing the rest of the call, and it downloads a small
+  diarization model the first time it runs. When enabled it replaces the after-call pass.
 
 ## Implementation notes
 
@@ -151,7 +165,10 @@ replaced by the transcript). "Save & Open in …" in the title dialog and "Open 
 Transcript in …" in the menu then open the tool with the prompt ready – you only press
 Enter. Short prompts travel in the URL; real transcripts are too long for that, so the text
 goes to the clipboard and is pasted automatically (requires the Accessibility permission,
-macOS asks once).
+macOS asks once). If you renamed or re-signed the app and the grant does not take, an entry
+left from the old signature can linger: the dialog keeps appearing although the toggle looks
+on. Toggle Transcriber off and on under System Settings › Privacy & Security › Accessibility
+(or run `tccutil reset Accessibility com.moritzkrause.anyrecord`) to recreate it.
 
 ## App icon
 

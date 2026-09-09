@@ -33,6 +33,9 @@ struct SessionMeta: Codable {
     var micWav: String?
     var systemWav: String?
     var appVersion: String
+    /// Custom display names entered for remote speakers, keyed by base label ("Speaker 1", …).
+    /// Optional for backward compatibility with sessions written before this existed.
+    var speakerNames: [String: String]?
 }
 
 /// Owns one recording session folder:
@@ -138,6 +141,15 @@ final class SessionStore {
         lock.lock(); renderMarkdownLocked(); lock.unlock()
     }
 
+    /// Stores the custom speaker names for this recording and re-renders the Markdown so the
+    /// saved transcript shows them. Keys are base labels ("Speaker 1", …); blank values are dropped.
+    func setSpeakerNames(_ names: [String: String]) {
+        let cleaned = names.filter { !$0.value.trimmingCharacters(in: .whitespaces).isEmpty }
+        meta.speakerNames = cleaned.isEmpty ? nil : cleaned
+        try? writeMeta()
+        lock.lock(); renderMarkdownLocked(); lock.unlock()
+    }
+
     func markFinalizing() {
         meta.status = .finalizing
         try? writeMeta()
@@ -180,7 +192,7 @@ final class SessionStore {
             try? enc.encode(payload).write(to: directory.appendingPathComponent("transcript.json"), options: .atomic)
         }
         if srt {
-            try? TranscriptExporter.srt(entries: sorted).data(using: .utf8)?
+            try? TranscriptExporter.srt(entries: sorted, names: meta.speakerNames).data(using: .utf8)?
                 .write(to: directory.appendingPathComponent("transcript.srt"), options: .atomic)
         }
     }

@@ -11,9 +11,11 @@ enum RemoteDiarizer {
         let end: Double
     }
 
-    static func diarize(wavURL: URL, maxSpeakers: Int, progress: @escaping @Sendable (Double) -> Void) async throws -> [SpeakerSpan] {
+    static func diarize(wavURL: URL, maxSpeakers: Int? = nil, progress: @escaping @Sendable (Double) -> Void) async throws -> [SpeakerSpan] {
         var config = OfflineDiarizerConfig.default
-        config.clustering.maxSpeakers = maxSpeakers
+        // Leave maxSpeakers unset so the clustering auto-detects how many people spoke; only cap
+        // it when a specific number is asked for.
+        if let maxSpeakers { config.clustering.maxSpeakers = maxSpeakers }
         let manager = OfflineDiarizerManager(config: config)
         try await manager.prepareModels()
         let result = try await manager.process(wavURL) { done, total in

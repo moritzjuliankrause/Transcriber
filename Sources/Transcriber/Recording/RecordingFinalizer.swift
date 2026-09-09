@@ -22,12 +22,15 @@ enum RecordingFinalizer {
             store.replaceEntries(deduped)
         }
 
-        // Speaker diarization on the remote (system audio) channel.
-        if settings.diarizeRemote, FileManager.default.fileExists(atPath: store.systemWavURL.path),
+        // Speaker diarization on the remote (system audio) channel. Skipped when live diarization
+        // already labelled speakers during the call, so its labels (and the names mapped to them)
+        // are not overwritten by a second, differently-numbered pass.
+        if settings.diarizeRemote, !settings.liveDiarization,
+           FileManager.default.fileExists(atPath: store.systemWavURL.path),
            store.entries.contains(where: { $0.channel == .them }) {
             state.phase = .stopping("Identifying speakers…")
             do {
-                let spans = try await RemoteDiarizer.diarize(wavURL: store.systemWavURL, maxSpeakers: settings.maxRemoteSpeakers) { p in
+                let spans = try await RemoteDiarizer.diarize(wavURL: store.systemWavURL) { p in
                     Task { @MainActor in state.phase = .stopping("Identifying speakers… \(Int(p * 100))%") }
                 }
                 // Only keep speakers that hold a meaningful share of the talk time; pyannote tends
@@ -58,6 +61,11 @@ enum RecordingFinalizer {
             }
         }
 
+        // Offer the call's remote speakers for naming in the title prompt, in order of appearance.
+        var remote: [String] = []
+        for e in store.entries where e.channel == .them && !remote.contains(e.speaker) { remote.append(e.speaker) }
+        state.remoteSpeakers = remote
+
         var openInAI = false
         if askTitle {
             state.phase = .stopping("Waiting for title…")
@@ -65,6 +73,8 @@ enum RecordingFinalizer {
             if let title = answer.title { store.setTitle(title) }
             openInAI = answer.openInAI
         }
+        // Persist any names entered live or in the title prompt (coordinator's live mirror is gone by now).
+        store.setSpeakerNames(state.speakerNames)
 
         store.exportExtras(json: settings.exportJSON, srt: settings.exportSRT)
         store.markComplete()
@@ -84,9 +94,11 @@ enum RecordingFinalizer {
     /// entries. Keeps the original transcript if anything fails (the live pass is never worse).
     @MainActor
     private static func reTranscribe(store: SessionStore, settings: AppSettings, state: AppState) async {
+        // The remote label must match the live path ("\(otherName) 1"), so a name the user typed
+        // during the call (keyed by that base label) still applies after the re-pass replaces entries.
         let channels: [(Channel, URL, String)] = [
             (.me, store.micWavURL, settings.myName),
-            (.them, store.systemWavURL, settings.otherName),
+            (.them, store.systemWavURL, "\(settings.otherName) 1"),
         ].filter { FileManager.default.fileExists(atPath: $0.1.path) }
         guard !channels.isEmpty else { return }
         state.phase = .stopping("Re-transcribing…")

@@ -3,6 +3,15 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.5.0 (2026-09-09)
+- Name speakers from the floating bar. Hover the bar during a call and small pills zoom out beneath it, one per remote speaker; type a name straight from the keyboard (no matter which app is in front), Enter confirms, Tab moves between them. The name is used for the rest of that recording, in the bar and the saved transcript. The same pills appear under the "Name this recording" prompt at the end so you can still name (or rename) speakers before saving.
+- The naming pill is now available from the moment a recording starts, so you can name the other side before they have spoken (it used to appear only after the far end's first line).
+- A name typed into a pill is kept even if you press Stop straight away: it is saved the instant you type it instead of only when the pills close.
+- Experimental live speaker separation (Settings → Speakers): tells remote speakers apart during the call and labels them Speaker 1, 2, … as they appear, so you can name them live. Less accurate than the after-call pass and downloads a diarization model on first use; when on, it replaces the after-call pass.
+- The other side of a call is now labelled "Speaker 1" by default (then "Speaker 2", … when several remote voices are detected), instead of just "Speaker".
+- Copy and paste (⌘C / ⌘V, plus ⌘X / ⌘A / ⌘Z) now work in the Settings text fields and the naming fields.
+- Auto-paste into the AI tool no longer asks for Accessibility permission on every paste. It requests it at most once per launch and otherwise falls back to a manual paste, so a stale permission left over from the old app name can't cause a prompt loop. If the dialog keeps appearing, toggle Transcriber off and on under System Settings › Privacy & Security › Accessibility once.
+
 ## 0.4.0 (2026-09-09)
 - Your side of a call no longer goes silent after a mid-call audio-device switch: the microphone is restarted automatically when it stops delivering audio, not only when it delivers silence.
 - Better microphone level on multi-channel input devices (e.g. aggregate devices): when the voice sits on one channel, that channel is used instead of an average that buried it.

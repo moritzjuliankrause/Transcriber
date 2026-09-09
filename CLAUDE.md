@@ -40,6 +40,8 @@ open -a /Applications/Transcriber.app --args --capture-test 8 --log /tmp/capture
 .build/release/Transcriber --transcribe file.wav [--language de] [--out dir] [--diarize] [--reference system.wav] [--realtime]
 # offline long-window re-pass (the RecordingFinalizer path); use to A/B quality vs. the line above
 .build/release/Transcriber --transcribe file.wav --longwindow [--window 600] [--language de]
+# experimental live diarization over a file (per-VAD-segment speaker labels); tune the matcher
+.build/release/Transcriber --transcribe file.wav --live-diarize [--speaker-threshold 0.62]
 # marketing images rendered from the real PillView / FloatingBarView (used by .github/workflows/hero-render.yml)
 .build/release/Transcriber --render-hero out.png --timer 12:34 --caption "…" "Anna: line" "Me: line"
 .build/release/Transcriber --render-bar out.png --text "…"

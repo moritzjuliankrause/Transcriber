@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         DockIcon.apply(settings.showDockIcon)
         AppSettings.applyAppearance(settings.appearance)
+        NSApp.mainMenu = AppDelegate.makeMainMenu()
         statusItemController = StatusItemController(
             state: state,
             onToggleRecording: { [weak self] in self?.toggleRecording() },
@@ -88,8 +89,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self.state.isPaused = true }
             }
         }
+        // Development aid: `Transcriber --pills-test` shows the live speaker-naming pills.
+        if CommandLine.arguments.contains("--pills-test") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self else { return }
+                self.state.recordingStartedAt = Date()
+                self.state.phase = .recording
+                self.state.appendLive(TranscriptLine(channel: .them, speaker: "Speaker 1", text: "So this is the other side talking for a while on the call.", start: 1), channel: .them)
+                self.state.remoteSpeakers = ["Speaker 1", "Speaker 2"]
+                // No force-show here: hovering the bar must reveal the pills via the tracking area.
+            }
+        }
         // Development aid: `Transcriber --title-test` shows the bar's save prompt right away.
         if CommandLine.arguments.contains("--title-test") {
+            state.remoteSpeakers = ["Speaker 1", "Speaker 2"]
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                 for w in NSApp.windows {
                     AppLog.write("Window: \(type(of: w)) level=\(w.level.rawValue) frame=\(w.frame) visible=\(w.isVisible) alpha=\(w.alphaValue) title=\(w.title) content=\(w.contentView.map { String(describing: type(of: $0)) } ?? "-")")
@@ -100,6 +113,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 AppLog.write("Title test: \(answer.title ?? "<none>") openInAI=\(answer.openInAI)")
             }
         }
+    }
+
+    /// A menu-bar (accessory) app has no menu bar, but without a main menu the standard text
+    /// editing shortcuts (⌘C/⌘V/⌘X/⌘A/⌘Z) are dead in every text field — Settings, the title
+    /// prompt, the speaker-name fields. A minimal App + Edit menu wires those key equivalents to
+    /// the first responder (the field editor handles them).
+    static func makeMainMenu() -> NSMenu {
+        let main = NSMenu()
+
+        let appItem = NSMenuItem()
+        main.addItem(appItem)
+        let appMenu = NSMenu()
+        appItem.submenu = appMenu
+        appMenu.addItem(withTitle: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+
+        let editItem = NSMenuItem()
+        main.addItem(editItem)
+        let edit = NSMenu(title: "Edit")
+        editItem.submenu = edit
+        edit.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        let redo = edit.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "z")
+        redo.keyEquivalentModifierMask = [.command, .shift]
+        edit.addItem(.separator())
+        edit.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        edit.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        edit.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        return main
     }
 
     func applicationWillTerminate(_ notification: Notification) {

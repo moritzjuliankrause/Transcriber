@@ -100,6 +100,11 @@ enum AITool {
         case file(URL, prompt: String)
     }
 
+    /// We ask the system to show its Accessibility grant dialog at most once per launch. Without
+    /// this a stale or denied grant (e.g. an entry left over from the AnyRecord-era signature)
+    /// would make `AXIsProcessTrusted()` return false and pop the dialog on *every* paste.
+    private static var didRequestAccessibility = false
+
     @MainActor
     static func open(session directory: URL) {
         guard let text = prompt(forSession: directory) else {
@@ -149,8 +154,13 @@ enum AITool {
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(delay))
             guard AXIsProcessTrusted() else {
-                let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-                AXIsProcessTrustedWithOptions(options)
+                // Show the system grant dialog only the first time this launch; after that just
+                // fall back to manual paste so we never nag on every paste.
+                if !didRequestAccessibility {
+                    didRequestAccessibility = true
+                    let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+                    _ = AXIsProcessTrustedWithOptions(options)
+                }
                 if case .text(let t) = payload { copy(t) } else if case .file(_, let p) = payload { copy(p) }
                 notifyPaste()
                 return

@@ -32,6 +32,38 @@ final class AppState: ObservableObject {
     @Published var currentSessionURL: URL?
     @Published var pendingRecovery: [SessionRecovery.IncompleteSession] = []
 
+    // MARK: - Manual speaker naming (this recording only)
+
+    /// Custom display names for remote speakers, keyed by their base label ("Speaker 1", …).
+    /// Applied to the floating bar and the saved transcript; reset when a new session starts.
+    @Published var speakerNames: [String: String] = [:]
+    /// The remote speakers currently offered for naming, in order ("Speaker 1", "Speaker 2", …).
+    /// Populated live as remote speech arrives, and from the finished transcript at save time.
+    @Published var remoteSpeakers: [String] = []
+
+    /// The label to show for a base speaker label: its custom name if one was entered, else itself.
+    func displayName(for base: String) -> String {
+        if let custom = speakerNames[base], !custom.isEmpty { return custom }
+        return base
+    }
+
+    /// Sets (or, with an empty/blank name, clears) the custom name for a speaker. The first letter
+    /// is always capitalised.
+    func setSpeakerName(_ name: String, for base: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            speakerNames[base] = nil
+        } else {
+            speakerNames[base] = trimmed.prefix(1).uppercased() + trimmed.dropFirst()
+        }
+    }
+
+    /// Notes that a remote speaker exists so the bar can offer to name it.
+    func noteRemoteSpeaker(_ base: String) {
+        guard !remoteSpeakers.contains(base) else { return }
+        remoteSpeakers.append(base)
+    }
+
     var isRecording: Bool {
         if case .recording = phase { return true }
         if case .starting = phase { return true }
@@ -91,6 +123,8 @@ final class AppState: ObservableObject {
         partialLines = [:]
         lastUpdatedChannel = nil
         retractions = []
+        speakerNames = [:]
+        remoteSpeakers = []
     }
 }
 

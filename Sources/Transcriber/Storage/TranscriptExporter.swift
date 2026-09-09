@@ -12,7 +12,14 @@ enum TranscriptExporter {
         return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%02d:%02d", m, s)
     }
 
+    /// Applies the session's custom speaker names (base label → entered name) to a label.
+    private static func display(_ speaker: String, _ names: [String: String]?) -> String {
+        guard let custom = names?[speaker], !custom.isEmpty else { return speaker }
+        return custom
+    }
+
     static func markdown(meta: SessionMeta, entries: [TranscriptEntry]) -> String {
+        let names = meta.speakerNames
         let df = DateFormatter()
         df.dateStyle = .long
         df.timeStyle = .short
@@ -22,7 +29,7 @@ enum TranscriptExporter {
             out += "- **Duration:** \(timestamp(end.timeIntervalSince(meta.startedAt)))\n"
         }
         out += "- **Status:** \(meta.status.rawValue)\n"
-        let speakers = Array(Set(entries.map(\.speaker))).sorted()
+        let speakers = Array(Set(entries.map { display($0.speaker, names) })).sorted()
         if !speakers.isEmpty { out += "- **Speakers:** \(speakers.joined(separator: ", "))\n" }
         out += "\n---\n\n"
 
@@ -32,7 +39,7 @@ enum TranscriptExporter {
         var paragraphStart = 0.0
         func flush() {
             guard !paragraph.isEmpty else { return }
-            out += "**\(lastSpeaker)** _[\(timestamp(paragraphStart))]_  \n\(paragraph.joined(separator: " "))\n\n"
+            out += "**\(display(lastSpeaker, names))** _[\(timestamp(paragraphStart))]_  \n\(paragraph.joined(separator: " "))\n\n"
             paragraph = []
         }
         for e in entries {
@@ -47,7 +54,7 @@ enum TranscriptExporter {
         return out
     }
 
-    static func srt(entries: [TranscriptEntry]) -> String {
+    static func srt(entries: [TranscriptEntry], names: [String: String]? = nil) -> String {
         func stamp(_ t: Double) -> String {
             let ms = Int((t - t.rounded(.down)) * 1000)
             let total = Int(t)
@@ -55,7 +62,7 @@ enum TranscriptExporter {
         }
         var out = ""
         for (i, e) in entries.enumerated() {
-            out += "\(i + 1)\n\(stamp(e.start)) --> \(stamp(e.end))\n\(e.speaker): \(e.text)\n\n"
+            out += "\(i + 1)\n\(stamp(e.start)) --> \(stamp(e.end))\n\(display(e.speaker, names)): \(e.text)\n\n"
         }
         return out
     }

@@ -75,12 +75,19 @@ enum HeadlessTranscribe {
                 return 0
             }
 
+            // `--live-diarize`: label each segment with the experimental online diarizer.
+            var liveThreshold: Float = 0.62
+            if let ti = arguments.firstIndex(of: "--speaker-threshold"), ti + 1 < arguments.count, let t = Float(arguments[ti + 1]) { liveThreshold = t }
+            let live: LiveDiarizer? = arguments.contains("--live-diarize") ? LiveDiarizer(otherName: "Speaker", threshold: liveThreshold) : nil
+            if let live { try await live.prepare(); print("Live diarization ready") }
+
             let queue = TranscriptionQueue(engine: engine, language: language) { segment, result in
-                let entry = TranscriptEntry(channel: .them, speaker: "Speaker", start: segment.start, end: segment.end,
+                let speaker = (await live?.label(for: segment.samples, duration: segment.end - segment.start)) ?? "Speaker 1"
+                let entry = TranscriptEntry(channel: .them, speaker: speaker, start: segment.start, end: segment.end,
                                             text: result.text, confidence: result.confidence, createdAt: Date(),
                                             words: result.words.map { WordStamp(word: $0.word, start: segment.start + $0.startTime, end: segment.start + $0.endTime) })
                 store.append(entry)
-                print(String(format: "[%6.2f – %6.2f] %@", segment.start, segment.end, result.text))
+                print(String(format: "[%6.2f – %6.2f] %@: %@", segment.start, segment.end, speaker, result.text))
             } onPartial: { segment, result in
                 print(String(format: "  … partial [%6.2f – %6.2f] %@", segment.start, segment.end, result.text))
             }
@@ -106,7 +113,7 @@ enum HeadlessTranscribe {
                 wav.append(samples)
                 wav.close()
                 store.registerAudioFiles(mic: false, system: true)
-                let spans = try await RemoteDiarizer.diarize(wavURL: store.systemWavURL, maxSpeakers: 4) { _ in }
+                let spans = try await RemoteDiarizer.diarize(wavURL: store.systemWavURL) { _ in }
                 let speakers = Set(spans.map(\.speaker))
                 print("Diarization: \(speakers.count) speaker(s)")
                 let names = Dictionary(uniqueKeysWithValues: speakers.sorted().enumerated().map { ($1, "Speaker \($0 + 1)") })
