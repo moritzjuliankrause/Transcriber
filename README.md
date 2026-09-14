@@ -7,12 +7,28 @@ FaceTime, browsers, YouTube – anything that plays audio.
 
 Everything runs offline. The only network access is the one-time model download.
 
-## Requirements
+## Install
+
+Most people don't build anything. Grab the latest build from the
+[Releases page](https://github.com/moritzjuliankrause/Transcriber/releases), unzip
+it and drag `Transcriber.app` into your Applications folder. You need macOS 14.2 or
+newer (Core Audio process taps), Apple Silicon recommended. No Xcode, no command
+line tools, nothing else.
+
+The app isn't signed with a paid Apple Developer ID yet, so the first time you open
+it macOS says it's from an unidentified developer and won't let it straight through.
+Open it once via System Settings › Privacy & Security, where a "Open Anyway" button
+appears after the first blocked attempt (on older macOS you can instead right-click
+the app and choose Open). After that it launches normally like any other app.
+
+## Build from source
+
+Only needed if you want to compile it yourself. Requirements:
 
 - macOS 14.2 or newer (Core Audio process taps), Apple Silicon recommended
-- Xcode 15.2+ **or** just the Command Line Tools (`xcode-select --install`)
-
-## Build
+- Xcode 15.3+ **or** the matching Command Line Tools (`xcode-select --install`). The
+  package is on Swift tools version 5.10, so an older toolchain (Xcode 15.2 / Swift
+  5.9 and earlier) is refused before it compiles.
 
 Option A – Xcode: open `Package.swift` in Xcode, select the *Transcriber* scheme, run.
 
