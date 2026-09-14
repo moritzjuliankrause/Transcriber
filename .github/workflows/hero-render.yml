@@ -18,6 +18,12 @@ on:
   workflow_dispatch:
   repository_dispatch:
     types: [render-heroes]
+  # Safety net: the routines commit hero.json but nothing dispatches this workflow yet, so poll a
+  # few times a day and render any hero.json in transcriber-blog that has no (or a stale) hero.webp.
+  # Guarantees a draft's Slack preview card has its image without a manual trigger. Uses the existing
+  # BLOG_REPO_TOKEN; it commits only when there is something to render.
+  schedule:
+    - cron: '30 */3 * * *'
 
 permissions:
   contents: read
