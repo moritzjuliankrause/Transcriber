@@ -24,3 +24,6 @@ scripts/notify.mjs
 .github/workflows/seo-data.yml
 .github/workflows/seo-notify.yml
 .env.example
+
+# Personal Claude Code guidance, not needed on GitHub
+CLAUDE.md
