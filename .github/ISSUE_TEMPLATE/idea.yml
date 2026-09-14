@@ -1,0 +1,29 @@
+name: Idea or feature request
+description: Suggest something Transcriber could do.
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tell me the situation you're in, not just the feature. The problem is
+        more useful to me than the solution, and I'll say plainly whether it fits
+        how the app works. It might already be on my list, and it might not, no
+        hard feelings either way.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The real situation. What's happening now that you wish were different?
+      placeholder: e.g. "I'm on a lot of Teams calls with three people and I keep having to rename the same speakers by hand."
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you had in mind
+      description: Optional. If you have a concrete idea for how it could work, put it here.
+  - type: textarea
+    id: workaround
+    attributes:
+      label: How you handle it today
+      description: Optional. Is there a way you work around it right now?

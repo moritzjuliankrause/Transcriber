@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Email Moritz directly
+    url: mailto:moritz@moritz-krause.com
+    about: Prefer not to use GitHub, or have a private or security matter? Email me.
+  - name: Security or privacy issue
+    url: https://github.com/moritzjuliankrause/Transcriber/blob/main/SECURITY.md
+    about: Please report these privately by email, not as a public issue. See the security policy.

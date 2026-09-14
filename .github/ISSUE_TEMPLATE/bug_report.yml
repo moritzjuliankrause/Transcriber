@@ -1,0 +1,47 @@
+name: Bug report
+description: Something in Transcriber isn't working the way it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. A line from the log usually tells me more
+        than anything else, so please don't skip that field if you can help it.
+        If you'd rather not use GitHub, email me at moritz@moritz-krause.com.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, and what did the app do instead of what you expected?
+      placeholder: e.g. "My side of the call went silent after I switched from AirPods to the built-in mic mid-Zoom."
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log excerpt
+      description: >
+        Paste the part of ~/Library/Logs/Transcriber.log around when it went
+        wrong. For an audio-capture problem, the output of
+        `--capture-test 8` is even better (see CONTRIBUTING.md).
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Transcriber version
+      description: Settings › General shows it, or the title of the release you downloaded.
+      placeholder: e.g. 0.5.0
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac
+      placeholder: e.g. macOS 15.1, MacBook Air M2
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Which app were you on (Zoom, Teams, FaceTime, a browser)? Headphones or speakers? Steps to reproduce if you have them.
