@@ -8,6 +8,8 @@ enum RecordTest {
     static func run(arguments: [String]) async -> Int32 {
         var seconds = 15.0
         if let i = arguments.firstIndex(of: "--record-test"), i + 1 < arguments.count, let s = Double(arguments[i + 1]) { seconds = s }
+        // Before the --log redirect, so a refused request writes nothing.
+        guard await DiagnosticConsent.confirm("--record-test", duration: "for \(Int(seconds)) s") else { return 1 }
         if let li = arguments.firstIndex(of: "--log"), li + 1 < arguments.count {
             freopen(arguments[li + 1], "w", stdout)
             setvbuf(stdout, nil, _IONBF, 0)

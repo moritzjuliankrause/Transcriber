@@ -138,9 +138,11 @@ enum AITool {
         // Too long for a URL (the normal case for a real call): open the page without the
         // query and paste into the focused input once the page is up.
         let bare = template.components(separatedBy: "?").first ?? template
-        if let url = URL(string: bare) { NSWorkspace.shared.open(url) }
+        let url = URL(string: bare)
+        if let url { NSWorkspace.shared.open(url) }
         if AppSettings.shared.aiAutoPaste {
-            pasteWhenReady(payload, after: 3.0)
+            let browser = url.flatMap { NSWorkspace.shared.urlForApplication(toOpen: $0) }.flatMap { Bundle(url: $0)?.bundleIdentifier }
+            pasteWhenReady(payload, into: browser, after: 3.0)
         } else {
             copy(text)
             notifyPaste()
@@ -148,11 +150,22 @@ enum AITool {
     }
 
     /// Sends the payload as ⌘V (twice for file + prompt) after a delay if Accessibility is
-    /// granted, otherwise asks for it once and falls back to the clipboard.
+    /// granted, otherwise asks for it once and falls back to the clipboard. Only pastes while
+    /// `target` (bundle id of the AI app or browser) is frontmost: the user may have switched to
+    /// another app during the delay, and a transcript must never land in Slack or Mail by accident.
     @MainActor
-    private static func pasteWhenReady(_ payload: Payload, after delay: TimeInterval) {
+    private static func pasteWhenReady(_ payload: Payload, into target: String?, after delay: TimeInterval) {
+        func targetIsFront() -> Bool {
+            target != nil && NSWorkspace.shared.frontmostApplication?.bundleIdentifier == target
+        }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(delay))
+            guard targetIsFront() else {
+                AppLog.write("Auto-paste skipped: \(target ?? "target app") is not in front")
+                if case .text(let t) = payload { copy(t) } else if case .file(_, let p) = payload { copy(p) }
+                notifyPaste()
+                return
+            }
             guard AXIsProcessTrusted() else {
                 // Show the system grant dialog only the first time this launch; after that just
                 // fall back to manual paste so we never nag on every paste.
@@ -175,6 +188,8 @@ enum AITool {
                 // Give the app a moment to pick up the attachment before the text arrives.
                 try? await Task.sleep(for: .seconds(1.5))
                 copy(prompt)
+                // The file is in; if the user switched away meanwhile, leave the prompt to paste by hand.
+                guard targetIsFront() else { notifyPaste(); return }
                 sendPaste()
             }
             // The transcript has been delivered; do not leave it on the clipboard where every
@@ -202,7 +217,7 @@ enum AITool {
                     if case .text(let t) = payload { copy(t) } else if case .file(_, let p) = payload { copy(p) }
                     notifyPaste(); return
                 }
-                pasteWhenReady(payload, after: alreadyRunning ? 1.0 : 4.0)
+                pasteWhenReady(payload, into: bundleID, after: alreadyRunning ? 1.0 : 4.0)
             }
         }
     }
@@ -265,6 +280,7 @@ enum AITool {
         alert.messageText = "Transcript copied"
         alert.informativeText = "The prompt with the transcript is in your clipboard. Paste it with ⌘V into \(toolDisplayName) and press Enter."
         alert.addButton(withTitle: "OK")
+        NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
 

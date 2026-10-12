@@ -5,14 +5,17 @@ import AVFoundation
 /// seconds and prints callback counts and levels. Use it to verify permissions.
 enum CaptureTest {
     static func run(arguments: [String]) async -> Int32 {
+        var seconds = 6.0
+        if let i = arguments.firstIndex(of: "--capture-test"), i + 1 < arguments.count, let s = Double(arguments[i + 1]) { seconds = s }
+        // Before the --log redirect, so a refused request writes nothing. The mic runs for
+        // `seconds` in total, then system audio for another `seconds`.
+        guard await DiagnosticConsent.confirm("--capture-test", duration: "for about \(Int(seconds * 2)) s") else { return 1 }
         if let li = arguments.firstIndex(of: "--log"), li + 1 < arguments.count {
             // Redirect output so the test can be launched via `open … --args` (proper TCC attribution).
             freopen(arguments[li + 1], "w", stdout)
             setvbuf(stdout, nil, _IONBF, 0)
             dup2(fileno(stdout), fileno(stderr))
         }
-        var seconds = 6.0
-        if let i = arguments.firstIndex(of: "--capture-test"), i + 1 < arguments.count, let s = Double(arguments[i + 1]) { seconds = s }
 
         print("Microphone permission: \(AVCaptureDevice.authorizationStatus(for: .audio).rawValue) (3 = authorized)")
         let granted = await Permissions.requestMicrophone()

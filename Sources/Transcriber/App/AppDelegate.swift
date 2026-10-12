@@ -85,11 +85,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         if CommandLine.arguments.contains("--changelog") { ChangelogWindowController.shared.show() }
         // Development aid: `Transcriber --start` begins recording right after launch.
-        if CommandLine.arguments.contains("--start") {
+        if CommandLine.arguments.contains("--start"), DiagnosticConsent.confirm("--start", duration: "until you stop it") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.toggleRecording() }
         }
         // Development aid: `Transcriber --cycle` records, stops (skipping the title), records again.
-        if CommandLine.arguments.contains("--cycle") {
+        if CommandLine.arguments.contains("--cycle"), DiagnosticConsent.confirm("--cycle", duration: "for about 20 s and then again until you stop it") {
             let t = { (d: Double, f: @escaping () -> Void) in DispatchQueue.main.asyncAfter(deadline: .now() + d) { f() } }
             t(1.5) { [weak self] in self?.toggleRecording() }
             t(9) { [weak self] in self?.toggleRecording() }

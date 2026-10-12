@@ -98,6 +98,11 @@ This prints the permission state, callback counts, and peak levels for both the
 microphone and the system-audio tap. Launch it through `open` rather than running the
 binary directly, so the permissions land on the app bundle.
 
+Both tests, and the `--start` / `--cycle` launch flags, record under the app's
+microphone and system-audio permissions. Any program on the Mac could launch the app
+with those flags, so a release build first asks "Start a recording?" and only records
+after you click Record; a debug build skips the question.
+
 ## First run
 
 1. macOS asks for **Microphone** and **System Audio Recording** permission. You need
@@ -248,7 +253,10 @@ template (`{transcript}` gets replaced by the transcript). "Save & Open in …" 
 title dialog, and "Open Last Transcript in …" in the menu, then open that tool with the
 prompt already filled in, and you only press Enter. Short prompts ride along in the URL;
 a real transcript is far too long for that, so the text goes onto the clipboard and
-pastes itself (that needs the Accessibility permission, which macOS asks for once). If
+pastes itself (that needs the Accessibility permission, which macOS asks for once). It
+only pastes while the AI app or browser is still in front; if you've switched to
+another app in the meantime, the text stays on the clipboard and Transcriber tells you
+to paste it yourself, so a transcript never lands in the wrong window. If
 you've renamed or re-signed the app and the grant won't take, an entry left over from
 the old signature can hang around, and the dialog keeps popping up even though the
 toggle looks on. Turn Transcriber off and back on under System Settings › Privacy &

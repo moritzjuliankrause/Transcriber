@@ -3,7 +3,7 @@
 .DS_Store
 .build/
 .claude/worktrees/
-.env
+.env*
 .swiftpm/
 .wrangler/
 dist/
