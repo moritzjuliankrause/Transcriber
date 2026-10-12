@@ -3,6 +3,10 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.6.1 (2026-10-12)
+- Recording flags given at launch (--record-test, --capture-test, --start, --cycle) now ask "Start a recording?" first, so no other program can record through Transcriber's microphone permission.
+- Auto-paste into your AI tool only happens while that app or browser is still in front; if you switched away, the text stays on the clipboard instead of landing in the wrong window.
+
 ## 0.6.0 (2026-10-12)
 - The floating pill is back on by default and much smaller: a waveform shows that audio arrives, with a mute button on the left and pause on the right. The menu bar icon simply turns red while recording; clicking it stops.
 - Mute your own microphone from the pill (or the menu) to talk to someone in the room: only the computer's audio is recorded and transcribed until you unmute.
