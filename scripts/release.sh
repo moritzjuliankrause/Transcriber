@@ -14,6 +14,14 @@ if [ -n "$(git status --porcelain)" ]; then
   echo "Working tree not clean – commit first." >&2; exit 1
 fi
 
+# Users only accept an update signed by the same certificate as their installed copy.
+PINNED=$(grep -v '^#' scripts/signing-certificate.sha1 | tr -d '[:space:]')
+if ! security find-identity -p codesigning | grep -q "$PINNED"; then
+  echo "Release certificate $PINNED is not in the keychain – existing users could not install" >&2
+  echo "this update. Import it (see scripts/signing-certificate.sha1) before releasing." >&2
+  exit 1
+fi
+
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" Resources/Info.plist
 # Add the release notes to CHANGELOG.md (shown in the app under Settings → Show Changes),
 # unless a section for this version was written by hand already.
@@ -31,6 +39,12 @@ git commit -q -m "Release $VERSION"
 git tag -a "v$VERSION" -m "Transcriber $VERSION"
 
 ./scripts/bundle.sh release
+SIGNED=$(codesign -dr - dist/Transcriber.app 2>&1 | sed -nE 's/.*certificate leaf = H"([0-9a-fA-F]+)".*/\1/p' | tr a-f A-F)
+if [ "$SIGNED" != "$PINNED" ]; then
+  echo "dist/Transcriber.app is signed with ${SIGNED:-no certificate}, not $PINNED – not publishing." >&2
+  echo "Undo the local release commit and tag: git tag -d v$VERSION && git reset --hard HEAD~1" >&2
+  exit 1
+fi
 ZIP="dist/Transcriber-$VERSION.zip"
 rm -f "$ZIP"
 ditto -c -k --keepParent dist/Transcriber.app "$ZIP"

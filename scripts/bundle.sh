@@ -36,6 +36,9 @@ echo -n "APPL????" > "$APP/Contents/PkgInfo"
 # macOS keeps the microphone / system-audio grants across rebuilds. Ad-hoc signatures
 # change with every build and reset the permissions each time.
 IDENTITY="${CODESIGN_IDENTITY:-}"
+# Prefer the exact release certificate (by hash: a re-created identity can share the name).
+PINNED=$(grep -v '^#' scripts/signing-certificate.sha1 | tr -d '[:space:]')
+if [ -z "$IDENTITY" ] && security find-identity -p codesigning | grep -q "$PINNED"; then IDENTITY="$PINNED"; fi
 if [ -z "$IDENTITY" ]; then
   for name in "Transcriber Dev" "AnyRecord Dev"; do
     # No -v: a self-signed identity is "not trusted" but signs fine, and keeps a stable signature.

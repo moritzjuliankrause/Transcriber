@@ -12,6 +12,12 @@ if CommandLine.arguments.contains("--capture-test") {
     let code = await CaptureTest.run(arguments: CommandLine.arguments)
     exit(code)
 }
+#if DEBUG
+if CommandLine.arguments.contains("--call-watch") {
+    let code = await CallWatch.run(arguments: CommandLine.arguments)
+    exit(code)
+}
+#endif
 if CommandLine.arguments.contains("--render-hero") {
     let code = await HeroRender.run(arguments: CommandLine.arguments)
     exit(code)
