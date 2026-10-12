@@ -28,6 +28,11 @@ Open it once through System Settings › Privacy & Security, where an "Open Anyw
 button turns up right after the block (on older macOS you right-click the app and pick
 Open instead). After that it launches like anything else.
 
+If you're on 0.5.0 or older, download 0.6.1 once by hand the same way: the built-in
+updater will refuse it. I lost the certificate those versions were signed with, and the
+updater only accepts the certificate it already knows. From 0.6.1 on, updates install
+with one click again.
+
 ## Build from source
 
 Only if you want to compile it yourself. You'll need:
