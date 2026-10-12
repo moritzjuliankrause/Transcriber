@@ -11,6 +11,9 @@ actor ChannelProcessor {
         let end: TimeInterval
         let samples: [Float]
         var isPartial = false
+        /// Audio right before `samples` (up to a few seconds). Decoded along with the segment so
+        /// the model hears each word in its sentence; the words that fall into it are dropped again.
+        var context: [Float] = []
     }
 
     let channel: Channel
@@ -19,7 +22,9 @@ actor ChannelProcessor {
     private let onSegment: @Sendable (Segment) async -> Void
     private let onPartial: (@Sendable (Segment) async -> Void)?
     private var lastPartialSample = 0
-    private let partialIntervalSamples = 8_000     // re-transcribe the running segment every 0.5 s
+    /// Re-transcribe the running segment every 0.6 s, stretched for long segments (each pass
+    /// decodes the whole segment so far) – up to ~1.5 s at the 28 s cap.
+    private func partialIntervalSamples(segmentLength: Int) -> Int { 9_600 + segmentLength / 20 }
 
     private var vadState: VadStreamState
     private var pending: [Float] = []          // samples not yet fed to VAD (mod chunkSize)
@@ -28,7 +33,8 @@ actor ChannelProcessor {
     private var totalSamples = 0               // absolute sample counter for this channel
     private var speechStartSample: Int?
     private let lookbackSamples = 4_800        // 0.3 s of pre-roll
-    private let hardCapSamples = 16_000 * 20   // never let a segment exceed 20 s
+    private let contextSamples = 16_000 * 5    // left context kept for decoding (see Segment.context)
+    private let hardCapSamples = 16_000 * 30   // never let a segment exceed 30 s
     private let sampleRate = 16_000
 
     init(channel: Channel, vad: VadManager, threshold: Float,
@@ -39,10 +45,13 @@ actor ChannelProcessor {
         self.onSegment = onSegment
         self.onPartial = onPartial
         self.vadState = await vad.makeStreamState()
+        // Segments end at a real pause (~1 s of silence), not at every breath: the model gets whole
+        // sentences, which is the main accuracy lever for the live text. The cost is that a line
+        // turns final a little later – the display keeps it blurred until then.
         self.vadConfig = VadSegmentationConfig(
             minSpeechDuration: 0.25,
-            minSilenceDuration: 0.25,   // state machine fires on the 2nd low chunk (~0.5 s of real silence)
-            maxSpeechDuration: 14.0,
+            minSilenceDuration: 0.7,    // state machine fires on the ~4th low chunk (~1 s of real silence)
+            maxSpeechDuration: 28.0,
             speechPadding: 0.15)
         _ = threshold
     }
@@ -53,9 +62,9 @@ actor ChannelProcessor {
         ring.append(contentsOf: samples)
         totalSamples += samples.count
 
-        // Keep the ring bounded while idle.
-        if speechStartSample == nil, ring.count > lookbackSamples * 2 {
-            let drop = ring.count - lookbackSamples
+        // Keep the ring bounded while idle (the last few seconds stay as decoding context).
+        if speechStartSample == nil, ring.count > contextSamples + 16_000 {
+            let drop = ring.count - contextSamples
             ring.removeFirst(drop)
             ringStartSample += drop
         }
@@ -89,7 +98,7 @@ actor ChannelProcessor {
                 speechStartSample = totalSamples   // keep going in a new segment
             }
             if let onPartial, let start = speechStartSample,
-               totalSamples - lastPartialSample >= partialIntervalSamples,
+               totalSamples - lastPartialSample >= partialIntervalSamples(segmentLength: totalSamples - start),
                totalSamples - start >= sampleRate / 2 {
                 lastPartialSample = totalSamples
                 let lo = max(0, start - ringStartSample)
@@ -97,7 +106,7 @@ actor ChannelProcessor {
                 await onPartial(Segment(channel: channel,
                                         start: Double(start) / Double(sampleRate),
                                         end: Double(totalSamples) / Double(sampleRate),
-                                        samples: samples, isPartial: true))
+                                        samples: samples, isPartial: true, context: context(before: lo)))
             }
         } catch {
             NSLog("VAD error on \(channel): \(error)")
@@ -110,9 +119,10 @@ actor ChannelProcessor {
         let lo = max(0, start - ringStartSample)
         let hi = max(lo, end - ringStartSample)
         let samples = Array(ring[lo..<hi])
+        let context = context(before: lo)
         speechStartSample = nil
-        // Drop consumed audio, keep lookback.
-        let keepFrom = max(0, hi - lookbackSamples)
+        // Drop consumed audio, keep the tail as context for the next segment.
+        let keepFrom = max(0, hi - contextSamples)
         ring.removeFirst(keepFrom)
         ringStartSample += keepFrom
 
@@ -120,8 +130,14 @@ actor ChannelProcessor {
         let segment = Segment(channel: channel,
                               start: Double(start) / Double(sampleRate),
                               end: Double(end) / Double(sampleRate),
-                              samples: samples)
+                              samples: samples, context: context)
         await onSegment(segment)
+    }
+
+    /// The audio before ring index `lo`, at most `contextSamples` long.
+    private func context(before lo: Int) -> [Float] {
+        guard lo > 0 else { return [] }
+        return Array(ring[max(0, lo - contextSamples)..<lo])
     }
 
     /// Flush any speech in progress (called on stop).

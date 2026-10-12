@@ -1,4 +1,5 @@
 import Foundation
+import FluidAudio
 
 /// Serializes ASR work so segments from both channels are transcribed one at a
 /// time (the Neural Engine does not benefit from parallel requests) and results
@@ -51,7 +52,7 @@ actor TranscriptionQueue {
                 segment = partial
             }
             do {
-                let result = try await engine.transcribe(segment.samples, language: language)
+                let result = try await transcribe(segment)
                 if segment.isPartial {
                     // A final for this channel may have arrived meanwhile – then the partial is stale.
                     if !result.text.isEmpty, !queue.contains(where: { $0.channel == segment.channel }) {
@@ -73,9 +74,39 @@ actor TranscriptionQueue {
         waiters.forEach { $0.resume() }
     }
 
+    /// Decodes the segment together with the audio before it, then keeps only the words whose
+    /// centre lies inside the segment (timings shifted back to the segment start). Hearing the
+    /// preceding sentence fixes the typical errors of short fragments: a wrong language for "ja" or
+    /// "genau", names split into nonsense, missing first words. Without word timings there is no
+    /// safe cut, so the segment is decoded on its own.
+    private func transcribe(_ segment: ChannelProcessor.Segment) async throws -> TranscribedSegment {
+        let contextSeconds = Double(segment.context.count) / 16_000
+        guard contextSeconds >= 0.5 else { return try await engine.transcribe(segment.samples, language: language) }
+        let full = try await engine.transcribe(segment.context + segment.samples, language: language)
+        let kept = full.words
+            .filter { ($0.startTime + $0.endTime) / 2 >= contextSeconds }
+            .map { WordTiming(word: $0.word, startTime: max(0, $0.startTime - contextSeconds), endTime: max(0, $0.endTime - contextSeconds)) }
+        guard !full.words.isEmpty, !kept.isEmpty else {
+            return try await engine.transcribe(segment.samples, language: language)
+        }
+        return TranscribedSegment(text: WordText.join(kept.map(\.word)), confidence: full.confidence, words: kept)
+    }
+
     /// Waits until every queued segment has been processed.
     func drain() async {
         guard running || !queue.isEmpty else { return }
         await withCheckedContinuation { drainContinuations.append($0) }
+    }
+}
+
+/// Joins recognised words back into text, without spaces before punctuation tokens.
+enum WordText {
+    static func join(_ words: [String]) -> String {
+        words.joined(separator: " ")
+            .replacingOccurrences(of: " ,", with: ",")
+            .replacingOccurrences(of: " .", with: ".")
+            .replacingOccurrences(of: " ?", with: "?")
+            .replacingOccurrences(of: " !", with: "!")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

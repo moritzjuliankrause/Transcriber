@@ -57,6 +57,11 @@ You can also run the bare binary with `swift run`, but macOS only remembers the
 microphone and system-audio permissions and "Launch at login" for a real `.app`
 bundle, so day to day the bundle is the nicer route.
 
+With only the Command Line Tools installed, the macOS 27 SDK cannot compile SwiftUI's
+`@State` (its macro plugin ships with Xcode). `bundle.sh` then builds against the newest
+older SDK it finds; for a plain `swift build` set it yourself:
+`SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk swift build`.
+
 ### Code signing and permissions
 
 macOS ties every privacy grant to the app's code signature. An ad-hoc signature
@@ -103,28 +108,62 @@ binary directly, so the permissions land on the app bundle.
 
 ## Usage
 
-- **Left click** the dot in the menu bar to start recording. The dot turns red and
-  grows into a pill with a live waveform and a timer.
-- **Left click again** to stop and save.
-- **Right click** for the menu: Settings, the transcripts folder, quit.
+- **Left click** the icon in the menu bar to start recording. The icon turns red.
+- **Left click again** to stop and save (after a short confirmation in the floating pill).
+- **Right click** for the menu: pause, mute, Settings, the transcripts folder, quit.
 - **⌃⌥⌘R** starts and stops from anywhere.
-- A floating bar under the menu bar (or the notch) shows the live transcript. You can
-  turn it off in Settings.
-- **Name a speaker** by hovering the floating bar. A small pill zooms out beneath it
-  for each remote speaker it has heard ("Speaker 1", "Speaker 2", and so on). Type the
-  name straight away (the bar takes the keyboard even while another app is in front),
-  press Enter to confirm, Tab to jump between several. It never asks about your own
-  microphone side, you set that name in Settings. The name you type replaces the label
-  for the rest of the recording, both in the bar and in the saved transcript. The same
-  pills come back under the "Name this recording" prompt when the call ends, so you can
-  name or fix speakers before it saves.
+- While recording, a **floating pill** sits under the menu bar (or the notch). You can
+  turn it off in Settings › General. Its waveform shows that audio is coming in.
+  - **Mute** (left button) mutes only your microphone. I use it to talk to someone in
+    the room: the computer's audio is still recorded and transcribed, and my side is
+    recorded as silence until I unmute.
+  - **Pause** (right button) pauses the whole recording. Paused time is left out.
+  - **Hover** the pill and the live transcript unfolds below it, a scrollable card with
+    the conversation so far. The pill stays where it is, so the buttons never move
+    under the pointer. The card opens at the latest line. Scroll up to read back; a
+    "Latest" button shows up whenever you're not at the end. Click the waveform or the
+    pin to keep the card open without hovering. The newest words stay blurred, often
+    for several lines, until the model has heard enough of the sentence to be sure.
+- **Name whoever is speaking** (Settings › Speakers, on by default). When the card opens
+  on hover, the cursor is already in its "Who's speaking?" field. Type the name of
+  whoever is talking on the far end and press Enter. Move the pointer away with the
+  field empty and the keyboard goes back to the app in front; a half-typed name keeps
+  the card open until Enter or Escape. It's meant for longer turns, someone giving a
+  talk or presenting for a few minutes, not quick back-and-forth. Names you've used
+  in the call show up as chips, so one click is enough when that person speaks again,
+  and ✕ ends the name when they stop. Everything that voice says gets the name, live
+  in the card and, after the call, across the whole recording: diarization finds the
+  same voice everywhere, also where you didn't name it.
 - **Re-transcribe after the call** (Settings › Transcription, off by default). When a
   recording stops, the recorded audio runs through the model again in long context
-  windows and replaces the live transcript. The live pass has to cut speech into short
-  pieces at every pause and recognise each one on its own; the second pass feeds the
-  model whole minutes at a time, so each word is heard inside its sentence. It's
-  noticeably better on quick back-and-forth, and it finishes in well under a minute for
-  an hour-long call.
+  windows and replaces the live transcript. The live pass works on single utterances,
+  cut at pauses of about a second; the second pass feeds the model whole minutes at a
+  time, so each word is heard inside its sentence. It's noticeably better on quick
+  back-and-forth, and it finishes in well under a minute for an hour-long call.
+- **Mute phases** are marked in the transcript where they happened
+  (`[12:00–14:30] Microphone muted`).
+- **Language** (Settings › Transcription): auto-detect or one of 18 languages. With
+  Parakeet the choice keeps the model to the language's alphabet (no Cyrillic letters in
+  Polish, no Latin in Russian). It can't force German over English, say; the model
+  works out the language from the audio itself.
+
+## Recordings: history, re-transcribing, importing
+
+Settings › Recordings (also *Recordings…* in the menu) lists every recording with its
+date, length and whether its audio is still around.
+
+- **Re-transcribe** runs a finished recording through the after-call steps again with
+  the current settings: long-window transcription of the kept audio, echo removal,
+  speaker separation, remembered voices. Names already in the transcript are carried
+  over by time, so speakers keep their names even if the numbering changes.
+- **Transcribe an audio file.** Drop a WAV, M4A, MP3, AIFF or video file onto the
+  section (or pick one) and it becomes a new recording named after the file, with every
+  voice in it separated.
+- **Unfinished recordings** (a crash, a forced quit) show up at the top with *Finalize*.
+- **Keep raw audio** (Settings › Output): delete when saved, 7 days (the default), 30
+  days, or until you delete it. Expired audio is removed automatically, at launch and
+  every 6 hours; the transcript always stays. *Delete Audio* in a recording's ⋯ menu
+  removes it right away.
 
 ## Output
 
@@ -135,8 +174,8 @@ Each recording gets its own folder, `<Transcripts>/<yyyy-MM-dd HH-mm> <title>/`:
 | `transcript.md` | Readable transcript, grouped by speaker with timestamps. Re-rendered after every segment. |
 | `transcript.jsonl` | One JSON object per segment, appended and fsync'ed immediately. This is the crash-safe source of truth. |
 | `transcript.json`, `transcript.srt` | Optional exports (Settings › Output). |
-| `mic.wav`, `system.wav` | Raw 16 kHz mono audio, flushed every 2 s. Optional to keep. |
-| `session.json` | Metadata and status (`recording` / `complete`). |
+| `mic.wav`, `system.wav` | Raw 16 kHz mono audio, flushed every 2 s. Kept for 7 days by default (Settings › Output). |
+| `session.json` | Metadata and status (`recording` / `complete`), names typed during the call, mute phases. |
 
 If the Mac crashes mid-call, the transcript up to the last segment is already on disk.
 Next time you launch, Transcriber offers to finalize that session: it transcribes
@@ -147,21 +186,28 @@ whatever audio hadn't been processed yet and writes the final files.
 - Your microphone channel is you (the label is yours to set).
 - The system-audio channel is the other side. After the call, pyannote diarization
   runs over that channel and splits it into "Speaker 1", "Speaker 2", and so on when it
-  hears more than one remote voice.
+  hears more than one remote voice, numbered in the order they first speak. Voices the
+  clustering splits off with only a few seconds of speech are merged into the closest
+  real speaker; anyone who said more than a sentence or two keeps their own label, also
+  in big meetings.
+- Names typed for the current speaker during the call are matched to these voices: the
+  voice that dominates the named stretch gets the name everywhere.
+- **Remember voices** (Settings › Transcription, on by default). A voice you name in the
+  pill is kept as a voice print (an embedding, no audio) in
+  `~/Library/Application Support/Transcriber/voices.json` and recognised in later
+  recordings. Only names you give are learned, never automatic matches, and the bar for
+  a match is set high: an unknown voice stays "Speaker N" rather than getting the wrong
+  name. You can forget each voice in Settings, or all at once.
 - **Echo gate** (on by default). Without headphones your microphone also picks up the
   loudspeaker, so the far end would land in the transcript twice. The gate takes the
   system-audio channel as a reference, works out the delay and the echo gain, and mutes
-  the mic frames that only carry the far end. A text-level check then drops anything
+  the mic frames that only carry the far end. Both channels are lined up on the
+  recording's own sample timeline, so the gate behaves live exactly as it does in an
+  offline run over `mic.wav` and `system.wav`. A text-level check then drops anything
   that slipped past. On a real 54-minute Zoom call that took out 220 of 225 echo
-  segments.
+  segments; on a 115-minute call over MacBook speakers, a 5-minute test section went
+  from 403 echo words on my side to none, with my own words intact.
 - Apple's voice processing is there as an experimental alternative (off by default).
-- **Live speaker separation** (Settings › Speakers, experimental, off by default).
-  Instead of waiting for the after-call pass, the remote channel is diarized during the
-  call: each turn is matched against a running set of voices and labelled Speaker 1, 2,
-  and so on as they first show up, so the naming pills can offer them live. It's less
-  accurate than the after-call pass, because it has to decide a turn's speaker without
-  having heard the rest of the call, and it downloads a small diarization model the
-  first time it runs. When it's on, it takes the place of the after-call pass.
 
 ## Implementation notes
 
@@ -170,6 +216,13 @@ whatever audio hadn't been processed yet and writes the final files.
   mixdown tap over the explicit list of audio process objects does work, so that's what
   Transcriber uses, and it rebuilds the tap whenever the process list changes (an app
   launched mid-recording, say).
+- **System audio sample rate.** The tap's buffers arrive on the output device's clock,
+  which isn't always the rate the tap reports: AirPods drop to 24 kHz in call mode once
+  their microphone opens. Transcriber uses the aggregate device's actual rate, follows
+  rate changes, and as a safety net checks delivered frames against wall-clock time
+  (logged as `measured … frames/s`). Before that, a call on AirPods recorded the far end
+  at double speed and half length, which also wrecked echo removal and speaker
+  separation.
 - **System audio permission.** There's no public API to bring up the prompt, so the app
   calls the private `TCCAccessRequest` for `kTCCServiceAudioCapture`. That's fine for a
   personal build, and it's also why this can't go on the App Store.
@@ -181,7 +234,7 @@ Sources/Transcriber
 ├── App/            entry point, AppDelegate, AppState, AppSettings
 ├── Audio/          Core Audio devices, microphone capture, system audio tap, resampler, WAV writer
 ├── Transcription/  ModelManager, FluidAudio engine, VAD segmenter, transcription queue, diarizer
-├── Storage/        SessionStore (JSONL/MD), exporters, crash recovery
+├── Storage/        SessionStore (JSONL/MD), exporters, crash recovery, recording history, voice library
 ├── Recording/      RecordingCoordinator (orchestration), RecordingFinalizer
 ├── System/         hotkey, power assertion, launch at login, call detection, consent notice
 └── UI/             status item + pill/waveform, floating bar, settings window

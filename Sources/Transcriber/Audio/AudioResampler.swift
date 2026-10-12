@@ -86,6 +86,23 @@ final class AudioResampler {
         return (sum / Float(samples.count)).squareRoot()
     }
 
+    /// Loudest 20 ms RMS in the buffer. Comparable across channels whatever their buffer size
+    /// (the mic delivers ~100 ms at once, the system tap ~10 ms; a plain RMS over a long buffer
+    /// averages speech down into its pauses).
+    static func peakRMS(_ samples: [Float], frame: Int = 320) -> Float {
+        guard samples.count > frame else { return rms(samples) }
+        var peak: Float = 0
+        var i = 0
+        while i < samples.count {
+            let end = min(samples.count, i + frame)
+            var sum: Float = 0
+            for k in i..<end { sum += samples[k] * samples[k] }
+            peak = max(peak, (sum / Float(end - i)).squareRoot())
+            i = end
+        }
+        return peak
+    }
+
     /// Maps RMS to a 0...1 display level with a soft log curve.
     static func displayLevel(rms: Float) -> Float {
         guard rms > 0 else { return 0 }

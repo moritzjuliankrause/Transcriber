@@ -20,13 +20,16 @@ final class RecordingCoordinator {
     private var engine: FluidAudioEngine?
     private var power: PowerAssertion?
     private var deviceListeners: [AudioPropertyListener] = []
-    /// Persists speaker names entered in the floating bar into the current session while recording.
-    private var speakerNameCancellable: AnyCancellable?
-    /// Experimental online diarization of the system channel; nil unless enabled in Settings.
-    private var liveDiarizer: LiveDiarizer?
+    /// Persists speaker names / name tags entered in the floating pill into the current session.
+    private var speakerTagCancellable: AnyCancellable?
+    private var muteCancellable: AnyCancellable?
     private var levelTimer: Timer?
-    private var micPeak: Float = 0
-    private var systemPeak: Float = 0
+    /// Loudest level since the last meter tick; nil = no buffer arrived in between.
+    private var micPeak: Float?
+    private var systemPeak: Float?
+    /// Display levels last pushed to the meter (main thread).
+    private var shownMic: Float = 0
+    private var shownSystem: Float = 0
     private let levelLock = NSLock()
     private var diskTimer: Timer?
     private var echoGate: EchoGate?
@@ -34,6 +37,15 @@ final class RecordingCoordinator {
     private let pausedLock = NSLock()
     private var _paused = false
     private var pausedFlag: Bool { pausedLock.lock(); defer { pausedLock.unlock() }; return _paused }
+    /// Mirror of state.isMicMuted readable from the microphone thread.
+    private var _micMuted = false
+    private var micMutedFlag: Bool { pausedLock.lock(); defer { pausedLock.unlock() }; return _micMuted }
+    /// Paused time so far (pausedLock): it is not part of the timeline.
+    private var pausedSeconds: Double = 0
+    private var pauseStartedHost: UInt64 = 0
+    /// Samples written per channel so far; each is touched only by its own audio thread.
+    private var micWritten = 0
+    private var systemWritten = 0
     private var sessionStartHostTime: UInt64 = 0
     private var silentMicCallbacks = 0
     private var micRestartAttempts = 0
@@ -100,29 +112,30 @@ final class RecordingCoordinator {
             self.store = store
             store.registerAudioFiles(mic: settings.captureMicrophone, system: settings.captureSystemAudio)
             // A name typed into the floating bar lands in AppState; mirror it into the saved transcript.
-            speakerNameCancellable = state.$speakerNames
+            // Names typed for the current remote speaker are stored right away (crash recovery
+            // finalizes with them too).
+            speakerTagCancellable = state.$speakerTags
                 .dropFirst()
-                .sink { [weak store] names in store?.setSpeakerNames(names) }
+                .sink { [weak store] tags in store?.setSpeakerTags(tags) }
+            muteCancellable = state.$muteIntervals
+                .dropFirst()
+                .sink { [weak store] spans in store?.setMuteIntervals(spans) }
             let language = settings.languageCode.isEmpty ? nil : settings.languageCode
             let myName = settings.myName
             let otherName = settings.otherName
-            // The remote side starts as "Speaker 1"; post-call diarization may split it into
-            // "Speaker 1", "Speaker 2", … The user can rename any of these in the floating bar.
+            // The remote side is stored as "Speaker 1"; post-call diarization splits it into
+            // "Speaker 1", "Speaker 2", … Live, it shows as plain "Speaker" – or as the name the user
+            // typed for whoever is talking (speaker tags), which then also goes into the file.
             let remoteBase = "\(otherName) 1"
             let state = self.state
 
-            // Experimental live diarization: assigns "Speaker N" per remote turn as the call runs.
-            let liveDiarizer: LiveDiarizer? = (settings.liveDiarization && settings.captureSystemAudio)
-                ? LiveDiarizer(otherName: otherName) : nil
-            self.liveDiarizer = liveDiarizer
-            if let liveDiarizer {
-                Task { do { try await liveDiarizer.prepare() } catch { AppLog.write("Live diarization unavailable: \(error)") } }
-            }
-
             let queue = TranscriptionQueue(engine: engine, language: language) { segment, result in
                 var label = myName
+                var liveLabel = myName
                 if segment.channel == .them {
-                    label = await liveDiarizer?.label(for: segment.samples, duration: segment.end - segment.start) ?? remoteBase
+                    let tagged = await MainActor.run { state.taggedName(at: segment.start) }
+                    label = tagged ?? remoteBase
+                    liveLabel = tagged ?? otherName
                 }
                 let entry = TranscriptEntry(channel: segment.channel, speaker: label,
                                             start: segment.start, end: segment.end,
@@ -141,13 +154,12 @@ final class RecordingCoordinator {
                 store.append(entry)
                 await MainActor.run {
                     self.partialHistory[segment.channel] = nil
-                    if segment.channel == .them { state.noteRemoteSpeaker(label) }
-                    state.appendLive(TranscriptLine(channel: segment.channel, speaker: label, text: result.text, start: segment.start), channel: segment.channel)
+                    state.appendLive(TranscriptLine(channel: segment.channel, speaker: liveLabel, text: result.text, start: segment.start), channel: segment.channel)
                 }
             } onPartial: { segment, result in
-                let label = segment.channel == .me ? myName : remoteBase
                 let recentThem = store.entries.suffix(12).filter { $0.channel == .them }
                 await MainActor.run {
+                    let label = segment.channel == .me ? myName : (state.taggedName(at: segment.start) ?? otherName)
                     // Residual echo shows up on the mic while the far end talks. Do not show such
                     // a partial at all (the final is dropped anyway) – otherwise the user's name
                     // keeps popping up although they are silent.
@@ -165,15 +177,17 @@ final class RecordingCoordinator {
                         }
                     }
                     // Display-only decision (the transcript file always uses the final pass).
-                    // A word counts as settled once it ended at least 1.5 s before the end of the
-                    // audio and was identical (ignoring case / punctuation) in the last two partial
-                    // passes – or once it ended 4 s before the end, whatever the history says.
+                    // Accuracy over speed: a word turns sharp once it ended at least 2.5 s before
+                    // the end of the audio and was identical (ignoring case / punctuation) in the
+                    // last three partial passes – or once it ended 7 s before the end, whatever the
+                    // history says. Everything newer stays blurred, often several lines, until the
+                    // model has heard enough of the sentence (or the final pass arrives).
                     let words = result.text.split(separator: " ").map(String.init)
                     let normalized = words.map { $0.lowercased().filter(\.isLetter) }
                     var history = self.partialHistory[segment.channel] ?? []
                     if state.partialLines[segment.channel]?.start != segment.start { history = [] }
                     history.append(normalized)
-                    if history.count > 2 { history.removeFirst(history.count - 2) }
+                    if history.count > 3 { history.removeFirst(history.count - 3) }
                     self.partialHistory[segment.channel] = history
                     var stable = 0
                     let audioEnd = segment.end - segment.start
@@ -183,8 +197,8 @@ final class RecordingCoordinator {
                         || recentThem.contains { segment.start <= $0.end + 1.5 && segment.start >= $0.start - 1.5 })
                     while !holdBack, stable < min(words.count, result.words.count) {
                         let age = audioEnd - result.words[stable].endTime
-                        let agreed = history.count == 2 && history.allSatisfy { stable < $0.count && $0[stable] == normalized[stable] }
-                        guard age >= 4.0 || (age >= 1.5 && agreed) else { break }
+                        let agreed = history.count == 3 && history.allSatisfy { stable < $0.count && $0[stable] == normalized[stable] }
+                        guard age >= 7.0 || (age >= 2.5 && agreed) else { break }
                         stable += 1
                     }
                     state.updatePartial(TranscriptLine(channel: segment.channel, speaker: label, text: result.text, start: segment.start, stableWords: stable), channel: segment.channel)
@@ -202,7 +216,9 @@ final class RecordingCoordinator {
             let gate = (settings.captureMicrophone && settings.captureSystemAudio && settings.echoGate) ? EchoGate() : nil
             echoGate = gate
             sessionStartHostTime = mach_absolute_time()
-            pausedLock.lock(); _paused = false; pausedLock.unlock()
+            pausedLock.lock(); _paused = false; _micMuted = false; pausedSeconds = 0; pausedLock.unlock()
+            micWritten = 0
+            systemWritten = 0
             silentMicCallbacks = 0
             micRestartAttempts = 0
             AppLog.write("Recording start: mic=\(settings.captureMicrophone) system=\(settings.captureSystemAudio) gate=\(gate != nil) input=\(settings.inputDeviceUID.isEmpty ? "default (\(AudioDevices.defaultInputDevice()?.name ?? "-"))" : settings.inputDeviceUID) output=\(AudioDevices.defaultOutputDevice()?.name ?? "-")")
@@ -219,9 +235,19 @@ final class RecordingCoordinator {
                     self.noteMicBuffer()
                     self.watchMicSilence(rawSamples)
                     let t = self.seconds(fromHostTime: hostTime, sampleCount: 0)
-                    let samples = gate?.processMic(rawSamples, at: t) ?? rawSamples
+                    // Muted: keep the channel's timeline running with silence, so mic and system
+                    // audio stay aligned (echo removal, re-transcription, timestamps).
+                    let muted = self.micMutedFlag
+                    let input = muted ? [Float](repeating: 0, count: rawSamples.count) : rawSamples
+                    let gap = self.gapFill(.me, written: &self.micWritten, bufferStart: t)
+                    if !gap.isEmpty { wav.append(gap); Task { await processor.append(gap) } }
+                    // The gate runs on the written-sample timeline, the one mic.wav and system.wav
+                    // share. Host times of the two capture paths can be offset by more than the
+                    // gate's delay search covers, which left it disabled for whole calls.
+                    let samples = muted ? input : (gate?.processMic(input, at: Double(self.micWritten) / 16_000) ?? input)
+                    self.micWritten += samples.count
                     wav.append(samples)
-                    self.notePeak(mic: AudioResampler.rms(samples))
+                    self.notePeak(mic: AudioResampler.peakRMS(samples))
                     Task { await processor.append(samples) }
                 }
                 let uid = settings.inputDeviceUID, aec = settings.echoCancellation
@@ -240,9 +266,13 @@ final class RecordingCoordinator {
                 systemWav = wav
                 let capture = SystemAudioCapture { [weak self] samples, hostTime in
                     guard let self, !self.pausedFlag else { return }
-                    gate?.pushSystem(samples, at: self.seconds(fromHostTime: hostTime, sampleCount: samples.count))
+                    let t = self.seconds(fromHostTime: hostTime, sampleCount: 0)   // host time of the buffer's first frame
+                    let gap = self.gapFill(.them, written: &self.systemWritten, bufferStart: t)
+                    if !gap.isEmpty { wav.append(gap); Task { await processor.append(gap) } }
+                    gate?.pushSystem(samples, at: Double(self.systemWritten) / 16_000)
+                    self.systemWritten += samples.count
                     wav.append(samples)
-                    self.notePeak(system: AudioResampler.rms(samples))
+                    self.notePeak(system: AudioResampler.peakRMS(samples))
                     Task { await processor.append(samples) }
                 }
                 try await offMain { try capture.start() }
@@ -256,10 +286,11 @@ final class RecordingCoordinator {
             if settings.soundEffects { NSSound(named: "Tink")?.play() }
             state.recordingStartedAt = Date()
             state.currentSessionURL = store.directory
+            state.sessionClock = { [weak self] in
+                guard let self else { return 0 }
+                return self.systemWav?.durationSeconds ?? self.micWav?.durationSeconds ?? 0
+            }
             state.phase = .recording
-            // Offer the remote side for naming from the first moment (hover pills), instead of only
-            // once the far end's first final line has arrived. Live diarization may add more later.
-            if settings.captureSystemAudio { state.noteRemoteSpeaker(remoteBase) }
         } catch {
             AppLog.write("Recording start failed: \(error)")
             state.lastError = error.localizedDescription
@@ -279,18 +310,74 @@ final class RecordingCoordinator {
     func togglePause() {
         guard case .recording = state.phase else { return }
         state.isPaused.toggle()
-        pausedLock.lock(); _paused = state.isPaused; pausedLock.unlock()
+        let now = mach_absolute_time()
+        pausedLock.lock()
+        _paused = state.isPaused
+        if state.isPaused {
+            pauseStartedHost = now
+        } else if pauseStartedHost != 0 {
+            pausedSeconds += Double(now - pauseStartedHost) * RecordingCoordinator.hostTimeToSeconds
+        }
+        pausedLock.unlock()
         AppLog.write(state.isPaused ? "Paused" : "Resumed")
         if state.isPaused { state.pushLevel(mic: 0, system: 0) }
     }
 
     private var isPaused: Bool { state.isPaused }
 
+    /// Silence for audio a channel failed to deliver: the system tap starts late or is rebuilt,
+    /// a microphone restart takes a moment. Without it the channel's timeline (sample count) falls
+    /// behind the clock and the other channel – echo removal, names typed in the pill and mute
+    /// phases would then point at the wrong moment. Called on that channel's audio thread.
+    private func gapFill(_ channel: Channel, written: inout Int, bufferStart: Double) -> [Float] {
+        pausedLock.lock(); let paused = pausedSeconds; pausedLock.unlock()
+        let missing = Int(((bufferStart - paused) - Double(written) / 16_000) * 16_000)
+        guard missing > 4_800 else { return [] }           // tolerate < 0.3 s of jitter
+        let gap = min(missing, 16_000 * 600)
+        written += gap
+        if gap >= 16_000 { AppLog.write(String(format: "%@ delivered no audio for %.1f s – filled with silence", channel == .me ? "Microphone" : "System audio", Double(gap) / 16_000)) }
+        return [Float](repeating: 0, count: gap)
+    }
+
+    // MARK: - Mute
+
+    /// Mutes the microphone channel: it keeps recording silence (so both channels stay aligned),
+    /// and only the system audio is transcribed until it is unmuted.
+    func toggleMicMute() {
+        guard state.isRecording, settings.captureMicrophone else { return }
+        state.isMicMuted.toggle()
+        pausedLock.lock(); _micMuted = state.isMicMuted; pausedLock.unlock()
+        AppLog.write(state.isMicMuted ? "Microphone muted" : "Microphone unmuted")
+        let now = state.sessionClock?() ?? 0
+        if state.isMicMuted {
+            state.muteIntervals.append(TimeSpan(start: now, end: nil))
+        } else if let i = state.muteIntervals.indices.last, state.muteIntervals[i].end == nil {
+            state.muteIntervals[i].end = now
+        }
+        if state.isMicMuted {
+            partialHistory[.me] = nil
+            state.clearPartial(channel: .me)
+        }
+    }
+
+    /// Where a name typed for the current remote speaker should start: the beginning of the
+    /// remote speech in progress (or that ended a moment ago), else now.
+    func speakerTagStart() -> Double {
+        let now = state.sessionClock?() ?? 0
+        if let partial = state.partialLines[.them] { return partial.start }
+        if let last = store?.entries.last(where: { $0.channel == .them }), now - last.end < 3 { return last.start }
+        return now
+    }
+
     // MARK: - Stop
 
     func stop() async {
         guard state.isRecording, let store else { return }
         state.phase = .stopping("Finishing transcription…")
+        state.endSpeakerTag(at: state.sessionClock?() ?? 0)
+        if let i = state.muteIntervals.indices.last, state.muteIntervals[i].end == nil {
+            state.muteIntervals[i].end = state.sessionClock?() ?? 0
+        }
         AppLog.write("Recording stop: mic=\(Int(micWav?.durationSeconds ?? 0))s system=\(Int(systemWav?.durationSeconds ?? 0))s")
         await teardownCaptureAsync()
 
@@ -325,8 +412,8 @@ final class RecordingCoordinator {
         levelTimer?.invalidate(); levelTimer = nil
         statsTimer?.invalidate(); statsTimer = nil
         diskTimer?.invalidate(); diskTimer = nil
-        speakerNameCancellable = nil
-        liveDiarizer = nil
+        speakerTagCancellable = nil
+        muteCancellable = nil
         deviceListeners = []
         mic?.stop(); mic = nil
         system?.stop(); system = nil
@@ -403,19 +490,25 @@ final class RecordingCoordinator {
 
     private func notePeak(mic: Float? = nil, system: Float? = nil) {
         levelLock.lock()
-        if let mic { micPeak = max(micPeak, mic) }
-        if let system { systemPeak = max(systemPeak, system) }
+        if let mic { micPeak = max(micPeak ?? 0, mic) }
+        if let system { systemPeak = max(systemPeak ?? 0, system) }
         levelLock.unlock()
     }
 
     private func startTimers() {
+        shownMic = 0; shownSystem = 0
         levelTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             guard let self, !self.state.isPaused else { return }
             self.levelLock.lock()
             let m = self.micPeak, s = self.systemPeak
-            self.micPeak = 0; self.systemPeak = 0
+            self.micPeak = nil; self.systemPeak = nil
             self.levelLock.unlock()
-            self.state.pushLevel(mic: AudioResampler.displayLevel(rms: m), system: AudioResampler.displayLevel(rms: s))
+            // The mic delivers a buffer only every ~100 ms, i.e. every third tick: between buffers
+            // the meter holds and decays instead of dropping to zero (which made the user's
+            // voice look like a flicker next to the far end's continuous system audio).
+            self.shownMic = m.map { AudioResampler.displayLevel(rms: $0) } ?? self.shownMic * 0.8
+            self.shownSystem = s.map { AudioResampler.displayLevel(rms: $0) } ?? self.shownSystem * 0.8
+            self.state.pushLevel(mic: self.shownMic, system: self.shownSystem)
             self.checkMicStall()
         }
         statsTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in

@@ -74,12 +74,7 @@ enum OfflineRetranscribe {
         var current: [WordStamp] = []
         func flush() {
             guard let first = current.first, let last = current.last else { return }
-            let text = current.map(\.word).joined(separator: " ")
-                .replacingOccurrences(of: " ,", with: ",")
-                .replacingOccurrences(of: " .", with: ".")
-                .replacingOccurrences(of: " ?", with: "?")
-                .replacingOccurrences(of: " !", with: "!")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = WordText.join(current.map(\.word))
             if !text.isEmpty {
                 out.append(TranscriptEntry(channel: channel, speaker: speaker, start: first.start,
                                            end: last.end, text: text, confidence: confidence,

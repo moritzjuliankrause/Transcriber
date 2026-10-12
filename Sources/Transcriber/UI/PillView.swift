@@ -1,22 +1,12 @@
 import SwiftUI
 
-/// Content of the status item: the app glyph (dot over two transcript lines) when idle,
-/// glyph + waveform + pause button inside a pill while recording.
+/// Content of the status item: the app glyph (dot over two transcript lines). Its dot turns red
+/// and breathes while recording, grey while paused, orange while loading or finishing. Controls
+/// (mute, pause) and the waveform live in the floating pill below the notch.
 struct PillView: View {
     @ObservedObject var state: AppState
-    @State private var pulse = false
-
-    private var isActive: Bool {
-        switch state.phase {
-        case .idle: return false
-        default: return true
-        }
-    }
-
     @Environment(\.colorScheme) private var scheme
 
-    /// Colour of the glyph's pill: black like the icon (white on a dark menu bar);
-    /// while recording it pulses red.
     private var pillColor: Color {
         switch state.phase {
         case .idle: return scheme == .dark ? .white : .black
@@ -31,51 +21,10 @@ struct PillView: View {
     }
 
     var body: some View {
-        ZStack {
-            if isActive {
-                Capsule()
-                    .fill(Color.primary.opacity(0.12))
-                    .transition(.opacity)
-            }
-            HStack(spacing: 4) {
-                GlyphView(pillColor: pillColor, pulse: pulse && isRecordingLive)
-                    .frame(width: GlyphView.width, height: GlyphView.height)
-                    .padding(.trailing, isActive ? 4 : 0)
-                if isActive {
-                    Group {
-                        if case .stopping = state.phase {
-                            ProgressView().controlSize(.mini)
-                        } else {
-                            WaveformView(levels: Array(state.levelHistory.suffix(9)))
-                                .frame(width: 16, height: 12)
-                                .opacity(state.isPaused ? 0.35 : 1)
-                        }
-                    }
-                    .frame(width: 18, height: 16)
-                    // Shown together with the waveform from the very first frame of the pill
-                    // (phase .starting), not only once recording has actually begun.
-                    if case .stopping = state.phase {} else {
-                        let ready: Bool = { if case .recording = state.phase { return true }; return false }()
-                        Image(systemName: state.isPaused ? "play.fill" : "pause.fill")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.primary.opacity(ready ? 0.8 : 0.35))
-                            .frame(width: 14, height: 16)
-                            .contentShape(Rectangle())
-                            .help(state.isPaused ? "Resume" : "Pause")
-                    }
-                }
-            }
-            .padding(.horizontal, isActive ? 5 : 0)
-        }
-        .frame(height: StatusItemController.height)
-        .animation(.easeOut(duration: 0.25), value: isActive)
-        .animation(.easeOut(duration: 0.25), value: pillColor)
-        .onAppear { pulse = true }
-    }
-
-    private func elapsed(from start: Date, now: Date) -> String {
-        let s = Int(now.timeIntervalSince(start))
-        return String(format: "%02d:%02d", s / 60, s % 60)
+        GlyphView(pillColor: pillColor, pulse: isRecordingLive)
+            .frame(width: GlyphView.width, height: GlyphView.height)
+            .frame(height: StatusItemController.height)
+            .animation(.easeOut(duration: 0.25), value: pillColor)
     }
 }
 

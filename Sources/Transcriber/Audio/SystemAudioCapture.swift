@@ -31,6 +31,19 @@ final class SystemAudioCapture {
     private var processListListener: AudioPropertyListener?
     private var rebuildWorkItem: DispatchWorkItem?
     private var tappedProcessCount = 0
+    private var rateListener: AudioPropertyListener?
+    /// Rate watchdog (IO queue only): frames delivered since `rateCheckStart` (host time).
+    private var rateCheckFrames = 0
+    private var rateCheckStart: UInt64 = 0
+    private var rateCheckLast: UInt64 = 0
+    /// A deviating rate seen in the previous window; applied only when the next one agrees.
+    private var rateCandidate: Double?
+    private static let hostTimeToSeconds: Double = {
+        var info = mach_timebase_info()
+        mach_timebase_info(&info)
+        return Double(info.numer) / Double(info.denom) / 1e9
+    }()
+    private static let standardRates: [Double] = [8_000, 11_025, 16_000, 22_050, 24_000, 32_000, 44_100, 48_000, 88_200, 96_000]
     var formatDescription: String { tapFormat.map { "\($0.sampleRate) Hz, \($0.channelCount) ch, interleaved=\($0.isInterleaved)" } ?? "-" }
 
     init(handler: @escaping Handler) {
@@ -97,9 +110,8 @@ final class SystemAudioCapture {
         var asbdSize = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
         let formatStatus = AudioObjectGetPropertyData(tapID, &formatAddress, 0, nil, &asbdSize, &asbd)
         guard formatStatus == noErr else { throw CaptureError.osStatus("kAudioTapPropertyFormat", formatStatus) }
-        guard let format = AVAudioFormat(streamDescription: &asbd) else { throw CaptureError.badFormat }
-        tapFormat = format
-        AppLog.write("SystemAudioCapture: tap format \(formatDescription)")
+        guard let tapReported = AVAudioFormat(streamDescription: &asbd) else { throw CaptureError.badFormat }
+        AppLog.write("SystemAudioCapture: tap format \(tapReported.sampleRate) Hz, \(tapReported.channelCount) ch, interleaved=\(tapReported.isInterleaved)")
 
         // 3. Build a private aggregate device: default output + our tap.
         let aggregateDescription: [String: Any] = [
@@ -124,13 +136,34 @@ final class SystemAudioCapture {
         guard aggStatus == noErr else { throw CaptureError.osStatus("AudioHardwareCreateAggregateDevice", aggStatus) }
         aggregateID = newAggregateID
 
+        // The tap delivers its audio on the aggregate's clock. When the output device runs at a
+        // different rate than the tap reports – AirPods drop to 24 kHz in call mode once their
+        // microphone is opened – the buffers carry the *device* rate. Wrapping them with the tap's
+        // 48 kHz made the system channel record at double speed and half the length (a whole
+        // Zoom call with chipmunk voices that diarization could not tell apart).
+        let aggregateRate = AudioDevices.nominalSampleRate(aggregateID)
+        let format = SystemAudioCapture.format(tapReported, rate: aggregateRate > 0 ? aggregateRate : tapReported.sampleRate)
+        tapFormat = format
+        resetRateCheck()
+        if format.sampleRate != tapReported.sampleRate {
+            AppLog.write("SystemAudioCapture: aggregate runs at \(format.sampleRate) Hz, using that instead of the tap's \(tapReported.sampleRate) Hz")
+        }
+        let aggregateForListener = aggregateID
+        rateListener = AudioPropertyListener(objectID: aggregateID, selector: kAudioDevicePropertyNominalSampleRate) { [weak self] in
+            guard let self, self.aggregateID == aggregateForListener else { return }
+            let rate = AudioDevices.nominalSampleRate(aggregateForListener)
+            self.queue.async { self.applyRate(rate, reason: "aggregate rate changed") }
+        }
+
         // 4. Install an IOProc that receives the tapped audio as input.
         // The tap's buffers are the last ones in the input list: 1 for interleaved audio,
         // one per channel otherwise.
         let tapBufferCount = format.isInterleaved ? 1 : Int(format.channelCount)
-        let procStatus = AudioDeviceCreateIOProcIDWithBlock(&ioProcID, aggregateID, options.useQueue ? queue : nil) { [weak self] _, inInputData, _, _, _ in
-            guard let self, let format = self.tapFormat else { return }
-            let hostTime = mach_absolute_time()
+        let procStatus = AudioDeviceCreateIOProcIDWithBlock(&ioProcID, aggregateID, options.useQueue ? queue : nil) { [weak self] _, inInputData, inInputTime, _, _ in
+            guard let self, var format = self.tapFormat else { return }
+            // When the first frame of this buffer was captured (not when the callback runs, which
+            // can lag on a busy queue); falls back to "now" if the device gives no host time.
+            let hostTime = inInputTime.pointee.mFlags.contains(.hostTimeValid) ? inInputTime.pointee.mHostTime : mach_absolute_time()
             // The aggregate's input side lists the output device's own input streams first (a USB
             // interface such as a Scarlett has microphone inputs; built-in speakers have none), then
             // the tap. Using the whole list as-is would read the interface's silent inputs.
@@ -147,6 +180,9 @@ final class SystemAudioCapture {
                 tapBuffers = UnsafeMutablePointer(mutating: inInputData)
             }
             defer { owned?.deallocate() }
+            if let corrected = self.checkRate(frames: Int(tapBuffers.pointee.mBuffers.mDataByteSize) / Int(format.streamDescription.pointee.mBytesPerFrame), at: hostTime) {
+                format = corrected
+            }
             guard let buffer = AVAudioPCMBuffer(pcmFormat: format, bufferListNoCopy: tapBuffers, deallocator: nil) else {
                 AppLog.write("SystemAudioCapture: could not wrap buffer list")
                 return
@@ -169,6 +205,59 @@ final class SystemAudioCapture {
         if options.mixdownAllProcesses {
             installProcessListListener()
         }
+    }
+
+    private static func format(_ base: AVAudioFormat, rate: Double) -> AVAudioFormat {
+        guard rate != base.sampleRate else { return base }
+        var asbd = base.streamDescription.pointee
+        asbd.mSampleRate = rate
+        return AVAudioFormat(streamDescription: &asbd) ?? base
+    }
+
+    /// Switches the wrapping format to a new sample rate. IO queue only.
+    private func applyRate(_ rate: Double, reason: String) {
+        guard rate > 0, let current = tapFormat, abs(rate - current.sampleRate) > 1 else { return }
+        AppLog.write("SystemAudioCapture: \(reason): \(current.sampleRate) → \(rate) Hz")
+        tapFormat = SystemAudioCapture.format(current, rate: rate)
+        resetRateCheck()
+    }
+
+    private func resetRateCheck() {
+        rateCheckFrames = 0
+        rateCheckStart = 0
+        rateCheckLast = 0
+        rateCandidate = nil
+    }
+
+    /// Safety net for rate changes nobody announces: compares the frames actually delivered
+    /// against wall-clock time over ~5 s windows and, when two windows in a row disagree with the
+    /// format by more than 10 %, snaps to the nearest standard rate. A gap in delivery (device
+    /// asleep, switching) restarts the window, so it never reads as a slow rate. Returns the
+    /// corrected format, if any. IO queue only.
+    private func checkRate(frames: Int, at hostTime: UInt64) -> AVAudioFormat? {
+        guard frames > 0, let format = tapFormat else { return nil }
+        let sinceLast = Double(hostTime &- rateCheckLast) * SystemAudioCapture.hostTimeToSeconds
+        rateCheckLast = hostTime
+        if rateCheckStart == 0 || sinceLast > 0.5 {
+            rateCheckStart = hostTime   // count from the next buffer on
+            rateCheckFrames = 0
+            return nil
+        }
+        rateCheckFrames += frames
+        let elapsed = Double(hostTime - rateCheckStart) * SystemAudioCapture.hostTimeToSeconds
+        guard elapsed >= 5 else { return nil }
+        let measured = Double(rateCheckFrames) / elapsed
+        rateCheckFrames = 0
+        rateCheckStart = hostTime
+        guard abs(measured / format.sampleRate - 1) > 0.1,
+              let nearest = SystemAudioCapture.standardRates.min(by: { abs($0 - measured) < abs($1 - measured) }),
+              abs(nearest / measured - 1) < 0.05 else { rateCandidate = nil; return nil }
+        guard rateCandidate == nearest else {
+            rateCandidate = nearest
+            return nil
+        }
+        applyRate(nearest, reason: String(format: "measured %.0f frames/s", measured))
+        return tapFormat
     }
 
     /// Rebuilds the tap when audio processes appear or disappear (debounced).
@@ -200,6 +289,7 @@ final class SystemAudioCapture {
     }
 
     private func teardownTap() {
+        rateListener = nil
         if aggregateID != kAudioObjectUnknown {
             if let ioProcID {
                 AudioDeviceStop(aggregateID, ioProcID)

@@ -20,6 +20,10 @@ if CommandLine.arguments.contains("--render-bar") {
     let code = await HeroRender.runBar(arguments: CommandLine.arguments)
     exit(code)
 }
+if CommandLine.arguments.contains("--import") || CommandLine.arguments.contains("--reprocess") {
+    let code = await HeadlessHistory.run(arguments: CommandLine.arguments)
+    exit(code)
+}
 if CommandLine.arguments.contains("--transcribe") {
     let code = await HeadlessTranscribe.run(arguments: CommandLine.arguments)
     exit(code)

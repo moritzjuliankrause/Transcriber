@@ -2,10 +2,11 @@ import AppKit
 import SwiftUI
 import Combine
 
-/// A slim, non-activating capsule pinned to the top edge of the main screen
-/// (below the menu bar / notch) that shows the live transcript while recording.
-/// Its height follows the content (one to three lines) and it shrinks to a small
-/// pill around the status text while paused / loading / stopping.
+/// The floating pill pinned to the top edge of the main screen (below the menu bar / notch)
+/// while recording: mute button, live waveform, pause button. Hovering it unfolds the live
+/// transcript card *below* the pill – the pill itself never moves or resizes on hover, so its
+/// buttons stay exactly where the pointer expects them. For prompts (stop confirmation, title)
+/// and status messages the pill morphs into a wider capsule.
 @MainActor
 final class FloatingBarController {
     /// The app's one bar, so the recording finaliser can ask for a title inside it.
@@ -16,7 +17,13 @@ final class FloatingBarController {
     private let settings: AppSettings
     private let model = FloatingBarModel()
     private var cancellables = Set<AnyCancellable>()
-    private var collapseTimer: Timer?
+    private var refreshTimer: Timer?
+    private var scrollMonitor: Any?
+
+    var onToggleMute: (() -> Void)?
+    var onTogglePause: (() -> Void)?
+    /// Where a name typed for the current remote speaker should start (session seconds).
+    var speakerTagStart: (() -> Double)?
 
     /// Duration of the capsule morph (size and content changes).
     static let resizeDuration: TimeInterval = 0.35
@@ -29,16 +36,13 @@ final class FloatingBarController {
         return CGFloat(Double(CommandLine.arguments[i + 1]) ?? 0)
     }()
 
-    /// The panel never changes size: it is as large as the widest / tallest capsule plus
-    /// shadow margin, and fully transparent. Only the SwiftUI capsule inside it morphs,
-    /// so its size, contents and shadow animate as one.
-    /// Room reserved below the capsule for the speaker-naming pills, so the panel never has to
-    /// resize when they appear (which made the capsule visibly jump). The extra area is fully
-    /// transparent and clicks through to whatever is underneath.
-    static let maxNamingPills = 5
-    static let panelSize = NSSize(width: max(FloatingBarView.width, FloatingBarView.confirmSize.width, FloatingBarView.titleSize.width) + 2 * shadowPadding,
-                                  height: max(FloatingBarView.height(forLines: FloatingBarModel.maxLines), FloatingBarView.confirmSize.height, FloatingBarView.titleSize.height)
-                                      + FloatingBarView.pillsAreaHeight(count: maxNamingPills) + 2 * shadowPadding)
+    /// The panel never changes size: it is as large as the largest content (pill + transcript
+    /// card, or the save prompt) plus shadow margin, and fully transparent.
+    /// Only the SwiftUI content inside it morphs; the empty area clicks through.
+    static let panelSize = NSSize(
+        width: max(FloatingBarView.titleSize.width, FloatingBarView.confirmSize.width, FloatingBarView.cardSize.width) + 2 * shadowPadding,
+        height: max(FloatingBarView.titleSize.height,
+                    FloatingBarView.pillHeight + FloatingBarView.cardGap + FloatingBarView.cardSize.height) + 2 * shadowPadding)
 
     init(state: AppState, settings: AppSettings) {
         self.state = state
@@ -52,7 +56,10 @@ final class FloatingBarController {
         // Re-layout whenever the transcript, the phase or the pause state changes.
         Publishers.CombineLatest4(state.$liveLines, state.$partialLines, state.$phase, state.$isPaused)
             .receive(on: RunLoop.main)
-            .sink { [weak self] _, _, _, _ in self?.relayout() }
+            .sink { [weak self] _, _, phase, _ in
+                if phase != .recording { self?.collapseCard() }
+                self?.relayout()
+            }
             .store(in: &cancellables)
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .sink { [weak self] _ in self?.reposition() }
@@ -61,22 +68,27 @@ final class FloatingBarController {
     }
 
     /// Creates the (hidden) panel. Called once at launch so the first recording start does not
-    /// pay for window + SwiftUI setup while the menu bar pill is animating.
+    /// pay for window + SwiftUI setup while the menu bar icon is animating.
     private func makePanel() -> NSPanel {
         let p = FloatingPanel(contentRect: NSRect(origin: .zero, size: FloatingBarController.panelSize),
                               styleMask: [.borderless, .nonactivatingPanel],
                               backing: .buffered, defer: false)
         p.onCancel = { [weak self] in
             guard let self else { return }
-            if self.model.askingTitle { self.model.onSkipTitle?() } else { self.cancelStopConfirmation() }
+            if self.model.askingTitle { self.model.onSkipTitle?() }
+            else if self.model.tagFieldFocused { self.endTagEditing() }
+            else { self.cancelStopConfirmation() }
         }
         p.level = .statusBar
         p.isOpaque = false
         p.backgroundColor = .clear
         p.hasShadow = false        // drawn by the capsule itself so it morphs along
         p.hidesOnDeactivate = false
+        // Clicking a button (mute, pause) must not take the keyboard away from the call app;
+        // only clicking into a text field makes the panel key.
+        p.becomesKeyOnlyIfNeeded = true
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        p.isMovableByWindowBackground = true
+        p.isMovableByWindowBackground = false
         p.acceptsMouseMovedEvents = true
         p.alphaValue = 0
         let host = CapsuleHostingView(rootView: FloatingBarView(state: state, settings: settings, model: model), model: model)
@@ -87,10 +99,17 @@ final class FloatingBarController {
         host.layer?.isOpaque = false
         p.contentView = host
         p.invalidateShadow()
+        // Clicking into another app while the name field is open: drop the half-typed name and let
+        // the card close if the pointer is no longer over it (no exit event would come otherwise).
+        NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification, object: p)
+            .sink { [weak self, weak p] _ in
+                guard let self, self.model.tagFieldFocused else { return }
+                self.endTagEditing()
+                if p != nil, !self.pointerOverPanel, !self.model.pinned { self.setExpanded(false) }
+            }
+            .store(in: &cancellables)
         return p
     }
-
-    private var showGeneration = 0
 
     /// Text input in the save prompt makes the system attach helper windows (prediction /
     /// writing-tools panels, hosted out of process) to the app. They can stay on screen after
@@ -114,23 +133,14 @@ final class FloatingBarController {
         }
         guard let panel else { return }
         FloatingBarController.dismissTextInputHelperWindows()
-        showGeneration += 1
         // Snap to the initial size without animation while still invisible, then order the
-        // panel on screen and commit the fade-in right now, in this run-loop pass.
-        //
-        // Ordering used to be deferred 0.35 s (so the bar arrived just after the menu-bar pill
-        // had finished expanding). But that made appearing depend on a main-thread timer firing
-        // later, and a slow recording start starves the main thread: a cold model load can take
-        // >20 s right after the click, during which the deferred block never ran and the bar
-        // simply never appeared. We now order it front while the main thread is still free
-        // (this runs during the short sleep at the top of RecordingCoordinator.start(), before
-        // any model work), so Core Animation finishes the fade on the render server even if the
-        // main thread stalls afterwards. The bar now appears on every click with the setting on.
+        // panel on screen and commit the fade-in right now, in this run-loop pass – a slow
+        // recording start (cold model load) must not delay the appearance.
         model.animated = false
         relayout()
         model.animated = true
-        collapseTimer?.invalidate()
-        collapseTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.relayout() }
         }
         panel.orderFrontRegardless()
@@ -141,10 +151,10 @@ final class FloatingBarController {
     }
 
     private func hide() {
-        showGeneration += 1
         model.animated = false
-        collapseTimer?.invalidate()
-        collapseTimer = nil
+        collapseCard()
+        refreshTimer?.invalidate()
+        refreshTimer = nil
         guard let panel, panel.isVisible else { return }
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.2
@@ -165,6 +175,7 @@ final class FloatingBarController {
     /// Morphs the bar into a "Stop recording?" dialog. A second call while it is shown cancels.
     func confirmStop(onStop: @escaping () -> Void) {
         if model.confirmingStop { cancelStopConfirmation(); return }
+        collapseCard()
         stopAction = onStop
         model.onConfirmStop = { [weak self] in
             guard let self else { return }
@@ -203,17 +214,13 @@ final class FloatingBarController {
     func askTitle(defaultTitle: String) async -> TitlePrompt.Answer {
         if model.askingTitle { model.onSkipTitle?() }
         cancelStopConfirmation()
+        collapseCard()
         return await withCheckedContinuation { continuation in
             var finished = false
             let finish: (TitlePrompt.Answer) -> Void = { [weak self] answer in
                 guard !finished else { return }
                 finished = true
                 guard let self else { continuation.resume(returning: answer); return }
-                // Commit any names still sitting unconfirmed in the pills, then close them.
-                for base in self.model.pillSpeakers { self.state.setSpeakerName(self.model.pillNames[base] ?? "", for: base) }
-                self.model.pillSpeakers = []
-                self.model.pillFocus = nil
-                self.model.pillTitleContext = false
                 self.model.askingTitle = false
                 self.model.onSaveTitle = nil
                 self.model.onSkipTitle = nil
@@ -231,8 +238,6 @@ final class FloatingBarController {
             if panel == nil { prepare() }
             model.animated = panel?.isVisible == true
             model.askingTitle = true
-            // Show the call's speakers as naming pills under the prompt (Tab reaches them).
-            if !state.remoteSpeakers.isEmpty { showPills(state.remoteSpeakers, titleContext: true) }
             (panel as? FloatingPanel)?.allowsKey = true
             // The panel does not activate the app; making it key is enough for typing.
             for delay in [0.0, 0.4, 0.8] {
@@ -257,7 +262,7 @@ final class FloatingBarController {
         }
     }
 
-    /// Recomputes the visible lines; the capsule animates to the new size on its own.
+    /// Recomputes what the pill / card shows; the SwiftUI content animates on its own.
     private func relayout() {
         guard panel != nil else { return }
         model.update(state: state, settings: settings)
@@ -273,124 +278,175 @@ final class FloatingBarController {
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 
-    // MARK: - Speaker-naming pills
+    // MARK: - Transcript card (hover)
 
-    private var hoverHideWork: DispatchWorkItem?
+    private var openWork: DispatchWorkItem?
+    /// After Enter / Escape in the name field the keyboard goes back to the app in front, and
+    /// hovering does not grab it again until the pointer has left the card once.
+    private var autoFocusSuspended = false
+    private var closeWork: DispatchWorkItem?
 
     private func configureModelCallbacks() {
-        model.onHoverPills = { [weak self] inside in self?.handleHover(inside) }
-        model.onPillSubmit = { [weak self] index in self?.pillSubmit(index) }
-        model.onPillTab = { [weak self] index, back in self?.pillTab(from: index, backwards: back) }
-        model.onPillCancel = { [weak self] in self?.pillCancel() }
-        model.onPillEdit = { [weak self] base, name in self?.state.setSpeakerName(name, for: base) }
-    }
-
-    /// Live naming is offered while recording, once a remote speaker has been heard, and the bar
-    /// is not already morphed into another prompt.
-    private var liveNamingAvailable: Bool {
-        state.isRecording && !state.remoteSpeakers.isEmpty && !model.askingTitle && !model.confirmingStop
-    }
-
-    private func handleHover(_ inside: Bool) {
-        hoverHideWork?.cancel()
-        if inside {
-            if model.pillSpeakers.isEmpty, liveNamingAvailable { showPills(state.remoteSpeakers, titleContext: false) }
-        } else {
-            guard !model.pillSpeakers.isEmpty, !model.pillTitleContext else { return }
-            // The pills stay until the pointer leaves the bar (then close, committing what was
-            // typed). The short delay bridges the gap between the capsule and the pills so moving
-            // the pointer onto a pill does not close them.
-            let work = DispatchWorkItem { [weak self] in self?.hidePills() }
-            hoverHideWork = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
+        model.onHover = { [weak self] inside in self?.handleHover(inside) }
+        model.onToggleMute = { [weak self] in self?.onToggleMute?() }
+        model.onTogglePause = { [weak self] in self?.onTogglePause?() }
+        model.onTogglePin = { [weak self] in self?.togglePin() }
+        model.onTagSubmit = { [weak self] in self?.submitTag() }
+        model.onTagChip = { [weak self] name in self?.tag(name) }
+        model.onEndTag = { [weak self] in
+            guard let self else { return }
+            self.state.endSpeakerTag(at: self.state.sessionClock?() ?? 0)
+        }
+        model.onTagFocus = { [weak self] in self?.beginTagEditing() }
+        model.onTagCancel = { [weak self] in
+            guard let self else { return }
+            self.autoFocusSuspended = true
+            self.endTagEditing()
+            if !self.model.pinned, !self.pointerOverPanel { self.setExpanded(false) }
         }
     }
 
-    /// Shows the naming pills below the capsule and (for live hover) focuses the first one.
-    func showPills(_ speakers: [String], titleContext: Bool) {
-        guard panel != nil else { return }
-        model.myNameForColor = settings.myName
-        model.pillTitleContext = titleContext
-        model.pillNames = Dictionary(uniqueKeysWithValues: speakers.map { ($0, state.speakerNames[$0] ?? "") })
-        model.pillSpeakers = speakers
-        model.pillFocus = titleContext ? nil : (speakers.isEmpty ? nil : 0)
+    /// The card is offered while recording, when the bar is not morphed into a prompt.
+    private var cardAvailable: Bool {
+        state.phase == .recording && !model.askingTitle && !model.confirmingStop && model.message == nil
+    }
+
+    /// The card offers the "Who's speaking?" field.
+    private var namingAvailable: Bool { settings.nameSpeakersLive && settings.captureSystemAudio }
+
+    /// The pointer is over the visible pill / card (not the transparent rest of the panel).
+    private var pointerOverPanel: Bool { (panel?.contentView as? CapsuleHostingView)?.containsMouse ?? false }
+
+    /// Hovering the open card puts the cursor into the name field, so a name can be typed right
+    /// away (Enter confirms). Leaving the card with the field empty gives the keyboard back to the
+    /// app in front; a half-typed name keeps the card open until Enter or Escape.
+    private func handleHover(_ inside: Bool) {
+        if inside {
+            closeWork?.cancel(); closeWork = nil
+            if model.expanded {
+                if namingAvailable, !model.tagFieldFocused, !autoFocusSuspended { beginTagEditing() }
+                return
+            }
+            guard openWork == nil, cardAvailable else { return }
+            // A short dwell, so sweeping the pointer across the top of the screen does not
+            // flash the card open.
+            let work = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.openWork = nil
+                if self.cardAvailable { self.setExpanded(true) }
+            }
+            openWork = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
+        } else {
+            openWork?.cancel(); openWork = nil
+            autoFocusSuspended = false
+            guard model.expanded, model.tagDraft.isEmpty else { return }
+            if model.tagFieldFocused { endTagEditing() }
+            guard !model.pinned, closeWork == nil else { return }
+            let work = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.closeWork = nil
+                if !self.model.pinned, self.model.tagDraft.isEmpty, !self.pointerOverPanel || !self.cardAvailable { self.setExpanded(false) }
+            }
+            closeWork = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: work)
+        }
+    }
+
+    /// Development aid (`--card-test --card-open`): pins the transcript card open.
+    func pinCardForTesting() { togglePin() }
+
+    private func togglePin() {
+        guard cardAvailable || model.expanded else { return }
+        model.pinned.toggle()
+        if model.pinned { setExpanded(true) }
+    }
+
+    private func setExpanded(_ expanded: Bool) {
+        guard model.expanded != expanded else { return }
+        model.animated = true
+        model.expanded = expanded
+        if expanded {
+            model.followLatest = true
+            (panel as? FloatingPanel)?.allowsKey = true
+            installScrollMonitor()
+            relayout()
+            // Opened by hovering: ready to type a name. (Pinned by a click while the pointer is
+            // elsewhere – e.g. --card-open – it stays out of the keyboard's way.)
+            autoFocusSuspended = false
+            if namingAvailable, pointerOverPanel { beginTagEditing() }
+        } else {
+            removeScrollMonitor()
+            if model.tagFieldFocused { endTagEditing() }
+            if !model.askingTitle, !model.confirmingStop {
+                (panel as? FloatingPanel)?.allowsKey = false
+            }
+        }
+    }
+
+    private func collapseCard() {
+        openWork?.cancel(); openWork = nil
+        closeWork?.cancel(); closeWork = nil
+        model.pinned = false
+        setExpanded(false)
+    }
+
+    /// Scrolling up in the transcript stops following new lines; the card shows a "Latest"
+    /// button (or the user scrolls back down) to resume.
+    private func installScrollMonitor() {
+        guard scrollMonitor == nil else { return }
+        scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            if let self, event.window === self.panel, event.scrollingDeltaY > 0.5 {
+                self.model.followLatest = false
+            }
+            return event
+        }
+    }
+
+    private func removeScrollMonitor() {
+        if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
+        scrollMonitor = nil
+    }
+
+    // MARK: Naming the current speaker
+
+    private func beginTagEditing() {
+        model.tagFieldFocused = true
         (panel as? FloatingPanel)?.allowsKey = true
-        for delay in [0.0, 0.4, 0.8] {
+        // The field may only just be entering the window (card transition); retry briefly.
+        for delay in [0.0, 0.15, 0.4] {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-                guard let self, !self.model.pillSpeakers.isEmpty else { return }
+                guard let self, self.model.tagFieldFocused, self.model.expanded else { return }
                 self.panel?.makeKey()
             }
         }
     }
 
-    /// Closes the naming pills, committing whatever was typed.
-    func hidePills() {
-        guard !model.pillSpeakers.isEmpty else { return }
-        for base in model.pillSpeakers { state.setSpeakerName(model.pillNames[base] ?? "", for: base) }
-        let wasTitle = model.pillTitleContext
-        model.pillSpeakers = []
-        model.pillFocus = nil
-        model.pillTitleContext = false
-        if !model.askingTitle, !model.confirmingStop {
-            (panel as? FloatingPanel)?.allowsKey = false
-            if panel?.isKeyWindow == true { panel?.resignKey() }
-        } else if wasTitle {
-            // Back to the title field.
-            panel?.makeKey()
-        }
+    private func endTagEditing() {
+        model.tagFieldFocused = false
+        model.tagDraft = ""
+        if !model.askingTitle, !model.confirmingStop, panel?.isKeyWindow == true { panel?.resignKey() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { FloatingBarController.dismissTextInputHelperWindows() }
     }
 
-    private func pillSubmit(_ index: Int) {
-        commitPill(index)
-        let count = model.pillSpeakers.count
-        if model.pillTitleContext {
-            // Enter in a name field jumps to the next name; after the last, back to the title field.
-            model.pillFocus = index + 1 < count ? index + 1 : nil
-        } else if count <= 1 {
-            hidePills()
-        } else {
-            model.pillFocus = (index + 1) % count
-        }
+    private func submitTag() {
+        let name = model.tagDraft
+        autoFocusSuspended = true
+        endTagEditing()
+        tag(name)
+        if !model.pinned, !pointerOverPanel { setExpanded(false) }
     }
 
-    private func pillTab(from index: Int, backwards: Bool) {
-        commitPill(index)
-        let count = model.pillSpeakers.count
-        guard count > 0 else { return }
-        if model.pillTitleContext {
-            // Ring including the title field, represented by pillFocus == nil.
-            if backwards {
-                model.pillFocus = index == 0 ? nil : index - 1
-            } else {
-                model.pillFocus = index + 1 < count ? index + 1 : nil
-            }
-            if model.pillFocus == nil { panel?.makeKey() }
-        } else {
-            model.pillFocus = backwards ? (index - 1 + count) % count : (index + 1) % count
-        }
+    private func tag(_ name: String) {
+        guard state.phase == .recording else { return }
+        let start = speakerTagStart?() ?? state.sessionClock?() ?? 0
+        state.tagSpeaker(name, from: start)
+        if let tag = state.activeSpeakerTag { AppLog.write("Speaker tag: \(tag.name) from \(Int(tag.start)) s") }
     }
-
-    private func pillCancel() {
-        if model.pillTitleContext {
-            model.pillFocus = nil        // back to the title field
-            panel?.makeKey()
-        } else {
-            hidePills()
-        }
-    }
-
-    private func commitPill(_ index: Int) {
-        guard index >= 0, index < model.pillSpeakers.count else { return }
-        let base = model.pillSpeakers[index]
-        state.setSpeakerName(model.pillNames[base] ?? "", for: base)
-    }
-
-    /// Called from the title prompt: focus moved to the title field (pillFocus == nil).
-    func focusTitleFromPills() { model.pillFocus = nil; panel?.makeKey() }
 }
 
-/// The bar's panel: never activates the app, takes keyboard focus only while the stop
-/// confirmation is shown (Enter / Escape).
+/// The bar's panel: never activates the app; takes keyboard focus only for its text fields and
+/// the stop confirmation (Enter / Escape).
 private final class FloatingPanel: NSPanel {
     var allowsKey = false
     var onCancel: (() -> Void)?
@@ -398,8 +454,8 @@ private final class FloatingPanel: NSPanel {
     override func cancelOperation(_ sender: Any?) { onCancel?() }
 }
 
-/// Hosting view that only reacts to mouse events inside the visible capsule, so the
-/// transparent margin of the fixed-size panel does not swallow clicks or drags.
+/// Hosting view that only reacts to mouse events inside the visible content, so the
+/// transparent margin of the fixed-size panel does not swallow clicks.
 @MainActor
 private final class CapsuleHostingView: NSHostingView<FloatingBarView> {
     private let model: FloatingBarModel
@@ -412,15 +468,25 @@ private final class CapsuleHostingView: NSHostingView<FloatingBarView> {
     @available(*, unavailable) required init?(coder: NSCoder) { fatalError() }
     @available(*, unavailable) required init(rootView: FloatingBarView) { fatalError() }
 
-    /// The visible region: the capsule at the top plus the naming pills below it (view coords).
-    /// The content is top-aligned; `NSHostingView` is flipped, so the top edge is at y = padding.
+    /// The visible region: the capsule at the top, plus the transcript card
+    /// below it (view coords). The content is top-aligned; `NSHostingView` is flipped, so the top
+    /// edge is at y = padding.
     private var contentRect: NSRect {
         let size = FloatingBarView.size(for: model)
-        let pills = FloatingBarView.pillsAreaHeight(count: model.pillSpeakers.count)
-        let w = max(size.width, 260), h = size.height + pills
+        var w = size.width, h = size.height
+        if model.showsCard {
+            w = max(w, FloatingBarView.cardSize.width)
+            h += FloatingBarView.cardGap + FloatingBarView.cardSize.height
+        }
         let y = isFlipped ? FloatingBarController.shadowPadding
                           : bounds.maxY - FloatingBarController.shadowPadding - h
         return NSRect(x: bounds.midX - w / 2, y: y, width: w, height: h)
+    }
+
+    var containsMouse: Bool {
+        guard let window else { return false }
+        let inWindow = window.convertPoint(fromScreen: NSEvent.mouseLocation)
+        return contentRect.contains(convert(inWindow, from: nil))
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -429,8 +495,7 @@ private final class CapsuleHostingView: NSHostingView<FloatingBarView> {
     }
 
     // Hover tracking. SwiftUI's `.onHover` only fires while the app is active, but the bar is a
-    // background, non-activating panel — so hover must be tracked with an `.activeAlways` tracking
-    // area instead, or the naming pills never appear on hover during a recording.
+    // background, non-activating panel — so hover is tracked with an `.activeAlways` tracking area.
     private var hoverTracking: NSTrackingArea?
 
     override func updateTrackingAreas() {
@@ -444,44 +509,32 @@ private final class CapsuleHostingView: NSHostingView<FloatingBarView> {
     }
 
     private func reportHover(_ event: NSEvent) {
-        model.onHoverPills?(contentRect.contains(convert(event.locationInWindow, from: nil)))
+        model.onHover?(contentRect.contains(convert(event.locationInWindow, from: nil)))
     }
     override func mouseEntered(with event: NSEvent) { reportHover(event) }
     override func mouseMoved(with event: NSEvent) { reportHover(event) }
-    override func mouseExited(with event: NSEvent) { model.onHoverPills?(false) }
+    override func mouseExited(with event: NSEvent) { model.onHover?(false) }
 }
 
-/// Display state of the floating bar. Designed to be *calm*: a word that has been
-/// shown sharp is never replaced, re-ordered or re-wrapped again – not even by the
-/// final recognition pass. Only the blurred tail at the very end may change.
+/// Display state of the floating pill and its transcript card.
 ///
-/// Both channels can have a partial in flight at the same time. Each channel keeps
-/// its own count of words already committed, so alternating partials never repeat
-/// words or speaker names. The blurred tails of all in-flight partials are shown
-/// after the committed text, ordered by the time the speech started.
-///
-/// The one exception to "never removed": when a segment turns out to be an echo of
-/// the other side (or empty), the words already shown for it are retracted again.
+/// The card shows the session's transcript as paragraphs (one per speaker turn). Final lines are
+/// sharp; the in-flight partials of both channels follow, ordered by when the speech started,
+/// with their not-yet-settled words blurred. Which words count as settled is decided by the
+/// coordinator (display only – the files always use the final pass).
 @MainActor
 final class FloatingBarModel: ObservableObject {
-    /// Which recognised segment a token came from, so it can be retracted later.
-    struct Source: Equatable { let channel: Channel?; let start: TimeInterval }
-
-    struct Token: Equatable {
-        var text: String
-        var settled: Bool
-        var speaker: String?      // set for "Name:" prefixes
-        var source: Source? = nil
-    }
-
-    struct Line: Identifiable, Equatable {
+    struct Paragraph: Identifiable, Equatable {
         let id: Int
-        var tokens: [Token]
+        var speaker: String
+        var isMe: Bool
+        /// Sharp words.
+        var text: String
+        /// Blurred words at the end (not settled yet).
+        var tail: [String]
     }
 
-    @Published var lines: [Line] = []
-    @Published var message: String?           // shown instead of text (status / prompts)
-    @Published var visibleLineCount = 1
+    @Published var message: String?           // shown instead of the controls (status / loading)
     /// False while the bar is hidden, so it snaps to its initial size instead of morphing into view.
     @Published var animated = true
     /// The bar is morphed into the "Stop recording?" dialog.
@@ -494,223 +547,70 @@ final class FloatingBarModel: ObservableObject {
     var onSaveTitle: ((_ openInAI: Bool) -> Void)?
     var onSkipTitle: (() -> Void)?
 
-    // MARK: - Speaker-naming pills (below the capsule)
+    // MARK: Pill controls and transcript card
 
-    /// Remote speaker base labels currently shown as naming pills, in order.
-    @Published var pillSpeakers: [String] = []
-    /// The text typed into each pill, keyed by base label.
-    @Published var pillNames: [String: String] = [:]
-    /// Which pill field has focus. nil = none (live) or the title field (title prompt).
-    @Published var pillFocus: Int?
-    /// The pills accompany the title prompt (Tab bridges to the title field) vs. a live hover.
-    var pillTitleContext = false
-    var showingPills: Bool { !pillSpeakers.isEmpty }
-    /// Colours the pill label like the speaker's text in the transcript.
-    var myNameForColor = "Me"
-    var onHoverPills: ((Bool) -> Void)?
-    var onPillSubmit: ((_ index: Int) -> Void)?
-    var onPillTab: ((_ index: Int, _ backwards: Bool) -> Void)?
-    var onPillCancel: (() -> Void)?
-    /// Called on every keystroke so the typed name is committed to the shared state immediately,
-    /// and never lost when the bar morphs into the stop / title prompt and the pills are rebuilt.
-    var onPillEdit: ((_ base: String, _ name: String) -> Void)?
+    @Published var expanded = false
+    /// Opened by clicking the waveform: stays open without hovering.
+    @Published var pinned = false
+    @Published var paragraphs: [Paragraph] = []
+    /// Auto-scroll to new text; off once the user scrolls up.
+    @Published var followLatest = true
+    @Published var tagDraft = ""
+    @Published var tagFieldFocused = false
+    /// Marketing renders (`--render-hero`): ImageRenderer cannot draw scroll views or AppKit
+    /// fields, so the card shows its lines in a plain stack, sized to fit.
+    var renderStatic = false
+    var onHover: ((Bool) -> Void)?
+    var onToggleMute: (() -> Void)?
+    var onTogglePause: (() -> Void)?
+    var onTogglePin: (() -> Void)?
+    var onTagSubmit: (() -> Void)?
+    var onTagChip: ((String) -> Void)?
+    var onEndTag: (() -> Void)?
+    var onTagFocus: (() -> Void)?
+    var onTagCancel: (() -> Void)?
 
-    static let maxLines = 3
+    var showsCard: Bool { expanded && !confirmingStop && !askingTitle && message == nil }
 
-    /// Committed (settled) tokens as one flat run of text. Lines are derived by the same
-    /// greedy wrap every time, which is deterministic – so appending never moves a word.
-    private var committedTokens: [Token] = []
-    /// Id of the first committed line; grows as old lines are trimmed off the top.
-    private var firstLineID = 1
-    private var lastFinalID: UUID?
-    private var lastRetractionID: UUID?
-    private var sessionStart: Date?
-
-    /// Per channel: the partial segment being shown and how many of its words are committed.
-    private struct Partial { var start: TimeInterval; var frozen: Int }
-    private var active: [Channel: Partial] = [:]
-    /// Not-yet-settled words of the in-flight partials, ordered by segment start.
-    private struct Tail { var start: TimeInterval; var speaker: String; var words: [String] }
-    private var tails: [Tail] = []
     /// A partial that has not been refreshed for this long belongs to a segment that ended
-    /// without a final (dropped, empty, failed) – its blurred words are hidden.
-    private static let partialTimeout: TimeInterval = 6
-
-    private var lastSpeaker: String { committedTokens.last(where: { $0.speaker != nil })?.speaker ?? "" }
+    /// without a final (dropped, empty, failed) – it is hidden.
+    private static let partialTimeout: TimeInterval = 8
 
     func update(state: AppState, settings: AppSettings) {
-        if state.recordingStartedAt != sessionStart {
-            sessionStart = state.recordingStartedAt
-            reset()
-        }
         switch state.phase {
         case .stopping(let msg): message = msg
         case .starting: message = "Loading models…"
-        case .recording where state.isPaused: message = "Paused"
         default: message = nil
         }
-        if message != nil {
-            lines = []; visibleLineCount = 1
-            return
-        }
-
-        consumeRetractions(state.retractions)
-        consumeFinals(state.liveLines)
-        consumePartials(state.partialLines)
-
-        let all = layout()
-        if all.isEmpty {
-            message = "Listening…"
-            lines = []; visibleLineCount = 1
-            return
-        }
-        let count = min(FloatingBarModel.maxLines, all.count)
-        lines = Array(all.suffix(count))
-        visibleLineCount = count
+        // The text is only needed while the card is open.
+        guard expanded else { return }
+        let built = FloatingBarModel.paragraphs(state: state)
+        if built != paragraphs { paragraphs = built }
     }
 
-    private func reset() {
-        committedTokens = []; firstLineID = 1; lastFinalID = nil; lastRetractionID = nil
-        active = [:]; tails = []
-    }
-
-    // MARK: - Consuming transcript updates
-
-    /// Removes everything shown for segments that were dropped after the fact (echo, empty).
-    private func consumeRetractions(_ retractions: [AppState.Retraction]) {
-        var new = retractions
-        if let id = lastRetractionID, let idx = retractions.firstIndex(where: { $0.id == id }) {
-            new = Array(retractions[(idx + 1)...])
-        }
-        guard !new.isEmpty else { return }
-        for r in new {
-            let source = Source(channel: r.channel, start: r.start)
-            committedTokens.removeAll { $0.source == source && $0.speaker == nil }
-            if active[r.channel]?.start == r.start { active[r.channel] = nil }
-            lastRetractionID = r.id
-        }
-        // Drop speaker prefixes that no longer introduce any words, and merge runs of the
-        // same speaker that became adjacent.
-        var cleaned: [Token] = []
-        for token in committedTokens {
-            if token.speaker != nil {
-                if let last = cleaned.last, last.speaker != nil { cleaned.removeLast() }   // prefix without words
-                if cleaned.last(where: { $0.speaker != nil })?.speaker == token.speaker { continue }   // same speaker again
+    static func paragraphs(state: AppState) -> [Paragraph] {
+        var out: [Paragraph] = []
+        func add(_ speaker: String, isMe: Bool, text: String, tail: [String]) {
+            guard !text.isEmpty || !tail.isEmpty else { return }
+            if var last = out.last, last.speaker == speaker, last.tail.isEmpty {
+                last.text = [last.text, text].filter { !$0.isEmpty }.joined(separator: " ")
+                last.tail = tail
+                out[out.count - 1] = last
+            } else {
+                out.append(Paragraph(id: out.count, speaker: speaker, isMe: isMe, text: text, tail: tail))
             }
-            cleaned.append(token)
         }
-        if let last = cleaned.last, last.speaker != nil { cleaned.removeLast() }
-        committedTokens = cleaned
-    }
-
-    private func consumeFinals(_ finals: [TranscriptLine]) {
-        var new: [TranscriptLine] = []
-        if let id = lastFinalID {
-            if let idx = finals.firstIndex(where: { $0.id == id }) {
-                new = Array(finals[(idx + 1)...])
-            } else if let last = finals.last {
-                // The id scrolled out of the capped history – take the most recent line only.
-                new = [last]
-            }
-        } else {
-            new = finals
+        for line in state.liveLines {
+            add(line.speaker, isMe: line.channel == .me, text: line.text, tail: [])
         }
-        for line in new {
-            var words = line.text.split(separator: " ").map(String.init)
-            var channel: Channel? = line.channel
-            if let (ch, partial) = active.first(where: { $0.value.start == line.start }) {
-                // Keep what was already shown sharp; only append what came after it.
-                words = Array(words.dropFirst(min(partial.frozen, words.count)))
-                active[ch] = nil
-                channel = ch
-            }
-            commit(words, speaker: line.speaker, source: Source(channel: channel, start: line.start))
-            lastFinalID = line.id
-        }
-    }
-
-    private func consumePartials(_ partials: [Channel: TranscriptLine]) {
-        tails = []
-        for channel in active.keys where partials[channel] == nil { active[channel] = nil }
         let now = Date()
-        for (channel, partial) in partials.sorted(by: { $0.value.start < $1.value.start }) {
-            if now.timeIntervalSince(partial.createdAt) > FloatingBarModel.partialTimeout {
-                active[channel] = nil
-                continue
-            }
+        for (channel, partial) in state.partialLines.sorted(by: { $0.value.start < $1.value.start })
+        where now.timeIntervalSince(partial.createdAt) <= partialTimeout {
             let words = partial.text.split(separator: " ").map(String.init)
             let stable = min(words.count, partial.stableWords ?? words.count)
-            var p = active[channel] ?? Partial(start: partial.start, frozen: 0)
-            if p.start != partial.start { p = Partial(start: partial.start, frozen: 0) }
-            if stable > p.frozen {
-                commit(Array(words[p.frozen..<stable]), speaker: partial.speaker, source: Source(channel: channel, start: partial.start))
-                p.frozen = stable
-            }
-            active[channel] = p
-            if words.count > p.frozen {
-                tails.append(Tail(start: partial.start, speaker: partial.speaker, words: Array(words[p.frozen...])))
-            }
+            add(partial.speaker, isMe: channel == .me, text: words[..<stable].joined(separator: " "), tail: Array(words[stable...]))
         }
-    }
-
-    // MARK: - Layout
-
-    private static let regularFont = FloatingBarView.font
-    private static let boldFont = NSFont.systemFont(ofSize: FloatingBarView.font.pointSize, weight: .semibold)
-    private static let gap = FloatingBarView.tokenSpacing
-    private static func width(_ t: Token) -> CGFloat {
-        ceil((t.text as NSString).size(withAttributes: [.font: t.speaker != nil ? boldFont : regularFont]).width)
-    }
-    private static func width(_ line: [Token]) -> CGFloat {
-        line.reduce(CGFloat(0)) { $0 + ($0 == 0 ? 0 : gap) + width($1) }
-    }
-    private static func fits(_ token: Token, after line: [Token]) -> Bool {
-        width(line) + gap + width(token) <= FloatingBarView.textWidth
-    }
-
-    /// Appends settled words, preceded by a speaker prefix when the speaker changed.
-    private func commit(_ words: [String], speaker: String, source: Source) {
-        guard !words.isEmpty else { return }
-        if speaker != lastSpeaker {
-            committedTokens.append(Token(text: speaker + ":", settled: true, speaker: speaker, source: source))
-        }
-        committedTokens += words.map { Token(text: $0, settled: true, speaker: nil, source: source) }
-        // Trim what can never be shown again (keeps the token list small).
-        let wrapped = FloatingBarModel.wrap(committedTokens)
-        let excess = wrapped.count - (FloatingBarModel.maxLines + 2)
-        if excess > 0 {
-            let drop = wrapped.prefix(excess).reduce(0) { $0 + $1.count }
-            committedTokens.removeFirst(drop)
-            firstLineID += excess
-        }
-    }
-
-    /// Greedy wrap into lines – the same rule for committed text and blurred tails.
-    private static func wrap(_ tokens: [Token]) -> [[Token]] {
-        var lines: [[Token]] = []
-        for token in tokens {
-            if let last = lines.last, fits(token, after: last) {
-                lines[lines.count - 1].append(token)
-            } else {
-                lines.append([token])
-            }
-        }
-        return lines
-    }
-
-    /// Committed lines plus the blurred tails, wrapped as one continuous text. Line ids are
-    /// positional, so a tail line keeps its id (and position) when its words settle.
-    private func layout() -> [Line] {
-        var tokens = committedTokens
-        var speaker = lastSpeaker
-        for tail in tails {
-            if tail.speaker != speaker {
-                speaker = tail.speaker
-                tokens.append(Token(text: tail.speaker + ":", settled: true, speaker: tail.speaker))
-            }
-            tokens += tail.words.map { Token(text: $0, settled: false, speaker: nil) }
-        }
-        return FloatingBarModel.wrap(tokens).enumerated().map { Line(id: firstLineID + $0.offset, tokens: $0.element) }
+        return out
     }
 }
 
@@ -719,58 +619,50 @@ struct FloatingBarView: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var model: FloatingBarModel
 
-    static let width: CGFloat = 420
-    static let textWidth: CGFloat = 340
-    static let tokenSpacing: CGFloat = 3.5
     static let font = NSFont.systemFont(ofSize: 11)
-    static let lineHeight: CGFloat = 14
-    static let verticalPadding: CGFloat = 8
-    static let leadingPadding: CGFloat = 12
-    static let trailingPadding: CGFloat = 14
-    /// Dot + waveform + their spacing, left of the text.
-    static let indicatorWidth: CGFloat = 7 + 8 + 22 + 8
+    /// The recording pill: mute · waveform · pause.
+    static let pillWidth: CGFloat = 156
+    static let pillHeight: CGFloat = 36
+    static let controlSize: CGFloat = 28
+    /// The transcript card below the pill.
+    static let cardSize = CGSize(width: 400, height: 380)
+    static let cardGap: CGFloat = 8
+    static let leadingPadding: CGFloat = 14
+    static let trailingPadding: CGFloat = 16
 
-    static func height(forLines n: Int) -> CGFloat {
-        CGFloat(max(1, n)) * lineHeight + 2 * verticalPadding + 2
-    }
 
-    /// Geometry of the smaller naming pills shown below the capsule.
-    static let pillHeight: CGFloat = 28
-    static let pillGap: CGFloat = 7
-    /// Vertical space the pills occupy below the capsule (each pill plus the gap above it).
-    static func pillsAreaHeight(count: Int) -> CGFloat {
-        count > 0 ? CGFloat(count) * (pillHeight + pillGap) : 0
-    }
-
-    /// Full width while showing transcript, a compact pill around the status message otherwise.
-    static func width(forMessage message: String?) -> CGFloat {
-        guard let message else { return width }
+    /// A compact capsule around a status message (spinner + text).
+    static func width(forMessage message: String) -> CGFloat {
         let text = ceil((message as NSString).size(withAttributes: [.font: font]).width)
-        return min(width, leadingPadding + indicatorWidth + text + trailingPadding)
+        return leadingPadding + 12 + 8 + text + trailingPadding
     }
 
     /// Size of the bar when morphed into the stop confirmation.
-    static let confirmSize = CGSize(width: 470, height: height(forLines: FloatingBarModel.maxLines) - 2)   // exactly the 3-line bar
+    static let confirmSize = CGSize(width: 470, height: 58)
     /// Size of the bar when morphed into the title prompt.
     static let titleSize = CGSize(width: 640, height: confirmSize.height)
 
     static func size(for model: FloatingBarModel) -> CGSize {
         if model.askingTitle { return titleSize }
         if model.confirmingStop { return confirmSize }
-        return CGSize(width: width(forMessage: model.message), height: height(forLines: model.visibleLineCount) - 2)
+        if let message = model.message { return CGSize(width: width(forMessage: message), height: pillHeight) }
+        return CGSize(width: pillWidth, height: pillHeight)
+    }
+
+    private var spring: Animation? {
+        model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil
     }
 
     var body: some View {
-        VStack(spacing: FloatingBarView.pillGap) {
+        VStack(spacing: FloatingBarView.cardGap) {
             capsule
-            ForEach(Array(model.pillSpeakers.enumerated()), id: \.element) { index, base in
-                SpeakerPill(base: base, index: index, model: model)
-                    .transition(.scale(scale: 0.2, anchor: .top).combined(with: .opacity))
+            if model.showsCard {
+                TranscriptCard(state: state, settings: settings, model: model)
+                    .transition(.asymmetric(insertion: .scale(scale: 0.92, anchor: .top).combined(with: .opacity),
+                                            removal: .opacity))
             }
         }
-        // Hover is tracked by CapsuleHostingView's tracking area (SwiftUI .onHover does not fire
-        // for a background, non-activating panel).
-        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: model.pillSpeakers)
+        .animation(model.animated ? .spring(duration: 0.3, bounce: 0.15) : nil, value: model.showsCard)
         .padding(FloatingBarController.shadowPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
@@ -779,24 +671,19 @@ struct FloatingBarView: View {
         let size = FloatingBarView.size(for: model)
         let confirming = model.confirmingStop
         let asking = model.askingTitle
-        // Always a capsule – the confirmation is just a taller, wider pill.
         let shape = Capsule()
         return HStack(alignment: .center, spacing: 8) {
-            Circle().fill(Color.red).frame(width: 7, height: 7)
-            WaveformView(levels: Array(state.levelHistory.suffix(10)), color: .white)
-                .frame(width: 22, height: 10)
-
             if asking {
+                Circle().fill(Color.red).frame(width: 7, height: 7)
                 TitleField(text: $model.title, placeholder: "Name this recording (optional)",
-                           focused: Binding(get: { model.pillFocus == nil }, set: { if $0 { model.pillFocus = nil } }),
+                           focused: .constant(true),
                            onSubmit: { model.onSaveTitle?(false) },
-                           onCancel: { model.onSkipTitle?() },
-                           onTab: { if !model.pillSpeakers.isEmpty { model.pillFocus = 0 } })
+                           onCancel: { model.onSkipTitle?() })
                     .frame(height: 17)
                     .padding(.horizontal, 12)
                     .frame(height: 26)
                     .background(.white.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(.white.opacity(model.pillFocus == nil ? 0.35 : 0.15)))
+                    .overlay(Capsule().stroke(.white.opacity(0.35)))
                     .padding(.leading, 4)
                 HStack(spacing: 6) {
                     Button("Skip") { model.onSkipTitle?() }
@@ -812,6 +699,7 @@ struct FloatingBarView: View {
                 .fixedSize()
                 .transition(.opacity)
             } else if confirming {
+                Circle().fill(Color.red).frame(width: 7, height: 7)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Stop recording?")
                         .font(.system(size: 12, weight: .semibold))
@@ -835,64 +723,543 @@ struct FloatingBarView: View {
                 .fixedSize()
                 .transition(.opacity)
             } else if let message = model.message {
+                ProgressView().controlSize(.mini).frame(width: 12, height: 12)
                 Text(message)
                     .foregroundStyle(.white.opacity(0.85))
                     .lineLimit(1)
                     .fixedSize()
-                    .frame(height: FloatingBarView.lineHeight)
                     .transition(.opacity)
+                Spacer(minLength: 0)
             } else {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(model.lines) { line in
-                        HStack(spacing: FloatingBarView.tokenSpacing) {
-                            ForEach(Array(line.tokens.enumerated()), id: \.offset) { _, token in
-                                Text(token.speaker != nil ? state.displayName(for: token.speaker!) + ":" : token.text)
-                                    .fontWeight(token.speaker != nil ? .semibold : .regular)
-                                    .foregroundStyle(color(for: token))
-                                    .blur(radius: token.settled ? 0 : 2.2)
-                                    .opacity(token.settled ? 1 : 0.7)
-                                    // Same curve as the line movement: a word whose blur fades in
-                                    // the same transaction as a scroll must not lag behind its line.
-                                    .animation(.easeOut(duration: 0.3), value: token.settled)
-                            }
-                        }
-                        .frame(height: FloatingBarView.lineHeight)
-                        // Children move as one with the line instead of animating individually.
-                        .geometryGroup()
-                        .lineLimit(1)
-                        .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
-                                                removal: .move(edge: .top).combined(with: .opacity)))
-                    }
-                }
-                .frame(width: FloatingBarView.textWidth, alignment: .bottomLeading)
-                .clipped()
-                .animation(model.animated ? .easeOut(duration: 0.3) : nil, value: model.lines.map(\.id))
-                .transition(.opacity)
+                controls
+                    .transition(.opacity)
             }
-            Spacer(minLength: 0)
         }
         .font(.system(size: 11))
-        .padding(.leading, (confirming || asking) ? 20 : FloatingBarView.leadingPadding)
-        .padding(.trailing, (confirming || asking) ? 12 : FloatingBarView.trailingPadding)
-        .padding(.vertical, FloatingBarView.verticalPadding)
+        .padding(.leading, (confirming || asking) ? 20 : (model.message != nil ? FloatingBarView.leadingPadding : 4))
+        .padding(.trailing, (confirming || asking) ? 12 : (model.message != nil ? FloatingBarView.trailingPadding : 4))
         .frame(width: size.width, height: size.height, alignment: .leading)
         .environment(\.colorScheme, .dark)
         // Clip the content first, then put the fill *with its shadow* behind it. The shadow of a
-        // plain shape is rendered from its path; a shadow on the composited group (text, blur,
-        // waveform) was re-rasterised once the size animation ended and showed up as a faint
-        // rectangle around the small status pill instead (macOS 26).
+        // plain shape is rendered from its path; a shadow on the composited group was
+        // re-rasterised once the size animation ended and showed a faint rectangle (macOS 26).
         .clipShape(shape)
         .background(shape.fill(.black.opacity(0.85)).shadow(color: .black.opacity(0.35), radius: 10, y: 4))
         .overlay(shape.strokeBorder(.white.opacity(0.15)))
-        .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: size)
-        .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: model.message == nil)
-        .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: confirming)
-        .animation(model.animated ? .spring(duration: FloatingBarController.resizeDuration, bounce: 0) : nil, value: asking)
+        .animation(spring, value: size)
+        .animation(spring, value: model.message == nil)
+        .animation(spring, value: confirming)
+        .animation(spring, value: asking)
     }
 
-    private func color(for token: FloatingBarModel.Token) -> Color {
-        guard let speaker = token.speaker else { return .white }
-        return speaker == settings.myName ? .cyan : .orange
+    /// Mute (left) · recording dot + waveform (centre, click pins the transcript open) · pause (right).
+    private var controls: some View {
+        let micAvailable = settings.captureMicrophone
+        let live = state.phase == .recording
+        return HStack(spacing: 0) {
+            PillIconButton(systemName: state.isMicMuted ? "mic.slash.fill" : "mic.fill",
+                           tint: state.isMicMuted ? Color(red: 1, green: 0.38, blue: 0.35) : .white,
+                           highlighted: state.isMicMuted,
+                           help: state.isMicMuted ? "Unmute your microphone" : "Mute your microphone (only the computer's audio is transcribed)") {
+                model.onToggleMute?()
+            }
+            .disabled(!micAvailable || !live)
+            .opacity(micAvailable ? 1 : 0.35)
+
+            Spacer(minLength: 0)
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(state.isPaused ? Color(white: 0.55) : Color.red)
+                    .frame(width: 7, height: 7)
+                if state.isPaused {
+                    Text("Paused")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .frame(width: 58, height: 14, alignment: .leading)
+                } else {
+                    WaveformView(levels: Array(state.levelHistory.suffix(14)), color: .white)
+                        .frame(width: 58, height: 14)
+                }
+            }
+            .frame(height: FloatingBarView.pillHeight)
+            .contentShape(Rectangle())
+            .onTapGesture { model.onTogglePin?() }
+            .help(model.pinned ? "Unpin the live transcript" : "Hover for the live transcript, click to keep it open")
+            Spacer(minLength: 0)
+
+            PillIconButton(systemName: state.isPaused ? "play.fill" : "pause.fill",
+                           tint: .white,
+                           highlighted: state.isPaused,
+                           help: state.isPaused ? "Resume" : "Pause the whole recording") {
+                model.onTogglePause?()
+            }
+            .disabled(!live)
+        }
+    }
+}
+
+/// A round icon button inside the pill.
+private struct PillIconButton: View {
+    let systemName: String
+    var tint: Color
+    var highlighted: Bool
+    var help: String
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(tint.opacity(0.92))
+                .frame(width: FloatingBarView.controlSize, height: FloatingBarView.controlSize)
+                .background(Circle().fill(.white.opacity(highlighted ? 0.16 : (hovering ? 0.12 : 0))))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help(help)
+        .animation(.easeOut(duration: 0.15), value: highlighted)
+    }
+}
+
+/// The live transcript card that unfolds below the pill: scrollable history, blurred tail,
+/// and the "Who's speaking?" field.
+private struct TranscriptCard: View {
+    @ObservedObject var state: AppState
+    @ObservedObject var settings: AppSettings
+    @ObservedObject var model: FloatingBarModel
+
+    private static let bottomID = "bottom"
+    private static let scrollSpace = "transcriptScroll"
+    /// The end of the transcript is inside the visible area (raw, updated on every layout).
+    @State private var atBottom = true
+    /// Shown state of "not at the end": set only after it lasted a moment, so the button does
+    /// not flash while an auto-scroll to a new line is still under way.
+    @State private var awayFromBottom = false
+    @State private var scrollToLatest: (() -> Void)?
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 20, style: .continuous) }
+    private var showsNaming: Bool { settings.nameSpeakersLive && settings.captureSystemAudio }
+
+    var body: some View {
+        if model.renderStatic {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                VStack(alignment: .leading, spacing: 11) {
+                    ForEach(model.paragraphs) { ParagraphView(paragraph: $0) }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .padding(.bottom, 16)
+            }
+            .frame(width: FloatingBarView.cardSize.width)
+            .environment(\.colorScheme, .dark)
+            .background(shape.fill(.black.opacity(0.85)))
+            .overlay(shape.strokeBorder(.white.opacity(0.15)))
+        } else {
+            interactive
+        }
+    }
+
+    private var interactive: some View {
+        VStack(spacing: 0) {
+            header
+            ZStack(alignment: .bottomTrailing) {
+                transcript
+                if !model.followLatest || awayFromBottom {
+                    Button {
+                        model.followLatest = true
+                        scrollToLatest?()
+                    } label: {
+                        Label("Latest", systemImage: "arrow.down")
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .frame(height: 22)
+                            // Opaque, so the transcript text scrolling underneath cannot bleed through.
+                            .background(Capsule().fill(Color(white: 0.2)).shadow(color: .black.opacity(0.6), radius: 6, y: 2))
+                            .overlay(Capsule().strokeBorder(.white.opacity(0.2)))
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(10)
+                    .transition(.opacity)
+                }
+            }
+            if showsNaming {
+                Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
+                SpeakerTagBar(state: state, model: model)
+            }
+        }
+        .frame(width: FloatingBarView.cardSize.width, height: FloatingBarView.cardSize.height)
+        .environment(\.colorScheme, .dark)
+        .clipShape(shape)
+        .background(shape.fill(.black.opacity(0.85)).shadow(color: .black.opacity(0.35), radius: 12, y: 5))
+        .overlay(shape.strokeBorder(.white.opacity(0.15)))
+        .animation(.easeOut(duration: 0.2), value: model.followLatest)
+        .animation(.easeOut(duration: 0.2), value: awayFromBottom)
+    }
+
+    private var header: some View {
+        HStack(spacing: 6) {
+            Text("Live transcript")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+            if state.isMicMuted {
+                Label("Mic muted", systemImage: "mic.slash.fill")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color(red: 1, green: 0.45, blue: 0.42))
+            }
+            Spacer()
+            Button { model.onTogglePin?() } label: {
+                Image(systemName: model.pinned ? "pin.fill" : "pin")
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundStyle(.white.opacity(model.pinned ? 0.9 : 0.4))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(model.pinned ? "Unpin (close when the pointer leaves)" : "Keep open")
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 10)
+        .frame(height: 34)
+    }
+
+    private var transcript: some View {
+        GeometryReader { viewport in
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: true) {
+                // Not lazy: the end marker must always exist so its position tells whether the
+                // end of the transcript is in view, and scrollTo lands exactly on it.
+                VStack(alignment: .leading, spacing: 11) {
+                    if model.paragraphs.isEmpty {
+                        Text(state.isPaused ? "Paused" : "Listening…")
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(.white.opacity(0.45))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    ForEach(model.paragraphs) { p in
+                        ParagraphView(paragraph: p)
+                    }
+                    Color.clear.frame(height: 1).id(TranscriptCard.bottomID)
+                        .background(GeometryReader { marker in
+                            Color.clear.preference(key: BottomMarkerKey.self,
+                                                   value: marker.frame(in: .named(TranscriptCard.scrollSpace)).minY)
+                        })
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .padding(.bottom, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .coordinateSpace(name: TranscriptCard.scrollSpace)
+            // Opens already showing the end – no visible scroll down from the top.
+            .defaultScrollAnchor(.bottom)
+            // Text scrolling out at the top fades instead of being cut off under the header.
+            .mask(VStack(spacing: 0) {
+                LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: 14)
+                Color.black
+            })
+            .onPreferenceChange(BottomMarkerKey.self) { markerY in
+                // 12 pt bottom padding below the marker, plus some slack.
+                atBottom = markerY <= viewport.size.height + 4
+            }
+            .onAppear {
+                // The card is inserted inside the open animation; jump without inheriting it.
+                var instant = Transaction(); instant.disablesAnimations = true
+                withTransaction(instant) { proxy.scrollTo(TranscriptCard.bottomID, anchor: .bottom) }
+                scrollToLatest = {
+                    withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(TranscriptCard.bottomID, anchor: .bottom) }
+                }
+            }
+            .onChange(of: model.paragraphs) { _, _ in
+                guard model.followLatest else { return }
+                withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(TranscriptCard.bottomID, anchor: .bottom) }
+            }
+            .onChange(of: model.followLatest) { _, follow in
+                if follow {
+                    withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(TranscriptCard.bottomID, anchor: .bottom) }
+                } else {
+                    // A scroll-up gesture with nowhere to go (short transcript) leaves the end in view.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        if atBottom, !model.followLatest { model.followLatest = true }
+                    }
+                }
+            }
+            .task(id: atBottom) {
+                if atBottom {
+                    awayFromBottom = false
+                    model.followLatest = true     // scrolled back down to the end
+                } else {
+                    // Away from the end for longer than an auto-scroll takes: offer "Latest".
+                    try? await Task.sleep(for: .milliseconds(450))
+                    if !Task.isCancelled, !atBottom { awayFromBottom = true }
+                }
+            }
+        }
+        }
+    }
+}
+
+/// Vertical position of the transcript's end marker inside the scroll view.
+private struct BottomMarkerKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
+/// One speaker turn: the name, then the text. The blurred words of a partial flow inline after
+/// the sharp ones and lose their blur in place as they settle.
+private struct ParagraphView: View {
+    let paragraph: FloatingBarModel.Paragraph
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(paragraph.speaker)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(paragraph.isMe ? Color.cyan : Color.orange)
+            if paragraph.tail.isEmpty {
+                Text(paragraph.text)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                let sharp = paragraph.text.split(separator: " ").map(String.init)
+                let words = sharp + paragraph.tail
+                FlowLayout(spacing: 3.5, lineSpacing: 3) {
+                    ForEach(Array(words.enumerated()), id: \.offset) { i, word in
+                        let settled = i < sharp.count
+                        Text(word)
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(.white.opacity(settled ? 0.92 : 0.7))
+                            .blur(radius: settled ? 0 : 2.4)
+                            .animation(.easeOut(duration: 0.35), value: settled)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+}
+
+/// Lays out words left to right, wrapping into lines (like text, but each word is its own view
+/// so it can be blurred on its own).
+private struct FlowLayout: Layout {
+    var spacing: CGFloat
+    var lineSpacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0, widest: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > maxWidth {
+                y += lineHeight + lineSpacing
+                x = 0; lineHeight = 0
+            }
+            widest = max(widest, x + size.width)
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+        }
+        return CGSize(width: proposal.width ?? widest, height: y + lineHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > bounds.width {
+                y += lineHeight + lineSpacing
+                x = 0; lineHeight = 0
+            }
+            view.place(at: CGPoint(x: bounds.minX + x, y: bounds.minY + y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+        }
+    }
+}
+
+/// Bottom of the card: who is speaking right now (named by the user), a field to name them,
+/// and one-click chips for names used earlier in this call.
+private struct SpeakerTagBar: View {
+    @ObservedObject var state: AppState
+    @ObservedObject var model: FloatingBarModel
+
+    var body: some View {
+        let active = state.activeSpeakerTag?.name
+        let others = state.usedSpeakerNames.filter { $0 != active }
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 6) {
+                Image(systemName: "person.wave.2.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange.opacity(0.9))
+                if let active {
+                    HStack(spacing: 4) {
+                        Text(active)
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(.orange)
+                        Button { model.onEndTag?() } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 8.5, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .frame(width: 16, height: 16)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("\(active) stopped speaking")
+                    }
+                    .padding(.leading, 9).padding(.trailing, 3)
+                    .frame(height: 24)
+                    .background(.orange.opacity(0.18), in: Capsule())
+                }
+                TagField(text: $model.tagDraft,
+                         placeholder: active == nil ? "Who's speaking? Type a name ⏎" : "Someone else? ⏎",
+                         focused: model.tagFieldFocused,
+                         onSubmit: { model.onTagSubmit?() },
+                         onCancel: { model.onTagCancel?() },
+                         onFocus: { model.onTagFocus?() })
+                    .frame(height: 17)
+                    .padding(.horizontal, 10)
+                    .frame(height: 24)
+                    .background(.white.opacity(model.tagFieldFocused ? 0.14 : 0.08), in: Capsule())
+                    .overlay(Capsule().stroke(.white.opacity(model.tagFieldFocused ? 0.35 : 0.12)))
+            }
+            if !others.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 5) {
+                        ForEach(others, id: \.self) { name in
+                            Button { model.onTagChip?(name) } label: {
+                                Text(name)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.85))
+                                    .padding(.horizontal, 9)
+                                    .frame(height: 22)
+                                    .background(.white.opacity(0.1), in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .help("\(name) is speaking again")
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+}
+
+/// The "Who's speaking?" field: like TitleField, but capitalises the first letter and reports
+/// when it is clicked into (the panel only becomes key then).
+private struct TagField: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    var focused: Bool
+    var onSubmit: () -> Void
+    var onCancel: () -> Void
+    var onFocus: () -> Void
+
+    /// Takes the focus itself on a click and when it enters the window while it should have it –
+    /// a click into a field of a background, non-activating panel is otherwise not enough.
+    final class FocusingField: NSTextField {
+        var wantsFocus = false
+        var onClick: (() -> Void)?
+        override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+        override func mouseDown(with event: NSEvent) {
+            onClick?()
+            window?.makeKey()
+            window?.makeFirstResponder(self)
+            super.mouseDown(with: event)
+        }
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if wantsFocus { DispatchQueue.main.async { [weak self] in self?.focusIfWanted() } }
+        }
+        func focusIfWanted() {
+            guard wantsFocus, let window else { return }
+            if window.firstResponder !== currentEditor() { window.makeFirstResponder(self) }
+        }
+    }
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = FocusingField()
+        field.onClick = onFocus
+        field.isBordered = false
+        field.drawsBackground = false
+        field.focusRingType = .none
+        field.font = .systemFont(ofSize: 11.5, weight: .medium)
+        field.textColor = .white
+        field.isAutomaticTextCompletionEnabled = false
+        field.allowsEditingTextAttributes = false
+        field.lineBreakMode = .byTruncatingTail
+        field.cell?.usesSingleLineMode = true
+        field.cell?.wraps = false
+        field.delegate = context.coordinator
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        context.coordinator.parent = self
+        if field.stringValue != text { field.stringValue = text }
+        if field.placeholderString != placeholder {
+            field.placeholderString = placeholder
+            field.placeholderAttributedString = NSAttributedString(string: placeholder, attributes: [
+                .foregroundColor: NSColor.white.withAlphaComponent(0.4), .font: NSFont.systemFont(ofSize: 11.5)])
+        }
+        if let field = field as? FocusingField {
+            field.onClick = onFocus
+            field.wantsFocus = focused
+            // The window becomes key a moment after the card opens; try again then.
+            if focused { for delay in [0.0, 0.2, 0.45] { DispatchQueue.main.asyncAfter(deadline: .now() + delay) { field.focusIfWanted() } } }
+        }
+        if !focused, field.currentEditor() != nil, field.window?.firstResponder === field.currentEditor() {
+            field.window?.makeFirstResponder(nil)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: TagField
+        init(_ parent: TagField) { self.parent = parent }
+
+        func controlTextDidBeginEditing(_ notification: Notification) {
+            if let editor = (notification.object as? NSTextField)?.currentEditor() as? NSTextView {
+                editor.isAutomaticTextCompletionEnabled = false
+                editor.isContinuousSpellCheckingEnabled = false
+                editor.isAutomaticSpellingCorrectionEnabled = false
+                editor.isGrammarCheckingEnabled = false
+                editor.isAutomaticQuoteSubstitutionEnabled = false
+                editor.isAutomaticDashSubstitutionEnabled = false
+                editor.isAutomaticTextReplacementEnabled = false
+                editor.isAutomaticDataDetectionEnabled = false
+                editor.isAutomaticLinkDetectionEnabled = false
+                if #available(macOS 14, *) { editor.inlinePredictionType = .no }
+                if #available(macOS 15.2, *) { editor.writingToolsBehavior = .none }
+                editor.insertionPointColor = .white
+            }
+            parent.onFocus()
+        }
+        func controlTextDidChange(_ notification: Notification) {
+            guard let field = notification.object as? NSTextField else { return }
+            var s = field.stringValue
+            if let first = s.first, first.isLowercase {      // always start with a capital letter
+                s = first.uppercased() + s.dropFirst()
+                field.stringValue = s
+                field.currentEditor()?.selectedRange = NSRange(location: (s as NSString).length, length: 0)
+            }
+            parent.text = s
+        }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            switch selector {
+            case #selector(NSResponder.insertNewline(_:)): parent.onSubmit(); return true
+            case #selector(NSResponder.cancelOperation(_:)): parent.onCancel(); return true
+            default: return false
+            }
+        }
     }
 }
 
@@ -986,124 +1353,6 @@ private struct TitleField: NSViewRepresentable {
             case #selector(NSResponder.insertTab(_:)):
                 if let onTab = parent.onTab { onTab(); return true }
                 return false
-            default: return false
-            }
-        }
-    }
-}
-
-/// One naming pill below the bar: "Speaker N:" in the speaker's colour, a focused text field
-/// (type the name straight away, even while another app is frontmost), and a ⏎ hint. Tab moves
-/// between pills (and the title field), Enter confirms.
-private struct SpeakerPill: View {
-    let base: String
-    let index: Int
-    @ObservedObject var model: FloatingBarModel
-
-    var body: some View {
-        let focused = model.pillFocus == index
-        HStack(spacing: 5) {
-            Text(base + ":")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(base == model.myNameForColor ? Color.cyan : Color.orange)
-                .fixedSize()
-            SpeakerField(
-                text: Binding(get: { model.pillNames[base] ?? "" },
-                              set: { model.pillNames[base] = $0; model.onPillEdit?(base, $0) }),
-                focused: focused,
-                onSubmit: { model.onPillSubmit?(index) },
-                onTab: { model.onPillTab?(index, $0) },
-                onCancel: { model.onPillCancel?() },
-                onFocus: { model.pillFocus = index })
-                .frame(width: 120, height: 18)
-            Text("⏎")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white.opacity(focused ? 0.9 : 0.3))
-        }
-        .padding(.horizontal, 12)
-        .frame(height: FloatingBarView.pillHeight)
-        .environment(\.colorScheme, .dark)
-        .background(Color.black.opacity(0.85), in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(focused ? 0.4 : 0.15)))
-        .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
-        .fixedSize()
-    }
-}
-
-/// The name field inside a speaker pill. Like TitleField, but auto-capitalises the first letter
-/// and routes Tab / Shift-Tab and Return to the bar's navigation.
-private struct SpeakerField: NSViewRepresentable {
-    @Binding var text: String
-    var focused: Bool
-    var onSubmit: () -> Void
-    var onTab: (_ backwards: Bool) -> Void
-    var onCancel: () -> Void
-    var onFocus: () -> Void
-
-    func makeNSView(context: Context) -> NSTextField {
-        let field = NSTextField()
-        field.isBordered = false
-        field.drawsBackground = false
-        field.focusRingType = .none
-        field.font = .systemFont(ofSize: 11, weight: .medium)
-        field.textColor = .white
-        field.placeholderAttributedString = NSAttributedString(string: "name", attributes: [
-            .foregroundColor: NSColor.white.withAlphaComponent(0.35), .font: NSFont.systemFont(ofSize: 11)])
-        field.isAutomaticTextCompletionEnabled = false
-        field.allowsEditingTextAttributes = false
-        field.lineBreakMode = .byTruncatingTail
-        field.cell?.usesSingleLineMode = true
-        field.cell?.wraps = false
-        field.delegate = context.coordinator
-        return field
-    }
-
-    func updateNSView(_ field: NSTextField, context: Context) {
-        if field.stringValue != text { field.stringValue = text }
-        if focused, field.window?.firstResponder !== field.currentEditor(), field.window != nil {
-            field.window?.makeFirstResponder(field)
-        }
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-    final class Coordinator: NSObject, NSTextFieldDelegate {
-        var parent: SpeakerField
-        init(_ parent: SpeakerField) { self.parent = parent }
-
-        func controlTextDidBeginEditing(_ notification: Notification) {
-            if let editor = (notification.object as? NSTextField)?.currentEditor() as? NSTextView {
-                editor.isAutomaticTextCompletionEnabled = false
-                editor.isContinuousSpellCheckingEnabled = false
-                editor.isAutomaticSpellingCorrectionEnabled = false
-                editor.isGrammarCheckingEnabled = false
-                editor.isAutomaticQuoteSubstitutionEnabled = false
-                editor.isAutomaticDashSubstitutionEnabled = false
-                editor.isAutomaticTextReplacementEnabled = false
-                editor.isAutomaticDataDetectionEnabled = false
-                editor.isAutomaticLinkDetectionEnabled = false
-                if #available(macOS 14, *) { editor.inlinePredictionType = .no }
-                if #available(macOS 15.2, *) { editor.writingToolsBehavior = .none }
-                editor.insertionPointColor = .white
-            }
-            parent.onFocus()
-        }
-        func controlTextDidChange(_ notification: Notification) {
-            guard let field = notification.object as? NSTextField else { return }
-            var s = field.stringValue
-            if let first = s.first, first.isLowercase {      // always start with a capital letter
-                s = first.uppercased() + s.dropFirst()
-                field.stringValue = s
-                field.currentEditor()?.selectedRange = NSRange(location: (s as NSString).length, length: 0)
-            }
-            parent.text = s
-        }
-        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-            switch selector {
-            case #selector(NSResponder.insertNewline(_:)): parent.onSubmit(); return true
-            case #selector(NSResponder.insertTab(_:)): parent.onTab(false); return true
-            case #selector(NSResponder.insertBacktab(_:)): parent.onTab(true); return true
-            case #selector(NSResponder.cancelOperation(_:)): parent.onCancel(); return true
             default: return false
             }
         }

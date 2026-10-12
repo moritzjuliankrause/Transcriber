@@ -36,6 +36,24 @@ struct SessionMeta: Codable {
     /// Custom display names entered for remote speakers, keyed by base label ("Speaker 1", …).
     /// Optional for backward compatibility with sessions written before this existed.
     var speakerNames: [String: String]?
+    /// Names the user gave the current remote speaker during the call, with the stretch of the
+    /// call they cover. Matched to diarization clusters when the recording is finalized.
+    var speakerTags: [SpeakerTag]?
+    /// Stretches in which the microphone was muted (session seconds; end nil while still muted).
+    var muteIntervals: [TimeSpan]?
+}
+
+struct TimeSpan: Codable, Sendable, Equatable {
+    var start: Double
+    var end: Double?
+}
+
+/// "From `start` on, the remote speaker is `name`" – entered in the floating pill while recording.
+/// `end` is nil while the tag is still active. Times are session seconds (system-audio timeline).
+struct SpeakerTag: Codable, Sendable, Equatable {
+    var name: String
+    var start: Double
+    var end: Double?
 }
 
 /// Owns one recording session folder:
@@ -148,6 +166,45 @@ final class SessionStore {
         meta.speakerNames = cleaned.isEmpty ? nil : cleaned
         try? writeMeta()
         lock.lock(); renderMarkdownLocked(); lock.unlock()
+    }
+
+    /// For imported audio: the recording "ends" when its audio does, not when it was imported.
+    func setDuration(_ seconds: Double) {
+        meta.endedAt = meta.startedAt.addingTimeInterval(seconds)
+        try? writeMeta()
+    }
+
+    /// Reads a session's metadata without opening the session.
+    static func readMeta(in directory: URL) -> SessionMeta? {
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
+        guard let data = try? Data(contentsOf: directory.appendingPathComponent("session.json")) else { return nil }
+        return try? decoder.decode(SessionMeta.self, from: data)
+    }
+
+    /// Changes a session's metadata in place (sessions that are not open, e.g. audio cleanup).
+    static func updateMeta(in directory: URL, _ change: (inout SessionMeta) -> Void) {
+        guard var meta = readMeta(in: directory) else { return }
+        change(&meta)
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        try? encoder.encode(meta).write(to: directory.appendingPathComponent("session.json"), options: .atomic)
+    }
+
+    func setMuteIntervals(_ spans: [TimeSpan]) {
+        meta.muteIntervals = spans.isEmpty ? nil : spans
+        try? writeMeta()
+        lock.lock(); renderMarkdownLocked(); lock.unlock()
+    }
+
+    /// Notes that the audio files were deleted (retention), so the session no longer offers them.
+    func forgetAudioFiles() {
+        meta.micWav = nil
+        meta.systemWav = nil
+        try? writeMeta()
+    }
+
+    func setSpeakerTags(_ tags: [SpeakerTag]) {
+        meta.speakerTags = tags.isEmpty ? nil : tags
+        try? writeMeta()
     }
 
     func markFinalizing() {

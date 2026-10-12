@@ -75,14 +75,8 @@ enum HeadlessTranscribe {
                 return 0
             }
 
-            // `--live-diarize`: label each segment with the experimental online diarizer.
-            var liveThreshold: Float = 0.62
-            if let ti = arguments.firstIndex(of: "--speaker-threshold"), ti + 1 < arguments.count, let t = Float(arguments[ti + 1]) { liveThreshold = t }
-            let live: LiveDiarizer? = arguments.contains("--live-diarize") ? LiveDiarizer(otherName: "Speaker", threshold: liveThreshold) : nil
-            if let live { try await live.prepare(); print("Live diarization ready") }
-
             let queue = TranscriptionQueue(engine: engine, language: language) { segment, result in
-                let speaker = (await live?.label(for: segment.samples, duration: segment.end - segment.start)) ?? "Speaker 1"
+                let speaker = "Speaker 1"
                 let entry = TranscriptEntry(channel: .them, speaker: speaker, start: segment.start, end: segment.end,
                                             text: result.text, confidence: result.confidence, createdAt: Date(),
                                             words: result.words.map { WordStamp(word: $0.word, start: segment.start + $0.startTime, end: segment.start + $0.endTime) })
@@ -113,11 +107,24 @@ enum HeadlessTranscribe {
                 wav.append(samples)
                 wav.close()
                 store.registerAudioFiles(mic: false, system: true)
-                let spans = try await RemoteDiarizer.diarize(wavURL: store.systemWavURL) { _ in }
-                let speakers = Set(spans.map(\.speaker))
-                print("Diarization: \(speakers.count) speaker(s)")
-                let names = Dictionary(uniqueKeysWithValues: speakers.sorted().enumerated().map { ($1, "Speaker \($0 + 1)") })
-                store.replaceEntries(RemoteDiarizer.relabel(store.entries, spans: spans, names: names))
+                // `--tag "Anna@30-95"` (repeatable): a name the user typed for the current speaker
+                // from 30 s to 95 s, as the floating pill would record it.
+                var tags: [SpeakerTag] = []
+                for (i, arg) in arguments.enumerated() where arg == "--tag" && i + 1 < arguments.count {
+                    let parts = arguments[i + 1].split(separator: "@", maxSplits: 1)
+                    let range = parts.count == 2 ? parts[1].split(separator: "-").compactMap { Double($0) } : []
+                    if range.count == 2 { tags.append(SpeakerTag(name: String(parts[0]), start: range[0], end: range[1])) }
+                }
+                let result = try await RemoteDiarizer.diarize(wavURL: store.systemWavURL) { _ in }
+                let labelled = RemoteDiarizer.label(result, tags: tags, otherName: "Speaker", sessionEnd: Double(samples.count) / 16_000)
+                print("Diarization: \(labelled.summary)")
+                // `--dump-embeddings out.json`: one voice embedding per label (to calibrate voice matching).
+                if let di = arguments.firstIndex(of: "--dump-embeddings"), di + 1 < arguments.count {
+                    let data = try JSONEncoder().encode(labelled.embeddings)
+                    try data.write(to: URL(fileURLWithPath: arguments[di + 1]))
+                }
+                let identity = Dictionary(uniqueKeysWithValues: Set(labelled.spans.map(\.speaker)).map { ($0, $0) })
+                store.replaceEntries(RemoteDiarizer.relabel(store.entries, spans: labelled.spans, names: identity))
                 for e in store.entries { print(String(format: "  %@ [%6.2f – %6.2f] %@", e.speaker, e.start, e.end, e.text)) }
             }
 

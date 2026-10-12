@@ -39,7 +39,7 @@ struct SettingsView: View {
         case transcription = "Transcription"
         case output = "Output"
         case ai = "AI"
-        case recovery = "Recovery"
+        case recordings = "Recordings"
         var id: String { rawValue }
         var icon: String {
             switch self {
@@ -47,7 +47,7 @@ struct SettingsView: View {
             case .audio: return "waveform"
             case .transcription: return "text.bubble"
             case .output: return "folder"
-            case .recovery: return "arrow.counterclockwise"
+            case .recordings: return "clock.arrow.circlepath"
             case .ai: return "sparkles"
             }
         }
@@ -57,7 +57,7 @@ struct SettingsView: View {
             case .audio: return "What is captured and how"
             case .transcription: return "Models, language and speakers"
             case .output: return "Where and how transcripts are saved"
-            case .recovery: return "Unfinished recordings"
+            case .recordings: return "History, re-transcribing and importing audio"
             case .ai: return "Hand transcripts to your AI tool"
             }
         }
@@ -81,7 +81,7 @@ struct SettingsView: View {
                     case .audio: AudioSettings(settings: settings, state: state)
                     case .transcription: TranscriptionSettings(settings: settings, models: models)
                     case .output: OutputSettings(settings: settings)
-                    case .recovery: RecoverySettings(settings: settings, state: state)
+                    case .recordings: RecordingsSettings(settings: settings, state: state)
                     case .ai: AISettings(settings: settings, state: state)
                     }
                 }
@@ -450,7 +450,7 @@ struct GeneralSettings: View {
                 }
             }
             SettingsCard(title: "Behaviour") {
-                ToggleRow(title: "Floating bar", caption: "Live transcript at the top of the screen while recording", isOn: $settings.showFloatingBar)
+                ToggleRow(title: "Floating pill", caption: "Small pill below the menu bar while recording: waveform, mute and pause. Hover it for the live transcript.", isOn: $settings.showFloatingBar)
                 ToggleRow(title: "Sound effects", caption: "Tones when recording starts, stops or fails", isOn: $settings.soundEffects)
                 ToggleRow(title: "Call detection", caption: "Suggest recording when an app begins using the microphone", isOn: $settings.detectCalls)
                 ToggleRow(title: "Dock icon", caption: "Off: menu bar only", isOn: $settings.showDockIcon)
@@ -594,11 +594,14 @@ struct LevelMeter: View {
 struct TranscriptionSettings: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var models: ModelManager
+    @ObservedObject private var voices = VoiceLibrary.shared
     @Environment(\.colorScheme) private var scheme
 
     private let languages: [(String, String)] = [
         ("", "Auto-detect"), ("de", "German"), ("en", "English"), ("fr", "French"), ("es", "Spanish"),
         ("it", "Italian"), ("nl", "Dutch"), ("pt", "Portuguese"), ("pl", "Polish"), ("sv", "Swedish"),
+        ("da", "Danish"), ("fi", "Finnish"), ("cs", "Czech"), ("ro", "Romanian"), ("hu", "Hungarian"),
+        ("ru", "Russian"), ("uk", "Ukrainian"), ("el", "Greek"),
     ]
 
     var body: some View {
@@ -624,7 +627,7 @@ struct TranscriptionSettings: View {
                 }
             }
             SettingsCard(title: "Recognition") {
-                SettingRow(title: "Language") {
+                SettingRow(title: "Language", caption: "Keeps the model to the language's alphabet (no Cyrillic in Polish, no Latin in Russian). It cannot stop a switch between e.g. German and English – the model hears the language itself.") {
                     ChoiceField(selection: $settings.languageCode, options: languages)
                 }
                 SettingRow(title: "Encoder precision", caption: "int8 for best quality, int4 for a smaller, faster model") {
@@ -646,7 +649,11 @@ struct TranscriptionSettings: View {
             }
             SettingsCard(title: "Speakers", footer: "Your own voice is identified by the microphone channel and never needs diarization.") {
                 ToggleRow(title: "Separate remote speakers", caption: "Diarization runs after the call on the system audio and finds how many people spoke on its own", isOn: $settings.diarizeRemote)
-                ToggleRow(title: "Live speaker separation (experimental)", caption: "Tell remote speakers apart during the call, labelling them Speaker 1, 2, … as they appear, so you can name them live. Less accurate than the after-call pass — labels are decided without hearing the rest of the call — and it downloads a diarization model on first use. Replaces the after-call pass.", isOn: $settings.liveDiarization)
+                ToggleRow(title: "Name speakers during the call", caption: "Adds a \"Who's speaking?\" field to the pill's live transcript. Type the name of whoever is talking (best for longer turns, like a talk); after the call that voice gets the name everywhere it spoke.", isOn: $settings.nameSpeakersLive)
+                ToggleRow(title: "Remember voices", caption: "When you name a speaker in the pill, their voice is remembered and recognised in later recordings. Only a voice print is stored on this Mac, no audio.", isOn: $settings.rememberVoices)
+                if settings.rememberVoices || !voices.voices.isEmpty {
+                    RememberedVoicesRow(voices: voices)
+                }
                 ToggleRow(title: "Guess speaker names", caption: "Experimental. When someone is addressed by name (\"…, Anna?\") or introduces themselves, the remote speaker who answers is labelled \"[Anna]\". Needs at least two matching mentions.", isOn: $settings.guessSpeakerNames)
             }
         }
@@ -702,11 +709,16 @@ struct OutputSettings: View {
                 ToggleRow(title: "JSON", caption: "With timestamps and confidence", isOn: $settings.exportJSON)
                 ToggleRow(title: "SRT subtitles", isOn: $settings.exportSRT)
             }
-            SettingsCard(title: "Audio") {
-                ToggleRow(title: "Keep raw audio", caption: "mic.wav / system.wav – lets you re-transcribe later with a better model. About 115 MB per hour and channel.", isOn: $settings.keepAudio)
+            SettingsCard(title: "Audio", footer: "mic.wav / system.wav, about 115 MB per hour and channel. Kept audio lets you re-transcribe a recording later (Settings › Recordings). The transcript is never deleted.") {
+                SettingRow(title: "Keep raw audio") {
+                    ChoiceField(selection: $settings.audioRetention, options: [
+                        ("never", "Delete when saved"), ("7", "For 7 days"), ("30", "For 30 days"), ("forever", "Until I delete it"),
+                    ])
+                    .onChange(of: settings.audioRetention) { _, _ in RecordingHistory.shared.sweepExpiredAudio(settings: settings) }
+                }
             }
             SettingsCard(title: "After stopping") {
-                ToggleRow(title: "Ask for a title", caption: "The floating bar asks for a name before the recording is saved", isOn: $settings.askForTitle)
+                ToggleRow(title: "Ask for a title", caption: "The floating pill asks for a name before the recording is saved", isOn: $settings.askForTitle)
                 SettingRow(title: "Low disk stop", caption: "Stop automatically below this much free space") {
                     Stepper("\(Int(settings.minFreeDiskGB)) GB", value: $settings.minFreeDiskGB, in: 1...50)
                 }
@@ -845,19 +857,17 @@ struct AISettings: View {
 
 // MARK: - Recovery
 
-struct RecoverySettings: View {
+struct RecordingsSettings: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var state: AppState
+    @ObservedObject private var history = RecordingHistory.shared
+    @Environment(\.colorScheme) private var scheme
+    @State private var dropTargeted = false
 
     var body: some View {
-        SettingsPage(section: .recovery) {
-            SettingsCard(title: "Unfinished recordings") {
-                if state.pendingRecovery.isEmpty {
-                    SettingRow(title: "None", caption: "Every recording was closed properly.") {
-                        Button("Rescan") { state.pendingRecovery = SessionRecovery.findIncomplete(in: settings.outputDirectoryURL) }
-                            .buttonStyle(SoftButtonStyle())
-                    }
-                } else {
+        SettingsPage(section: .recordings) {
+            if !state.pendingRecovery.isEmpty {
+                SettingsCard(title: "Unfinished recordings", footer: "Not closed properly (crash or forced quit). The transcript up to that point is saved; finalizing transcribes the remaining audio.") {
                     ForEach(state.pendingRecovery) { s in
                         SettingRow(title: SessionStore.dateFormatter.string(from: s.startedAt)) {
                             Button("Finalize") {
@@ -867,16 +877,210 @@ struct RecoverySettings: View {
                             .disabled(state.phase != .idle)
                         }
                     }
-                    SettingRow(title: "") {
-                        Button("Rescan") { state.pendingRecovery = SessionRecovery.findIncomplete(in: settings.outputDirectoryURL) }
-                            .buttonStyle(SoftButtonStyle())
+                }
+            }
+            SettingsCard(title: "Transcribe an audio file") {
+                dropZone
+            }
+            SettingsCard(title: "Recordings", footer: retentionFooter) {
+                if let error = history.lastError {
+                    HStack(spacing: 8) {
+                        Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                            .font(.system(size: 12)).lineLimit(2)
+                        Spacer()
+                        Button("Dismiss") { history.lastError = nil }.buttonStyle(SoftButtonStyle())
+                    }
+                }
+                if history.recordings.isEmpty {
+                    NoteRow(text: "No recordings yet.")
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(history.recordings) { r in
+                            RecordingRow(recording: r, settings: settings, history: history)
+                            if r.id != history.recordings.last?.id {
+                                Rectangle().fill(Theme.separator(scheme)).frame(height: 1)
+                            }
+                        }
                     }
                 }
             }
-            SettingsCard(title: "How crash safety works") {
-                NoteRow(text: "Every transcribed segment is appended to transcript.jsonl and flushed to disk immediately. Raw audio is written in 2-second flushes. If the Mac crashes, the transcript up to the last segment is intact and the remaining audio can be transcribed on the next launch.")
+        }
+        .onAppear {
+            state.pendingRecovery = SessionRecovery.findIncomplete(in: settings.outputDirectoryURL)
+            history.reload(settings: settings)
+        }
+    }
+
+    private var retentionFooter: String {
+        let kept: String
+        switch settings.audioRetention {
+        case "never": kept = "Audio is deleted when a recording is saved, so recordings cannot be re-transcribed."
+        case "forever": kept = "Audio is kept until you delete it."
+        default: kept = "Audio is kept for \(settings.audioRetention) days, then deleted automatically; the transcript stays."
+        }
+        return kept + " Re-transcribing uses the current settings – language, speaker separation, remembered voices – and keeps names already given. Change how long audio is kept under Output."
+    }
+
+    private var dropZone: some View {
+        VStack(spacing: 8) {
+            if let status = history.importStatus {
+                HStack(spacing: 8) { ProgressView().controlSize(.small); Text(status).font(.system(size: 12.5)) }
+            } else {
+                Image(systemName: "waveform.badge.plus")
+                    .font(.system(size: 22))
+                    .foregroundStyle(dropTargeted ? Theme.accent : Theme.secondary(scheme))
+                Text("Drop an audio file here")
+                    .font(.system(size: 13, weight: .medium))
+                Text("WAV, M4A, MP3, AIFF or a video's sound. It becomes a new recording: transcribed in long windows, speakers separated, remembered voices named.")
+                    .font(.system(size: 11)).foregroundStyle(Theme.secondary(scheme))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Choose File…", action: choose).buttonStyle(SoftButtonStyle()).padding(.top, 2)
             }
         }
-        .onAppear { state.pendingRecovery = SessionRecovery.findIncomplete(in: settings.outputDirectoryURL) }
+        .padding(18)
+        .frame(maxWidth: .infinity)
+        .background(dropTargeted ? Theme.accent.opacity(0.08) : Theme.hover(scheme),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder(dropTargeted ? Theme.accent : Theme.border(scheme), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])))
+        .onDrop(of: [.fileURL], isTargeted: $dropTargeted) { providers in
+            guard let provider = providers.first else { return false }
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url, RecordingHistory.audioExtensions.contains(url.pathExtension.lowercased()) else { return }
+                Task { @MainActor in await history.importAudio(url, settings: settings) }
+            }
+            return true
+        }
+    }
+
+    private func choose() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = RecordingHistory.audioExtensions.compactMap { UTType(filenameExtension: $0) }
+        if panel.runModal() == .OK, let url = panel.url {
+            Task { await history.importAudio(url, settings: settings) }
+        }
+    }
+}
+
+/// One past recording: title, date, length, whether audio is left; open / re-transcribe.
+private struct RecordingRow: View {
+    let recording: RecordingInfo
+    @ObservedObject var settings: AppSettings
+    @ObservedObject var history: RecordingHistory
+    @Environment(\.colorScheme) private var scheme
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateStyle = .medium; f.timeStyle = .short; return f
+    }()
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(recording.title.isEmpty ? "Untitled recording" : recording.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.secondary(scheme))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            if let status = history.busy[recording.directory] {
+                ProgressView().controlSize(.small)
+                Text(status).font(.system(size: 11.5)).foregroundStyle(Theme.secondary(scheme)).lineLimit(1)
+            } else {
+                Button("Open") { open() }.buttonStyle(SoftButtonStyle())
+                if recording.status == .complete {
+                    Button("Re-transcribe") { Task { await history.reTranscribe(recording, settings: settings) } }
+                        .buttonStyle(SoftButtonStyle())
+                        .disabled(!recording.hasAudio)
+                        .help(recording.hasAudio ? "Transcribe the kept audio again with the current settings" : "The audio of this recording was deleted")
+                }
+                Menu {
+                    Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([recording.directory]) }
+                    if recording.hasAudio {
+                        Button("Delete Audio") { history.deleteAudio(recording, settings: settings) }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis").frame(width: 22, height: 22)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+            }
+        }
+        .padding(.vertical, 10)
+    }
+
+    private var subtitle: String {
+        var parts = [RecordingRow.dateFormatter.string(from: recording.startedAt)]
+        if let d = recording.duration, d > 0 { parts.append(d >= 60 ? "\(Int(d / 60)) min" : "\(Int(d)) s") }
+        if recording.status != .complete { parts.append("unfinished") }
+        if recording.hasAudio {
+            let mb = ByteCountFormatter.string(fromByteCount: recording.audioBytes, countStyle: .file)
+            if let until = recording.audioDeletedAt {
+                let days = max(0, Int(ceil(until.timeIntervalSinceNow / 86_400)))
+                parts.append("audio \(mb), deleted in \(days) day\(days == 1 ? "" : "s")")
+            } else {
+                parts.append("audio \(mb)")
+            }
+        } else {
+            parts.append("no audio")
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private func open() {
+        let md = recording.directory.appendingPathComponent("transcript.md")
+        NSWorkspace.shared.open(FileManager.default.fileExists(atPath: md.path) ? md : recording.directory)
+    }
+}
+
+/// The remembered voices with a way to forget each one, or all.
+private struct RememberedVoicesRow: View {
+    @ObservedObject var voices: VoiceLibrary
+    @Environment(\.colorScheme) private var scheme
+    @State private var confirmAll = false
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateStyle = .medium; f.timeStyle = .none; return f
+    }()
+
+    var body: some View {
+        SettingRow(title: "Remembered voices", caption: voices.voices.isEmpty ? nil : "\(voices.voices.count) voice\(voices.voices.count == 1 ? "" : "s")") {
+            VStack(alignment: .leading, spacing: 0) {
+                if voices.voices.isEmpty {
+                    Text("None yet. Name a speaker during or after a call.")
+                        .font(.system(size: 12)).foregroundStyle(Theme.secondary(scheme))
+                } else {
+                    ForEach(voices.voices.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }) { v in
+                        HStack(spacing: 10) {
+                            Image(systemName: "person.wave.2").foregroundStyle(Theme.secondary(scheme))
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(v.name).font(.system(size: 12.5, weight: .medium))
+                                Text("Last heard \(RememberedVoicesRow.dateFormatter.string(from: v.lastHeard)) · named in \(v.recordings) recording\(v.recordings == 1 ? "" : "s")")
+                                    .font(.system(size: 10.5)).foregroundStyle(Theme.secondary(scheme))
+                            }
+                            Spacer()
+                            Button("Forget") { voices.forget(v) }.buttonStyle(SoftButtonStyle())
+                        }
+                        .padding(.vertical, 5)
+                    }
+                    Button("Forget All Voices…") { confirmAll = true }
+                        .buttonStyle(SoftButtonStyle())
+                        .foregroundStyle(.red)
+                        .padding(.top, 6)
+                        .confirmationDialog("Forget all \(voices.voices.count) remembered voices?", isPresented: $confirmAll) {
+                            Button("Forget All", role: .destructive) { voices.forgetAll() }
+                        } message: {
+                            Text("Later recordings will label these speakers \"Speaker 1\", \"Speaker 2\", … again until you name them.")
+                        }
+                }
+            }
+        }
     }
 }

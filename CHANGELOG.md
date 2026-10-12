@@ -3,6 +3,24 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.6.0 (2026-10-12)
+- The floating pill is back on by default and much smaller: a waveform shows that audio arrives, with a mute button on the left and pause on the right. The menu bar icon simply turns red while recording; clicking it stops.
+- Mute your own microphone from the pill (or the menu) to talk to someone in the room: only the computer's audio is recorded and transcribed until you unmute.
+- Hover the pill to read the live transcript: a scrollable card unfolds below it with the whole conversation so far. The pill and its buttons stay put. Click the waveform to keep the card open.
+- More accurate live text: speech is recognised in whole sentences with a few seconds of context, and the newest words stay blurred (sometimes several lines) until the model is sure of them.
+- Name whoever is speaking: type a name at the bottom of the transcript card (best for longer turns like a talk). After the call that voice gets the name across the whole recording, also where it was not named. When the card opens on hover the cursor is already in the name field, so you can type straight away. Replaces the "Speaker 1 / 2" naming pills (live and in the save prompt) and the experimental live speaker separation.
+- Meetings with many participants are now split into speakers properly. Before, anyone with less than 15 % of the talk time was merged away, so a 20-person call came out as a single "Speaker 1".
+- Fixed system audio recorded at double speed and half length on AirPods (and other devices that change their sample rate mid-call), which also ruined speaker separation and echo removal for those calls.
+- Transcriber remembers voices: once you name a speaker in the pill, they are recognised and named automatically in later recordings. Remembered voices (voice prints only, no audio) can be forgotten one by one or all at once in Settings → Transcription.
+- New Recordings section (Settings, or "Recordings…" in the menu): every past recording with its audio status. Re-transcribe a recording with the current settings, or drop an audio file to transcribe it as a new recording.
+- Raw audio is now kept for 7 days by default and then deleted automatically (or choose: delete when saved, 30 days, until you delete it). The transcript always stays.
+- Phases with your microphone muted are marked in the transcript.
+- Your side and the other side stay in sync: when one channel briefly delivers no audio (system audio starting late, a device switch), the gap is filled with silence instead of shifting everything after it.
+- More languages to choose from (Settings → Transcription); the setting now explains what it can and cannot do.
+- Echo removal works during the call again: without headphones, the far end coming out of your speakers no longer shows up as your own (blurred) text in the live transcript. The gate never locked on before, because it aligned the two channels by a clock that could be off by more than it searched.
+- Your microphone now moves the waveform as much as the computer's audio does; before it barely moved unless you spoke very loudly.
+- The live transcript card opens right at the latest line instead of visibly scrolling down from the top, and the "Latest" button appears whenever you are not at the end and is easy to read over the text.
+
 ## 0.5.0 (2026-09-09)
 - Name speakers from the floating bar. Hover the bar during a call and small pills zoom out beneath it, one per remote speaker; type a name straight from the keyboard (no matter which app is in front), Enter confirms, Tab moves between them. The name is used for the rest of that recording, in the bar and the saved transcript. The same pills appear under the "Name this recording" prompt at the end so you can still name (or rename) speakers before saving.
 - The naming pill is now available from the moment a recording starts, so you can name the other side before they have spoken (it used to appear only after the far end's first line).

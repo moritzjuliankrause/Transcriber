@@ -48,6 +48,8 @@ enum HeroRender {
         }
         let model = FloatingBarModel()
         model.animated = false
+        model.expanded = true            // the pill with its live transcript card open
+        model.renderStatic = true
         model.update(state: state, settings: settings)
 
         // Render both views from the real code at a fixed scale.
@@ -118,11 +120,12 @@ enum HeroRender {
             let activeIndex = remotes.firstIndex(where: { $0 == lastRemote }) ?? 0
 
             let theme = SceneTheme.of(scene)
-            // The transcript bar sits at the top, below the menu bar (exactly where the real app pins
-            // it). The call window sits entirely below the bar, never under it.
+            // The pill sits at the top, below the menu bar (exactly where the real app pins it). The
+            // call window starts just below the pill; the open transcript card floats over it, as it
+            // does over a real call.
             let barRect = CGRect(x: (W - barSize.width) / 2, y: H - menuH - 8 * scale - barSize.height, width: barSize.width, height: barSize.height)
             let margin = 0.055 * W
-            let winTop = barRect.minY - 16 * scale
+            let winTop = barRect.maxY - (FloatingBarController.shadowPadding + FloatingBarView.pillHeight + 16) * scale
             let winBottom = 0.055 * H
             let tileCount = theme.layout == .stage ? 1 : people.count
             let winSize = HeroScenes.windowSize(scale: scale, availableHeight: winTop - winBottom,
@@ -136,7 +139,8 @@ enum HeroRender {
         } else {
             let barRect = CGRect(x: (W - barSize.width) / 2, y: H - menuH - 8 * scale - barSize.height, width: barSize.width, height: barSize.height)
             ctx.saveGState(); barShadow(); ctx.draw(barImg, in: barRect); ctx.restoreGState()
-            drawCaption(centreY: 0.42 * H, capSize: 17, subSize: 12)
+            // Below the transcript card (its height follows the number of lines).
+            drawCaption(centreY: min(0.42 * H, barRect.minY - 34 * scale), capSize: 17, subSize: 12)
         }
         img.unlockFocus()
 
@@ -173,7 +177,6 @@ enum HeroRender {
         let model = FloatingBarModel()
         model.animated = false
         model.message = text            // the bar's compact status-line layout, not a transcript
-        model.visibleLineCount = 1
 
         let scale: CGFloat = 6
         let bar = FloatingBarView(state: state, settings: settings, model: model)

@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var floatingBar: FloatingBarController?
     private var hotKey: HotKey?
     private var callDetector: CallDetector?
+    private var retentionTimer: Timer?
 
     let settings = AppSettings.shared
     let state = AppState.shared
@@ -23,11 +24,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onToggleRecording: { [weak self] in self?.toggleRecording() },
             onConfirmStop: { [weak self] in self?.floatingBar?.confirmStop { self?.toggleRecording() } },
             onTogglePause: { [weak self] in self?.coordinator.togglePause() },
+            onToggleMute: { [weak self] in self?.coordinator.toggleMicMute() },
             onOpenSettings: { [weak self] in self?.showSettings() },
+            onOpenRecordings: { [weak self] in self?.showSettings(section: .recordings) },
             onQuit: { NSApp.terminate(nil) }
         )
 
         floatingBar = FloatingBarController(state: state, settings: settings)
+        floatingBar?.onToggleMute = { [weak self] in self?.coordinator.toggleMicMute() }
+        floatingBar?.onTogglePause = { [weak self] in self?.coordinator.togglePause() }
+        floatingBar?.speakerTagStart = { [weak self] in self?.coordinator.speakerTagStart() ?? 0 }
         FloatingBarController.shared = floatingBar
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.floatingBar?.prepare() }
 
@@ -41,7 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // A UI test instance (`--bar-test`) runs next to the installed app: no login item, model
         // loading, update check or recovery prompt for the other instance's open session.
-        let uiTest = CommandLine.arguments.contains("--bar-test")
+        let uiTest = CommandLine.arguments.contains("--bar-test") || CommandLine.arguments.contains("--card-test")
         if !uiTest {
             ConsentNotice.showIfNeeded(settings: settings)
             LaunchAtLogin.sync(enabled: settings.launchAtLogin)
@@ -56,6 +62,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await UpdateChecker.shared.checkAutomaticallyIfDue()
             }
             Task { await SessionRecovery.checkOnLaunch(settings: settings, state: state) }
+            // Delete kept audio past its retention period: shortly after launch, then every 6 hours.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+                guard let self else { return }
+                RecordingHistory.shared.sweepExpiredAudio(settings: self.settings)
+                self.retentionTimer = Timer.scheduledTimer(withTimeInterval: 6 * 3600, repeats: true) { [weak self] _ in
+                    Task { @MainActor in
+                        guard let self else { return }
+                        RecordingHistory.shared.sweepExpiredAudio(settings: self.settings)
+                    }
+                }
+            }
         }
 
         if settings.outputDirectory.isEmpty {
@@ -89,20 +106,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self.state.isPaused = true }
             }
         }
-        // Development aid: `Transcriber --pills-test` shows the live speaker-naming pills.
-        if CommandLine.arguments.contains("--pills-test") {
+        // Development aid: `Transcriber --card-test` fakes a recording with some transcript, so the
+        // pill (and, on hover, the transcript card) can be inspected without recording anything.
+        // Add `--card-open` to pin the card open right away (for screenshots).
+        if CommandLine.arguments.contains("--card-test") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                 guard let self else { return }
-                self.state.recordingStartedAt = Date()
-                self.state.phase = .recording
-                self.state.appendLive(TranscriptLine(channel: .them, speaker: "Speaker 1", text: "So this is the other side talking for a while on the call.", start: 1), channel: .them)
-                self.state.remoteSpeakers = ["Speaker 1", "Speaker 2"]
-                // No force-show here: hovering the bar must reveal the pills via the tracking area.
+                let state = self.state
+                state.recordingStartedAt = Date()
+                state.phase = .recording
+                state.sessionClock = { 60 }
+                let me = self.settings.myName
+                let lines: [(Channel, String, String)] = [
+                    (.them, "Speaker", "Good morning everyone, let's get started. We have a lot on the agenda today, so I'd suggest we keep the updates short."),
+                    (.me, me, "Sounds good. I can start with the release status if that helps."),
+                    (.them, "Anna", "Yes please, go ahead. And afterwards I'd like to talk about the budget for the next quarter, because the numbers changed quite a bit since last week."),
+                    (.me, me, "Okay. The release candidate is ready, we found two smaller issues in testing and both are fixed now."),
+                    (.them, "Anna", "That's great news. Do we already know when it goes out to customers?"),
+                ]
+                for (i, l) in lines.enumerated() {
+                    state.appendLive(TranscriptLine(channel: l.0, speaker: l.1, text: l.2, start: Double(i) * 8), channel: l.0)
+                }
+                state.speakerTags = [SpeakerTag(name: "Anna", start: 16, end: nil)]
+                // A partial with a long blurred tail; refreshed so it does not time out.
+                Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
+                    Task { @MainActor in
+                        guard state.phase == .recording else { return }
+                        state.updatePartial(TranscriptLine(channel: .me, speaker: me, text: "We are planning the rollout for next Tuesday, starting with ten percent of the users and then the rest on Thursday if nothing unexpected shows up in the crash reports", start: 40, stableWords: 9), channel: .me)
+                    }
+                }.fire()
+                if CommandLine.arguments.contains("--card-open") { self.floatingBar?.pinCardForTesting() }
             }
         }
         // Development aid: `Transcriber --title-test` shows the bar's save prompt right away.
         if CommandLine.arguments.contains("--title-test") {
-            state.remoteSpeakers = ["Speaker 1", "Speaker 2"]
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                 for w in NSApp.windows {
                     AppLog.write("Window: \(type(of: w)) level=\(w.level.rawValue) frame=\(w.frame) visible=\(w.isVisible) alpha=\(w.alphaValue) title=\(w.title) content=\(w.contentView.map { String(describing: type(of: $0)) } ?? "-")")

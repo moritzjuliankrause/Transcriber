@@ -1,8 +1,9 @@
 import Foundation
 
 /// Suppresses loudspeaker echo in the microphone channel using the system audio
-/// channel as reference. Works on 20 ms frames at 16 kHz, aligned by wall-clock
-/// time (both captures report host time):
+/// channel as reference. Works on 20 ms frames at 16 kHz, aligned on the session's
+/// sample timeline – the position in mic.wav / system.wav – so the live gate and an
+/// offline run over the two files see the same alignment:
 ///
 /// 1. Estimates the acoustic delay (system playback → mic) by correlating the
 ///    log-energy envelopes of both channels over the last few seconds.
@@ -95,10 +96,12 @@ final class EchoGate {
     }
 
     private func shouldMute(micFrame index: Int, energy: Float) -> Bool {
-        guard echoGain > 0, correlation > 0.5 else { return false }
+        guard echoGain > 0, correlation > 0.3 else { return false }
         let refIndex = index - delayFrames
         var ref: Float = 0
-        for i in (refIndex - 2)...(refIndex + 1) {
+        // Reference reaches 100 ms back: the room's reverb keeps the echo audible after the
+        // far end's syllable ended.
+        for i in (refIndex - 5)...(refIndex + 1) {
             ref = max(ref, systemEnergy[i] ?? 0)
         }
         let activeFloor = max(noiseFloor * 2, systemFloor * 4)
@@ -134,12 +137,12 @@ final class EchoGate {
         let activeFloor = max(noiseFloor * 2, systemFloor * 4)
         guard sysRaw.filter({ $0 > activeFloor }).count > 25 else { return }
 
-        // Delay: best normalized cross-correlation of log envelopes, lags −0.5…+0.8 s.
+        // Delay: best normalized cross-correlation of log envelopes, lags −0.5…+1.0 s.
         // (Negative lags absorb timestamp offsets between the two capture paths.)
         func logs(_ dict: [Int: Float]) -> [Int: Float] { dict }
         var bestLag = delayFrames
         var bestCorr: Float = -1
-        for lag in -25...40 {
+        for lag in -25...50 {
             var sm: Float = 0, ss: Float = 0, smm: Float = 0, sss: Float = 0, sms: Float = 0, k: Float = 0
             for i in start...end {
                 guard let a0 = micEnergy[i], let b0 = systemEnergy[i - lag] else { continue }

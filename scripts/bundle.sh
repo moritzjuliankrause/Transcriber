@@ -5,6 +5,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 CONFIG="${1:-release}"
+# The macOS 27 SDK implements SwiftUI's @State as a macro whose compiler plugin ships only with
+# Xcode. With the Command Line Tools alone, build against the newest older SDK that is installed.
+if [[ -z "${SDKROOT:-}" && ! -e "$(xcode-select -p)/usr/lib/swift/host/plugins/libSwiftUIMacros.dylib" ]]; then
+  for sdk in $(ls -d /Library/Developer/CommandLineTools/SDKs/MacOSX2[0-6].*.sdk(N) 2>/dev/null | sort -rV); do
+    export SDKROOT="$sdk"; echo "Using $SDKROOT (no SwiftUI macro plugin in the Command Line Tools)"; break
+  done
+fi
 swift build -c "$CONFIG" 2>&1 | tail -3
 
 BIN=".build/$CONFIG/Transcriber"
@@ -31,7 +38,8 @@ echo -n "APPL????" > "$APP/Contents/PkgInfo"
 IDENTITY="${CODESIGN_IDENTITY:-}"
 if [ -z "$IDENTITY" ]; then
   for name in "Transcriber Dev" "AnyRecord Dev"; do
-    if security find-identity -v -p codesigning | grep -q "\"$name\""; then IDENTITY="$name"; break; fi
+    # No -v: a self-signed identity is "not trusted" but signs fine, and keeps a stable signature.
+    if security find-identity -p codesigning | grep -q "\"$name\""; then IDENTITY="$name"; break; fi
   done
 fi
 # --options runtime enables the hardened runtime (library validation, no injection into a

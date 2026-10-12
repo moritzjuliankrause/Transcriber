@@ -1,70 +1,16 @@
 import AppKit
 import Foundation
 
-/// Shared end-of-session steps for live stop and crash recovery:
-/// diarize the remote channel, relabel, export extras, optional title, cleanup.
+/// Shared end-of-session steps for live stop, crash recovery and re-transcribing a recording
+/// from the history: re-transcribe, remove echo, diarize the remote channel and name its voices,
+/// optional title, exports, cleanup.
 enum RecordingFinalizer {
     @MainActor
     static func finish(store: SessionStore, settings: AppSettings, state: AppState, askTitle: Bool) async {
         store.markFinalizing()
-
-        // Offline re-pass: re-transcribe the kept audio in long context windows and replace the
-        // live transcript before dedup / diarization run on it. Same model as live, but each word
-        // is decoded in the surrounding sentence instead of as an isolated VAD fragment.
-        if settings.reTranscribeOffline {
-            await reTranscribe(store: store, settings: settings, state: state)
+        let labelled = await process(store: store, settings: settings, retranscribe: settings.reTranscribeOffline) {
+            state.phase = .stopping($0)
         }
-
-        // Text-level echo removal over the whole session (order of arrival does not matter here).
-        let deduped = EchoDeduplicator.dedupe(store.entries)
-        if deduped.count != store.entries.count {
-            NSLog("Removed \(store.entries.count - deduped.count) echo duplicates")
-            store.replaceEntries(deduped)
-        }
-
-        // Speaker diarization on the remote (system audio) channel. Skipped when live diarization
-        // already labelled speakers during the call, so its labels (and the names mapped to them)
-        // are not overwritten by a second, differently-numbered pass.
-        if settings.diarizeRemote, !settings.liveDiarization,
-           FileManager.default.fileExists(atPath: store.systemWavURL.path),
-           store.entries.contains(where: { $0.channel == .them }) {
-            state.phase = .stopping("Identifying speakers…")
-            do {
-                let spans = try await RemoteDiarizer.diarize(wavURL: store.systemWavURL) { p in
-                    Task { @MainActor in state.phase = .stopping("Identifying speakers… \(Int(p * 100))%") }
-                }
-                // Only keep speakers that hold a meaningful share of the talk time; pyannote tends
-                // to split one voice into two on long 1:1 calls. Minor speakers merge into the main one.
-                var duration: [String: Double] = [:]
-                for span in spans { duration[span.speaker, default: 0] += span.end - span.start }
-                let total = duration.values.reduce(0, +)
-                let major = duration.filter { $0.value >= total * 0.15 }.keys.sorted { duration[$0]! > duration[$1]! }
-                if major.count > 1, let dominant = major.first {
-                    var names: [String: String] = [:]
-                    for (i, speaker) in major.enumerated() { names[speaker] = "\(settings.otherName) \(i + 1)" }
-                    for speaker in duration.keys where names[speaker] == nil { names[speaker] = names[dominant]! }
-                    let merged = spans.map { RemoteDiarizer.SpeakerSpan(speaker: names[$0.speaker]!, start: $0.start, end: $0.end) }
-                    let identity = Dictionary(uniqueKeysWithValues: Set(names.values).map { ($0, $0) })
-                    store.replaceEntries(RemoteDiarizer.relabel(store.entries, spans: merged, names: identity))
-                }
-            } catch {
-                NSLog("Diarization skipped: \(error)")
-            }
-        }
-
-        if settings.guessSpeakerNames {
-            let remote = Set(store.entries.filter { $0.channel == .them }.map(\.speaker))
-            let names = SpeakerNameGuesser.guess(entries: store.entries, myName: settings.myName, remoteLabels: remote)
-            if !names.isEmpty {
-                AppLog.write("Guessed speaker names for \(names.count) remote label(s)")
-                store.replaceEntries(SpeakerNameGuesser.relabel(store.entries, names: names))
-            }
-        }
-
-        // Offer the call's remote speakers for naming in the title prompt, in order of appearance.
-        var remote: [String] = []
-        for e in store.entries where e.channel == .them && !remote.contains(e.speaker) { remote.append(e.speaker) }
-        state.remoteSpeakers = remote
 
         var openInAI = false
         if askTitle {
@@ -73,8 +19,7 @@ enum RecordingFinalizer {
             if let title = answer.title { store.setTitle(title) }
             openInAI = answer.openInAI
         }
-        // Persist any names entered live or in the title prompt (coordinator's live mirror is gone by now).
-        store.setSpeakerNames(state.speakerNames)
+        learnVoices(labelled, names: [:], settings: settings)
 
         store.exportExtras(json: settings.exportJSON, srt: settings.exportSRT)
         store.markComplete()
@@ -90,37 +35,119 @@ enum RecordingFinalizer {
         if openInAI { AITool.open(session: finalURL) }
     }
 
+    /// The transcript-improving steps, without any UI: optional long-window re-transcription,
+    /// echo removal, diarization + naming (tags, remembered voices), name guessing. Reports
+    /// progress as short status texts. Returns the diarization outcome, if it ran.
+    @MainActor
+    static func process(store: SessionStore, settings: AppSettings, retranscribe: Bool,
+                        engine: TranscriptionEngine? = nil, extraTags: [SpeakerTag] = [],
+                        progress: @escaping @MainActor (String) -> Void) async -> RemoteDiarizer.Labelled? {
+        // Offline re-pass: re-transcribe the kept audio in long context windows and replace the
+        // live transcript before dedup / diarization run on it. Same model as live, but each word
+        // is decoded in the surrounding sentence instead of as an isolated VAD fragment.
+        if retranscribe {
+            await reTranscribe(store: store, settings: settings, engine: engine, progress: progress)
+        }
+
+        // Text-level echo removal over the whole session (order of arrival does not matter here).
+        let deduped = EchoDeduplicator.dedupe(store.entries)
+        if deduped.count != store.entries.count {
+            NSLog("Removed \(store.entries.count - deduped.count) echo duplicates")
+            store.replaceEntries(deduped)
+        }
+
+        // Speaker diarization on the remote (system audio) channel, then the names the user gave
+        // during the call and the remembered voices are matched to the voices it found.
+        let tags = (store.meta.speakerTags ?? []) + extraTags
+        var labelled: RemoteDiarizer.Labelled?
+        if settings.diarizeRemote,
+           FileManager.default.fileExists(atPath: store.systemWavURL.path),
+           store.entries.contains(where: { $0.channel == .them }) {
+            progress("Identifying speakers…")
+            do {
+                let result = try await RemoteDiarizer.diarize(wavURL: store.systemWavURL) { p in
+                    Task { @MainActor in progress("Identifying speakers… \(Int(p * 100))%") }
+                }
+                let sessionEnd = store.entries.map(\.end).max() ?? 0
+                let known = settings.rememberVoices ? VoiceLibrary.shared.voices.map { (name: $0.name, embedding: $0.embedding) } : []
+                let l = RemoteDiarizer.label(result, tags: tags, knownVoices: known, otherName: settings.otherName, sessionEnd: sessionEnd)
+                AppLog.write("Diarization: \(l.summary); \(tags.count) name tag(s), \(known.count) remembered voice(s)")
+                if !l.spans.isEmpty {
+                    let identity = Dictionary(uniqueKeysWithValues: Set(l.spans.map(\.speaker)).map { ($0, $0) })
+                    store.replaceEntries(RemoteDiarizer.relabel(store.entries, spans: l.spans, names: identity))
+                    VoiceLibrary.shared.markHeard(l.namedByVoice)
+                    labelled = l
+                }
+            } catch {
+                AppLog.write("Diarization skipped: \(error)")
+            }
+        }
+        if labelled == nil, !tags.isEmpty {
+            store.replaceEntries(RemoteDiarizer.applyTags(store.entries, tags: tags))
+        }
+
+        if settings.guessSpeakerNames {
+            let remote = Set(store.entries.filter { $0.channel == .them }.map(\.speaker))
+            let names = SpeakerNameGuesser.guess(entries: store.entries, myName: settings.myName, remoteLabels: remote)
+            if !names.isEmpty {
+                AppLog.write("Guessed speaker names for \(names.count) remote label(s)")
+                store.replaceEntries(SpeakerNameGuesser.relabel(store.entries, names: names))
+            }
+        }
+        return labelled
+    }
+
+    /// Remembers the voices the user named in this recording (typed in the pill, or carried over
+    /// when re-transcribing). Needs enough speech for a reliable voice print.
+    @MainActor
+    static func learnVoices(_ labelled: RemoteDiarizer.Labelled?, names: [String: String], settings: AppSettings) {
+        guard settings.rememberVoices, let labelled else { return }
+        var learned: [String] = []
+        for (label, embedding) in labelled.embeddings where (labelled.talkTime[label] ?? 0) >= 8 {
+            let typed = names[label].flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
+            guard let name = typed ?? (labelled.namedByTag.contains(label) ? label : nil) else { continue }
+            VoiceLibrary.shared.learn(name: name, embedding: embedding)
+            learned.append(name)
+        }
+        if !learned.isEmpty { AppLog.write("Remembered voices: \(learned.joined(separator: ", "))") }
+    }
+
     /// Re-runs ASR over each channel's kept WAV with long context windows and replaces the live
     /// entries. Keeps the original transcript if anything fails (the live pass is never worse).
     @MainActor
-    private static func reTranscribe(store: SessionStore, settings: AppSettings, state: AppState) async {
+    private static func reTranscribe(store: SessionStore, settings: AppSettings, engine: TranscriptionEngine?,
+                                     progress: @escaping @MainActor (String) -> Void) async {
         // The remote label must match the live path ("\(otherName) 1"), so a name the user typed
         // during the call (keyed by that base label) still applies after the re-pass replaces entries.
         let channels: [(Channel, URL, String)] = [
-            (.me, store.micWavURL, settings.myName),
-            (.them, store.systemWavURL, "\(settings.otherName) 1"),
+            (.me, store.micWavURL, store.meta.myName),
+            (.them, store.systemWavURL, "\(store.meta.otherName) 1"),
         ].filter { FileManager.default.fileExists(atPath: $0.1.path) }
         guard !channels.isEmpty else { return }
-        state.phase = .stopping("Re-transcribing…")
+        progress("Re-transcribing…")
         do {
-            let engine = try await ModelCache.shared.engine(precision: ModelManager.shared.precision)
+            let asr: TranscriptionEngine
+            if let engine { asr = engine } else { asr = try await ModelCache.shared.engine(precision: ModelManager.shared.precision) }
             let language = settings.languageCode.isEmpty ? nil : settings.languageCode
             var entries: [TranscriptEntry] = []
-            for (channel, url, speaker) in channels {
+            for (index, (channel, url, speaker)) in channels.enumerated() {
                 let samples = (try? WavWriter.readSamples(url: url)) ?? []
                 guard !samples.isEmpty else { continue }
                 entries += try await OfflineRetranscribe.run(samples: samples, channel: channel,
-                                                             speaker: speaker, language: language, engine: engine)
+                                                             speaker: speaker, language: language, engine: asr) { p in
+                    let overall = (Double(index) + p) / Double(channels.count)
+                    Task { @MainActor in progress("Re-transcribing… \(Int(overall * 100))%") }
+                }
             }
             entries.sort { $0.start < $1.start }
             guard !entries.isEmpty else {
-                AppLog.write("Offline re-pass produced no entries – keeping the live transcript")
+                AppLog.write("Offline re-pass produced no entries – keeping the transcript")
                 return
             }
-            AppLog.write("Offline re-pass: \(store.entries.count) live → \(entries.count) entries")
+            AppLog.write("Offline re-pass: \(store.entries.count) → \(entries.count) entries")
             store.replaceEntries(entries)
         } catch {
-            AppLog.write("Offline re-pass failed, keeping live transcript: \(error)")
+            AppLog.write("Offline re-pass failed, keeping transcript: \(error)")
         }
     }
 }

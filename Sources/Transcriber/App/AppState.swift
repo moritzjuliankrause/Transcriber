@@ -16,6 +16,10 @@ final class AppState: ObservableObject {
     @Published var phase: Phase = .idle
     @Published var recordingStartedAt: Date?
     @Published var isPaused = false
+    /// The microphone channel is muted: it records silence, only the system audio is transcribed.
+    @Published var isMicMuted = false
+    /// When the microphone was muted during this recording (marked in the transcript).
+    @Published var muteIntervals: [TimeSpan] = []
     @Published var micLevel: Float = 0
     @Published var systemLevel: Float = 0
     /// Rolling history of combined levels for the waveform (newest last).
@@ -32,36 +36,46 @@ final class AppState: ObservableObject {
     @Published var currentSessionURL: URL?
     @Published var pendingRecovery: [SessionRecovery.IncompleteSession] = []
 
-    // MARK: - Manual speaker naming (this recording only)
+    // MARK: - Naming the current remote speaker (live, this recording only)
 
-    /// Custom display names for remote speakers, keyed by their base label ("Speaker 1", …).
-    /// Applied to the floating bar and the saved transcript; reset when a new session starts.
-    @Published var speakerNames: [String: String] = [:]
-    /// The remote speakers currently offered for naming, in order ("Speaker 1", "Speaker 2", …).
-    /// Populated live as remote speech arrives, and from the finished transcript at save time.
-    @Published var remoteSpeakers: [String] = []
+    /// Names entered for whoever is speaking on the far end, with the stretch they cover.
+    @Published var speakerTags: [SpeakerTag] = []
+    /// Current position on the session timeline (seconds); set by the coordinator while recording.
+    var sessionClock: (() -> Double)?
 
-    /// The label to show for a base speaker label: its custom name if one was entered, else itself.
-    func displayName(for base: String) -> String {
-        if let custom = speakerNames[base], !custom.isEmpty { return custom }
-        return base
+    var activeSpeakerTag: SpeakerTag? { speakerTags.last.flatMap { $0.end == nil ? $0 : nil } }
+
+    /// Names already used in this recording, most recent first – offered as one-click chips.
+    var usedSpeakerNames: [String] {
+        var out: [String] = []
+        for tag in speakerTags.reversed() where !out.contains(tag.name) { out.append(tag.name) }
+        return out
     }
 
-    /// Sets (or, with an empty/blank name, clears) the custom name for a speaker. The first letter
-    /// is always capitalised.
-    func setSpeakerName(_ name: String, for base: String) {
+    /// The tagged name covering a moment of the call, if any.
+    func taggedName(at time: Double) -> String? {
+        speakerTags.last { time >= $0.start - 0.05 && time < ($0.end ?? .infinity) }?.name
+    }
+
+    /// Starts a new tag (closing the active one). `start` may reach back to the beginning of the
+    /// remote speech in progress, so the turn that prompted the naming is covered too.
+    func tagSpeaker(_ name: String, from start: Double) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            speakerNames[base] = nil
-        } else {
-            speakerNames[base] = trimmed.prefix(1).uppercased() + trimmed.dropFirst()
-        }
+        guard !trimmed.isEmpty else { return }
+        let display = trimmed.prefix(1).uppercased() + trimmed.dropFirst()
+        if let active = activeSpeakerTag, active.name == display { return }
+        let start = max(start, speakerTags.last.map { $0.end ?? $0.start } ?? 0)
+        endSpeakerTag(at: start)
+        speakerTags.append(SpeakerTag(name: display, start: start, end: nil))
     }
 
-    /// Notes that a remote speaker exists so the bar can offer to name it.
-    func noteRemoteSpeaker(_ base: String) {
-        guard !remoteSpeakers.contains(base) else { return }
-        remoteSpeakers.append(base)
+    func endSpeakerTag(at time: Double) {
+        guard let i = speakerTags.indices.last, speakerTags[i].end == nil else { return }
+        if time <= speakerTags[i].start {
+            speakerTags.remove(at: i)          // ended before it covered anything
+        } else {
+            speakerTags[i].end = time
+        }
     }
 
     var isRecording: Bool {
@@ -79,7 +93,7 @@ final class AppState: ObservableObject {
 
     func appendLive(_ line: TranscriptLine, channel: Channel) {
         liveLines.append(line)
-        if liveLines.count > 40 { liveLines.removeFirst(liveLines.count - 40) }
+        if liveLines.count > 600 { liveLines.removeFirst(liveLines.count - 600) }
         partialLines[channel] = nil
         lastUpdatedChannel = channel
         lastTranscriptUpdate = Date()
@@ -116,6 +130,8 @@ final class AppState: ObservableObject {
         phase = .idle
         recordingStartedAt = nil
         isPaused = false
+        isMicMuted = false
+        muteIntervals = []
         micLevel = 0
         systemLevel = 0
         levelHistory = Array(repeating: 0, count: 24)
@@ -123,8 +139,8 @@ final class AppState: ObservableObject {
         partialLines = [:]
         lastUpdatedChannel = nil
         retractions = []
-        speakerNames = [:]
-        remoteSpeakers = []
+        speakerTags = []
+        sessionClock = nil
     }
 }
 

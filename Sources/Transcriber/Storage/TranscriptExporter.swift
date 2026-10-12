@@ -42,7 +42,19 @@ enum TranscriptExporter {
             out += "**\(display(lastSpeaker, names))** _[\(timestamp(paragraphStart))]_  \n\(paragraph.joined(separator: " "))\n\n"
             paragraph = []
         }
+        // Stretches with the microphone muted appear as a note at their place in the timeline.
+        var mutes = (meta.muteIntervals ?? []).sorted { $0.start < $1.start }[...]
+        func muteNotes(before time: Double) {
+            while let m = mutes.first, m.start <= time {
+                flush()
+                lastSpeaker = ""
+                let end = m.end.map { "–\(timestamp($0))" } ?? ""
+                out += "_[\(timestamp(m.start))\(end)] Microphone muted_\n\n"
+                mutes = mutes.dropFirst()
+            }
+        }
         for e in entries {
+            muteNotes(before: e.start)
             if e.speaker != lastSpeaker || (e.start - paragraphStart) > 90 {
                 flush()
                 lastSpeaker = e.speaker
@@ -50,6 +62,7 @@ enum TranscriptExporter {
             }
             paragraph.append(e.text)
         }
+        muteNotes(before: .infinity)
         flush()
         return out
     }

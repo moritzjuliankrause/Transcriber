@@ -16,7 +16,11 @@ final class AppSettings: ObservableObject {
     // General
     @Published var myName: String { didSet { defaults.set(myName, forKey: "myName") } }
     @Published var otherName: String { didSet { defaults.set(otherName, forKey: "otherName") } }
-    @Published var showFloatingBar: Bool { didSet { defaults.set(showFloatingBar, forKey: "showFloatingBar") } }
+    /// The floating pill below the notch (waveform, mute, pause; hover for the live transcript).
+    /// New key: the pill replaced the old live-transcript bar and is on again by default.
+    @Published var showFloatingBar: Bool { didSet { defaults.set(showFloatingBar, forKey: "showFloatingPill") } }
+    /// Offer a "Who's speaking?" field in the pill's transcript card to name the current remote speaker.
+    @Published var nameSpeakersLive: Bool { didSet { defaults.set(nameSpeakersLive, forKey: "nameSpeakersLive") } }
     /// Show the app icon in the Dock (otherwise menu bar only).
     @Published var showDockIcon: Bool { didSet { defaults.set(showDockIcon, forKey: "showDockIcon"); let show = showDockIcon; Task { @MainActor in DockIcon.apply(show) } } }
     @Published var launchAtLogin: Bool { didSet { defaults.set(launchAtLogin, forKey: "launchAtLogin"); LaunchAtLogin.sync(enabled: launchAtLogin) } }
@@ -51,8 +55,8 @@ final class AppSettings: ObservableObject {
     @Published var languageCode: String { didSet { defaults.set(languageCode, forKey: "languageCode") } }   // "" = auto
     @Published var encoderPrecision: String { didSet { defaults.set(encoderPrecision, forKey: "encoderPrecision") } } // int8 / int4
     @Published var diarizeRemote: Bool { didSet { defaults.set(diarizeRemote, forKey: "diarizeRemote") } }
-    /// Experimental: separate remote speakers live during the call (instead of only afterwards).
-    @Published var liveDiarization: Bool { didSet { defaults.set(liveDiarization, forKey: "liveDiarization") } }
+    /// Remember named voices across recordings (VoiceLibrary) and recognise them automatically.
+    @Published var rememberVoices: Bool { didSet { defaults.set(rememberVoices, forKey: "rememberVoices") } }
     /// Guess remote speakers' names from how people address each other ("Speaker 1 [Anna]").
     @Published var guessSpeakerNames: Bool { didSet { defaults.set(guessSpeakerNames, forKey: "guessSpeakerNames") } }
     @Published var vadThreshold: Double { didSet { defaults.set(vadThreshold, forKey: "vadThreshold") } }
@@ -66,7 +70,12 @@ final class AppSettings: ObservableObject {
     @Published var exportMarkdown: Bool { didSet { defaults.set(exportMarkdown, forKey: "exportMarkdown") } }
     @Published var exportJSON: Bool { didSet { defaults.set(exportJSON, forKey: "exportJSON") } }
     @Published var exportSRT: Bool { didSet { defaults.set(exportSRT, forKey: "exportSRT") } }
-    @Published var keepAudio: Bool { didSet { defaults.set(keepAudio, forKey: "keepAudio") } }
+    /// How long mic.wav / system.wav are kept after a recording: "never" (deleted when it is
+    /// saved), "7" / "30" (days, then deleted automatically), "forever".
+    @Published var audioRetention: String { didSet { defaults.set(audioRetention, forKey: "audioRetention") } }
+    var keepAudio: Bool { audioRetention != "never" }
+    /// Days after which kept audio is deleted, nil = never deleted automatically.
+    var audioRetentionDays: Int? { Int(audioRetention) }
     @Published var askForTitle: Bool { didSet { defaults.set(askForTitle, forKey: "askForTitle") } }
     @Published var minFreeDiskGB: Double { didSet { defaults.set(minFreeDiskGB, forKey: "minFreeDiskGB") } }
 
@@ -79,7 +88,8 @@ final class AppSettings: ObservableObject {
 
         myName = str("myName", "Me")
         otherName = str("otherName", "Speaker")
-        showFloatingBar = bool("showFloatingBar", true)
+        showFloatingBar = bool("showFloatingPill", true)
+        nameSpeakersLive = bool("nameSpeakersLive", true)
         showDockIcon = bool("showDockIcon", false)
         launchAtLogin = bool("launchAtLogin", false)
         soundEffects = bool("soundEffects", true)
@@ -108,8 +118,8 @@ final class AppSettings: ObservableObject {
         languageCode = str("languageCode", "")
         encoderPrecision = str("encoderPrecision", "int8")
         diarizeRemote = bool("diarizeRemote", true)
-        liveDiarization = bool("liveDiarization", false)
         guessSpeakerNames = bool("guessSpeakerNames", false)
+        rememberVoices = bool("rememberVoices", true)
         vadThreshold = dbl("vadThreshold", 0.6)
         reTranscribeOffline = bool("reTranscribeOffline", false)
 
@@ -117,7 +127,9 @@ final class AppSettings: ObservableObject {
         exportMarkdown = bool("exportMarkdown", true)
         exportJSON = bool("exportJSON", false)
         exportSRT = bool("exportSRT", false)
-        keepAudio = bool("keepAudio", true)
+        // Migration from the old "Keep raw audio" switch: on → keep forever, off or never set →
+        // keep a week (long enough to re-transcribe, short enough not to pile up).
+        audioRetention = str("audioRetention", d.object(forKey: "keepAudio") != nil && d.bool(forKey: "keepAudio") ? "forever" : "7")
         askForTitle = bool("askForTitle", true)
         minFreeDiskGB = dbl("minFreeDiskGB", 2)
     }
