@@ -266,7 +266,8 @@ you've renamed or re-signed the app and the grant won't take, an entry left over
 the old signature can hang around, and the dialog keeps popping up even though the
 toggle looks on. Turn Transcriber off and back on under System Settings › Privacy &
 Security › Accessibility (or run `tccutil reset Accessibility com.moritzkrause.anyrecord`)
-to rebuild it.
+to rebuild it. When the paste fails for that reason, the "Transcript copied" dialog says so and
+has a button that opens the Accessibility settings.
 
 ## App icon
 

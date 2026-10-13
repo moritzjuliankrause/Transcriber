@@ -175,7 +175,7 @@ enum AITool {
                     _ = AXIsProcessTrustedWithOptions(options)
                 }
                 if case .text(let t) = payload { copy(t) } else if case .file(_, let p) = payload { copy(p) }
-                notifyPaste()
+                notifyPaste(missingAccessibility: true)
                 return
             }
             switch payload {
@@ -274,14 +274,23 @@ enum AITool {
         lastChangeCount = -1
     }
 
+    /// `missingAccessibility`: auto-paste was on but the Accessibility grant is missing. A grant made
+    /// for a build with another signature (e.g. 0.5.0 → 0.6.x, new certificate) still shows as on
+    /// in System Settings but no longer counts, and only removing and re-adding the app fixes it.
     @MainActor
-    private static func notifyPaste() {
+    private static func notifyPaste(missingAccessibility: Bool = false) {
         let alert = NSAlert()
         alert.messageText = "Transcript copied"
         alert.informativeText = "The prompt with the transcript is in your clipboard. Paste it with ⌘V into \(toolDisplayName) and press Enter."
         alert.addButton(withTitle: "OK")
+        if missingAccessibility {
+            alert.informativeText += "\n\nTranscriber couldn't paste by itself because it lacks the Accessibility permission. If Transcriber is already switched on under Accessibility, that switch still belongs to an older version: remove Transcriber with – and add it again with +, then restart Transcriber."
+            alert.addButton(withTitle: "Open Accessibility Settings")
+        }
         NSApp.activate(ignoringOtherApps: true)
-        alert.runModal()
+        if alert.runModal() == .alertSecondButtonReturn {
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+        }
     }
 
     @MainActor
