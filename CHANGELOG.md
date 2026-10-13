@@ -3,6 +3,9 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.6.2 (2026-10-13)
+- When auto-paste into your AI tool fails because the Accessibility permission is missing, the dialog now explains why (a switch that looks on can still belong to an older version) and opens the right settings with one click.
+
 ## 0.6.1 (2026-10-12)
 - Recording flags given at launch (--record-test, --capture-test, --start, --cycle) now ask "Start a recording?" first, so no other program can record through Transcriber's microphone permission.
 - Auto-paste into your AI tool only happens while that app or browser is still in front; if you switched away, the text stays on the clipboard instead of landing in the wrong window.
