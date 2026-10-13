@@ -14,6 +14,9 @@ import Foundation
 /// tap over the explicit list of all audio process objects works, so that is
 /// what we use – and we rebuild the tap whenever the process list changes so
 /// apps launched mid-recording are included too.
+///
+/// The tap only delivers buffers while one of its processes plays something; silence on the
+/// system channel is therefore normal and filled in by the coordinator.
 final class SystemAudioCapture {
     typealias Handler = (_ samples16k: [Float], _ hostTime: UInt64) -> Void
 
@@ -30,7 +33,8 @@ final class SystemAudioCapture {
     private var currentOptions = Options.default
     private var processListListener: AudioPropertyListener?
     private var rebuildWorkItem: DispatchWorkItem?
-    private var tappedProcessCount = 0
+    /// The process objects the current tap covers.
+    private(set) var tappedProcesses: Set<AudioObjectID> = []
     private var rateListener: AudioPropertyListener?
     /// Rate watchdog (IO queue only): frames delivered since `rateCheckStart` (host time).
     private var rateCheckFrames = 0
@@ -80,7 +84,7 @@ final class SystemAudioCapture {
         if options.mixdownAllProcesses {
             let me = SystemAudioCapture.processObject(forPID: ProcessInfo.processInfo.processIdentifier)
             let processes = SystemAudioCapture.allProcessObjects().filter { $0 != me }
-            tappedProcessCount = processes.count
+            tappedProcesses = Set(processes)
             description = CATapDescription(stereoMixdownOfProcesses: processes)
             AppLog.write("SystemAudioCapture: tapping \(processes.count) process objects")
         } else if options.mixdownOfProcesses {
@@ -269,9 +273,14 @@ final class SystemAudioCapture {
             let work = DispatchWorkItem { [weak self] in
                 guard let self, self.isRunning else { return }
                 let me = SystemAudioCapture.processObject(forPID: ProcessInfo.processInfo.processIdentifier)
-                let count = SystemAudioCapture.allProcessObjects().filter { $0 != me }.count
-                guard count != self.tappedProcessCount else { return }
-                AppLog.write("SystemAudioCapture: process list changed (\(self.tappedProcessCount) → \(count)), rebuilding tap")
+                let current = Set(SystemAudioCapture.allProcessObjects().filter { $0 != me })
+                // Compare the sets, not their size: a call app starting its call can swap one
+                // audio process for another, and a count-only check then kept a tap without the
+                // call's audio (a whole FaceTime call recorded nothing on the system channel).
+                let added = current.subtracting(self.tappedProcesses)
+                guard !added.isEmpty || current.count != self.tappedProcesses.count else { return }
+                let names = added.map { SystemAudioCapture.processName($0) }.joined(separator: ", ")
+                AppLog.write("SystemAudioCapture: process list changed (\(self.tappedProcesses.count) → \(current.count)\(names.isEmpty ? "" : ", new: " + names)), rebuilding tap")
                 let options = self.currentOptions
                 self.teardownTap()
                 do { try self.start(options: options) } catch { AppLog.write("SystemAudioCapture: rebuild failed: \(error)") }
@@ -315,6 +324,37 @@ final class SystemAudioCapture {
             AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, UInt32(MemoryLayout<pid_t>.size), ptr, &size, &object)
         }
         return status == noErr && object != kAudioObjectUnknown ? object : nil
+    }
+
+    /// Processes (other than this app) currently playing audio, and those of them the tap does
+    /// not cover. Used by the coordinator's stall watchdog: no buffers while something plays
+    /// means the tap is broken or blind to that process.
+    func playbackState() -> (playing: [AudioObjectID], untapped: [AudioObjectID]) {
+        let me = SystemAudioCapture.processObject(forPID: ProcessInfo.processInfo.processIdentifier)
+        let playing = SystemAudioCapture.allProcessObjects().filter { $0 != me && SystemAudioCapture.isRunningOutput($0) }
+        return (playing, playing.filter { !tappedProcesses.contains($0) })
+    }
+
+    static func isRunningOutput(_ process: AudioObjectID) -> Bool {
+        var address = AudioObjectPropertyAddress(mSelector: kAudioProcessPropertyIsRunningOutput, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+        var value: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        return AudioObjectGetPropertyData(process, &address, 0, nil, &size, &value) == noErr && value != 0
+    }
+
+    /// Bundle id (or pid) of a process object, for the log.
+    static func processName(_ process: AudioObjectID) -> String {
+        var address = AudioObjectPropertyAddress(mSelector: kAudioProcessPropertyBundleID, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+        var name: Unmanaged<CFString>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        if AudioObjectGetPropertyData(process, &address, 0, nil, &size, &name) == noErr, let id = name?.takeRetainedValue() as String?, !id.isEmpty {
+            return id
+        }
+        address.mSelector = kAudioProcessPropertyPID
+        var pid: pid_t = 0
+        size = UInt32(MemoryLayout<pid_t>.size)
+        AudioObjectGetPropertyData(process, &address, 0, nil, &size, &pid)
+        return "pid \(pid)"
     }
 
     static func allProcessObjects() -> [AudioObjectID] {

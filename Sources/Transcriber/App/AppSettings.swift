@@ -19,7 +19,7 @@ final class AppSettings: ObservableObject {
     /// The floating pill below the notch (waveform, mute, pause; hover for the live transcript).
     /// New key: the pill replaced the old live-transcript bar and is on again by default.
     @Published var showFloatingBar: Bool { didSet { defaults.set(showFloatingBar, forKey: "showFloatingPill") } }
-    /// Offer a "Who's speaking?" field in the pill's transcript card to name the current remote speaker.
+    /// Offer a field in the pill's transcript card to name the far-end voices.
     @Published var nameSpeakersLive: Bool { didSet { defaults.set(nameSpeakersLive, forKey: "nameSpeakersLive") } }
     /// Show the app icon in the Dock (otherwise menu bar only).
     @Published var showDockIcon: Bool { didSet { defaults.set(showDockIcon, forKey: "showDockIcon"); let show = showDockIcon; Task { @MainActor in DockIcon.apply(show) } } }

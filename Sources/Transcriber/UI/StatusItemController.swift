@@ -12,6 +12,7 @@ final class StatusItemController {
     private let onConfirmStop: () -> Void
     private let onTogglePause: () -> Void
     private let onToggleMute: () -> Void
+    private let onReconnectAudio: () -> Void
     private let onOpenSettings: () -> Void
     private let onOpenRecordings: () -> Void
     private let onQuit: () -> Void
@@ -21,12 +22,13 @@ final class StatusItemController {
     /// is oversized by 1 pt on each side so the recording pill can use the full item height.
     static let height: CGFloat = 24
 
-    init(state: AppState, onToggleRecording: @escaping () -> Void, onConfirmStop: @escaping () -> Void, onTogglePause: @escaping () -> Void, onToggleMute: @escaping () -> Void, onOpenSettings: @escaping () -> Void, onOpenRecordings: @escaping () -> Void, onQuit: @escaping () -> Void) {
+    init(state: AppState, onToggleRecording: @escaping () -> Void, onConfirmStop: @escaping () -> Void, onTogglePause: @escaping () -> Void, onToggleMute: @escaping () -> Void, onReconnectAudio: @escaping () -> Void, onOpenSettings: @escaping () -> Void, onOpenRecordings: @escaping () -> Void, onQuit: @escaping () -> Void) {
         self.state = state
         self.onToggleRecording = onToggleRecording
         self.onConfirmStop = onConfirmStop
         self.onTogglePause = onTogglePause
         self.onToggleMute = onToggleMute
+        self.onReconnectAudio = onReconnectAudio
         self.onOpenSettings = onOpenSettings
         self.onOpenRecordings = onOpenRecordings
         self.onQuit = onQuit
@@ -91,6 +93,11 @@ final class StatusItemController {
                 mute.target = self
                 menu.addItem(mute)
             }
+            // Manual fallback when a channel stays silent (e.g. after a call app reconfigured
+            // the audio devices while the recording started).
+            let reconnect = NSMenuItem(title: "Reconnect Audio", action: #selector(menuReconnect), keyEquivalent: "")
+            reconnect.target = self
+            menu.addItem(reconnect)
         }
 
         let recordings = NSMenuItem(title: "Recordings…", action: #selector(menuRecordings), keyEquivalent: "")
@@ -133,6 +140,7 @@ final class StatusItemController {
     @objc private func menuToggle() { onToggleRecording() }
     @objc private func menuPause() { onTogglePause() }
     @objc private func menuMute() { onToggleMute() }
+    @objc private func menuReconnect() { onReconnectAudio() }
     @objc private func menuCheckUpdates() { Task { await UpdateChecker.shared.check(interactive: true) } }
     @objc private func menuSettings() { onOpenSettings() }
     @objc private func menuRecordings() { onOpenRecordings() }

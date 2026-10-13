@@ -36,46 +36,49 @@ final class AppState: ObservableObject {
     @Published var currentSessionURL: URL?
     @Published var pendingRecovery: [SessionRecovery.IncompleteSession] = []
 
-    // MARK: - Naming the current remote speaker (live, this recording only)
+    // MARK: - Far-end voices (live, this recording only)
 
-    /// Names entered for whoever is speaking on the far end, with the stretch they cover.
+    /// Voices told apart live on the system channel (`LiveSpeakers`), with the names typed for
+    /// them. A name belongs to a voice, not to a stretch of time: every line of that voice, past
+    /// and future, shows it.
+    @Published var voiceNames: [Int: String] = [:]
+    /// Voices whose name came from a remembered voice rather than from the user.
+    @Published var autoNamedVoices: Set<Int> = []
+    /// "Speaker N" numbers, given once a voice has spoken for a few seconds (a voice heard only
+    /// in one short line is often a stray guess and shows as plain "Speaker").
+    @Published var voiceNumbers: [Int: Int] = [:]
+    /// The voice of the far end's latest line (or of the speech in progress).
+    @Published var currentVoice: Int?
+    /// Label base for unnamed voices ("Speaker"); set by the coordinator.
+    var otherName = "Speaker"
+    /// Speaker tags derived from the named voices (one per line), persisted to session.json so the
+    /// after-call diarization can hand each name to the matching cluster.
     @Published var speakerTags: [SpeakerTag] = []
     /// Current position on the session timeline (seconds); set by the coordinator while recording.
     var sessionClock: (() -> Double)?
 
-    var activeSpeakerTag: SpeakerTag? { speakerTags.last.flatMap { $0.end == nil ? $0 : nil } }
+    /// What a far-end voice is shown as right now.
+    func label(forVoice voice: Int?) -> String {
+        guard let voice else { return otherName }
+        if let name = voiceNames[voice] { return name }
+        if let n = voiceNumbers[voice] { return "\(otherName) \(n)" }
+        return otherName
+    }
 
-    /// Names already used in this recording, most recent first – offered as one-click chips.
+    /// Names given in this recording, most recently used first – offered as one-click chips.
     var usedSpeakerNames: [String] {
         var out: [String] = []
-        for tag in speakerTags.reversed() where !out.contains(tag.name) { out.append(tag.name) }
+        for name in voiceNames.sorted(by: { $0.key > $1.key }).map(\.value) where !out.contains(name) { out.append(name) }
         return out
     }
 
-    /// The tagged name covering a moment of the call, if any.
-    func taggedName(at time: Double) -> String? {
-        speakerTags.last { time >= $0.start - 0.05 && time < ($0.end ?? .infinity) }?.name
-    }
-
-    /// Starts a new tag (closing the active one). `start` may reach back to the beginning of the
-    /// remote speech in progress, so the turn that prompted the naming is covered too.
-    func tagSpeaker(_ name: String, from start: Double) {
+    /// Names a voice (an empty name removes it). Two voices given the same name are one person
+    /// the live separation split in two.
+    func nameVoice(_ voice: Int, _ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        let display = trimmed.prefix(1).uppercased() + trimmed.dropFirst()
-        if let active = activeSpeakerTag, active.name == display { return }
-        let start = max(start, speakerTags.last.map { $0.end ?? $0.start } ?? 0)
-        endSpeakerTag(at: start)
-        speakerTags.append(SpeakerTag(name: display, start: start, end: nil))
-    }
-
-    func endSpeakerTag(at time: Double) {
-        guard let i = speakerTags.indices.last, speakerTags[i].end == nil else { return }
-        if time <= speakerTags[i].start {
-            speakerTags.remove(at: i)          // ended before it covered anything
-        } else {
-            speakerTags[i].end = time
-        }
+        autoNamedVoices.remove(voice)
+        guard !trimmed.isEmpty else { voiceNames[voice] = nil; return }
+        voiceNames[voice] = trimmed.prefix(1).uppercased() + trimmed.dropFirst()
     }
 
     var isRecording: Bool {
@@ -140,6 +143,10 @@ final class AppState: ObservableObject {
         lastUpdatedChannel = nil
         retractions = []
         speakerTags = []
+        voiceNames = [:]
+        autoNamedVoices = []
+        voiceNumbers = [:]
+        currentVoice = nil
         sessionClock = nil
     }
 }
@@ -149,6 +156,8 @@ struct TranscriptLine: Identifiable, Equatable {
     var channel: Channel? = nil
     let speaker: String
     let text: String
+    /// Far-end voice id (`LiveSpeakers`); the shown label follows the voice's current name.
+    var voice: Int? = nil
     let start: TimeInterval
     /// For partial lines: how many leading words are considered settled. nil = all.
     var stableWords: Int? = nil

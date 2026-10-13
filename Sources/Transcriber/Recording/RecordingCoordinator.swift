@@ -54,9 +54,26 @@ final class RecordingCoordinator {
     /// a case the per-buffer silence watchdog cannot see because it never runs then.
     private var micBufferAt: Date?
     private var micStallRestarting = false
+    /// Same for the system tap: on a call that starts while the recording does, the tap can come
+    /// up without ever delivering a buffer (FaceTime reconfigures the output device). It is then
+    /// rebuilt until audio flows.
+    private var systemBufferAt: Date?
+    /// When the tap was last (re)built; the stall clock counts from the later of the two.
+    private var systemStartedAt = Date()
+    private var systemPlaybackCheckedAt = Date.distantPast
+    private var systemStallRestarting = false
+    private var systemRestartAttempts = 0
     private var statsTimer: Timer?
     /// Recent partial word lists per channel, used to decide when a displayed word is settled.
     private var partialHistory: [Channel: [[String]]] = [:]
+    /// Live separation of the far-end voices (nil when diarization is off).
+    private var liveSpeakers: LiveSpeakers?
+    /// Every far-end line with its voice, in call order (for the speaker tags).
+    private var remoteVoiceSegments: [(voice: Int, start: Double, end: Double)] = []
+    /// Voice guessed for far-end speech still in progress, by segment start.
+    private var partialVoice: [Double: Int] = [:]
+    private var peekedSegments: Set<Double> = []
+    private var voiceNamesCancellable: AnyCancellable?
 
     private static let hostTimeToSeconds: Double = {
         var info = mach_timebase_info()
@@ -117,26 +134,48 @@ final class RecordingCoordinator {
             speakerTagCancellable = state.$speakerTags
                 .dropFirst()
                 .sink { [weak store] tags in store?.setSpeakerTags(tags) }
+            // A name typed for a voice covers all of its lines, the earlier ones too.
+            voiceNamesCancellable = state.$voiceNames
+                .dropFirst()
+                .sink { [weak self] names in self?.refreshSpeakerTags(names: names) }
             muteCancellable = state.$muteIntervals
                 .dropFirst()
                 .sink { [weak store] spans in store?.setMuteIntervals(spans) }
             let language = settings.languageCode.isEmpty ? nil : settings.languageCode
             let myName = settings.myName
             let otherName = settings.otherName
-            // The remote side is stored as "Speaker 1"; post-call diarization splits it into
-            // "Speaker 1", "Speaker 2", … Live, it shows as plain "Speaker" – or as the name the user
-            // typed for whoever is talking (speaker tags), which then also goes into the file.
+            // The remote side is stored as "Speaker 1" (or the name typed for that voice); the
+            // after-call diarization splits it into "Speaker 1", "Speaker 2", … Live, the voices
+            // are told apart by `LiveSpeakers` and shown as "Speaker N" or their name.
             let remoteBase = "\(otherName) 1"
             let state = self.state
+            state.otherName = otherName
+            remoteVoiceSegments = []
+            partialVoice = [:]
+            peekedSegments = []
+            let live: LiveSpeakers? = settings.captureSystemAudio && settings.diarizeRemote ? LiveSpeakers() : nil
+            liveSpeakers = live
+            if let live {
+                Task.detached(priority: .utility) {
+                    do { try await live.prepare() } catch { AppLog.write("Live speaker separation unavailable: \(error)") }
+                }
+            }
 
             let queue = TranscriptionQueue(engine: engine, language: language) { segment, result in
-                var label = myName
-                var liveLabel = myName
                 if segment.channel == .them {
-                    let tagged = await MainActor.run { state.taggedName(at: segment.start) }
-                    label = tagged ?? remoteBase
-                    liveLabel = tagged ?? otherName
+                    // One line per voice: a segment holding two far-end people is split at the change.
+                    let parts = await live?.assignParts(segment.samples) ?? []
+                    let lines = await MainActor.run { self.voiceLines(segment, result, parts: parts, remoteBase: remoteBase) }
+                    for (entry, _) in lines { store.append(entry) }
+                    await MainActor.run {
+                        self.partialHistory[segment.channel] = nil
+                        for (entry, voice) in lines {
+                            state.appendLive(TranscriptLine(channel: .them, speaker: entry.speaker, text: entry.text, voice: voice, start: entry.start), channel: .them)
+                        }
+                    }
+                    return
                 }
+                let label = myName
                 let entry = TranscriptEntry(channel: segment.channel, speaker: label,
                                             start: segment.start, end: segment.end,
                                             text: result.text, confidence: result.confidence, createdAt: Date(),
@@ -154,12 +193,23 @@ final class RecordingCoordinator {
                 store.append(entry)
                 await MainActor.run {
                     self.partialHistory[segment.channel] = nil
-                    state.appendLive(TranscriptLine(channel: segment.channel, speaker: liveLabel, text: result.text, start: segment.start), channel: segment.channel)
+                    state.appendLive(TranscriptLine(channel: segment.channel, speaker: label, text: result.text, start: segment.start), channel: segment.channel)
                 }
             } onPartial: { segment, result in
                 let recentThem = store.entries.suffix(12).filter { $0.channel == .them }
+                // Once per far-end segment, after a few seconds of it: whose voice is this?
+                var peeked: Int?
+                if segment.channel == .them, let live, segment.samples.count >= 40_000,
+                   await MainActor.run(body: { self.peekedSegments.insert(segment.start).inserted }) {
+                    peeked = await live.peek(segment.samples)
+                }
                 await MainActor.run {
-                    let label = segment.channel == .me ? myName : (state.taggedName(at: segment.start) ?? otherName)
+                    if let peeked {
+                        self.partialVoice[segment.start] = peeked
+                        state.currentVoice = peeked
+                    }
+                    let voice = segment.channel == .them ? self.partialVoice[segment.start] : nil
+                    let label = segment.channel == .me ? myName : state.label(forVoice: voice)
                     // Residual echo shows up on the mic while the far end talks. Do not show such
                     // a partial at all (the final is dropped anyway) – otherwise the user's name
                     // keeps popping up although they are silent.
@@ -201,7 +251,7 @@ final class RecordingCoordinator {
                         guard age >= 7.0 || (age >= 2.5 && agreed) else { break }
                         stable += 1
                     }
-                    state.updatePartial(TranscriptLine(channel: segment.channel, speaker: label, text: result.text, start: segment.start, stableWords: stable), channel: segment.channel)
+                    state.updatePartial(TranscriptLine(channel: segment.channel, speaker: label, text: result.text, voice: voice, start: segment.start, stableWords: stable), channel: segment.channel)
                 }
             } onEmptyFinal: { segment in
                 // The segment ended without text – whatever partial was shown for it is stale.
@@ -231,8 +281,9 @@ final class RecordingCoordinator {
                 let wav = try WavWriter(url: store.micWavURL)
                 micWav = wav
                 let capture = MicrophoneCapture { [weak self] rawSamples, hostTime in
-                    guard let self, !self.pausedFlag else { return }
-                    self.noteMicBuffer()
+                    guard let self else { return }
+                    self.noteMicBuffer()   // also while paused, so resuming does not look like a stall
+                    guard !self.pausedFlag else { return }
                     self.watchMicSilence(rawSamples)
                     let t = self.seconds(fromHostTime: hostTime, sampleCount: 0)
                     // Muted: keep the channel's timeline running with silence, so mic and system
@@ -264,8 +315,18 @@ final class RecordingCoordinator {
                 systemProcessor = processor
                 let wav = try WavWriter(url: store.systemWavURL)
                 systemWav = wav
+                #if DEBUG
+                // Debug aid: TRANSCRIBER_MUTE_TAP=8 swallows the tap's buffers for 8 s, as when a
+                // call app's device switch leaves the tap dead, to exercise the stall watchdog.
+                let deadUntil = Date().addingTimeInterval(Double(ProcessInfo.processInfo.environment["TRANSCRIBER_MUTE_TAP"] ?? "") ?? 0)
+                #endif
                 let capture = SystemAudioCapture { [weak self] samples, hostTime in
-                    guard let self, !self.pausedFlag else { return }
+                    guard let self else { return }
+                    #if DEBUG
+                    if Date() < deadUntil { return }
+                    #endif
+                    self.noteSystemBuffer()
+                    guard !self.pausedFlag else { return }
                     let t = self.seconds(fromHostTime: hostTime, sampleCount: 0)   // host time of the buffer's first frame
                     let gap = self.gapFill(.them, written: &self.systemWritten, bufferStart: t)
                     if !gap.isEmpty { wav.append(gap); Task { await processor.append(gap) } }
@@ -277,6 +338,9 @@ final class RecordingCoordinator {
                 }
                 try await offMain { try capture.start() }
                 system = capture
+                systemStartedAt = Date()   // the first buffer normally arrives within milliseconds
+                systemStallRestarting = false
+                systemRestartAttempts = 0
             }
 
             power = PowerAssertion(reason: "Transcriber is recording a call")
@@ -360,13 +424,101 @@ final class RecordingCoordinator {
         }
     }
 
-    /// Where a name typed for the current remote speaker should start: the beginning of the
-    /// remote speech in progress (or that ended a moment ago), else now.
-    func speakerTagStart() -> Double {
-        let now = state.sessionClock?() ?? 0
-        if let partial = state.partialLines[.them] { return partial.start }
-        if let last = store?.entries.last(where: { $0.channel == .them }), now - last.end < 3 { return last.start }
-        return now
+    // MARK: - Far-end voices
+
+    /// Turns a finished far-end segment into transcript entries, one per voice part, and records
+    /// the voices. Words go to the part their middle falls into; a part with fewer than three
+    /// words joins its neighbour (boundaries are not that exact).
+    private func voiceLines(_ segment: ChannelProcessor.Segment, _ result: TranscribedSegment, parts: [LiveSpeakers.Part],
+                            remoteBase: String) -> [(TranscriptEntry, Int?)] {
+        let guessed = partialVoice.removeValue(forKey: segment.start)
+        peekedSegments.remove(segment.start)
+        let words = result.words.map { WordStamp(word: $0.word, start: segment.start + $0.startTime, end: segment.start + $0.endTime) }
+        var groups: [(match: LiveSpeakers.Match?, words: [WordStamp])] = []
+        if parts.count > 1, !words.isEmpty {
+            for w in words {
+                let mid = (w.start + w.end) / 2 - segment.start
+                let part = parts.first { mid < $0.end } ?? parts.last!
+                if let last = groups.last, last.match?.voice == part.match.voice {
+                    groups[groups.count - 1].words.append(w)
+                } else {
+                    groups.append((part.match, [w]))
+                }
+            }
+            var merged: [(match: LiveSpeakers.Match?, words: [WordStamp])] = []
+            for g in groups {
+                if g.words.count < 3, !merged.isEmpty { merged[merged.count - 1].words += g.words; continue }
+                if let last = merged.last, last.match?.voice == g.match?.voice { merged[merged.count - 1].words += g.words; continue }
+                merged.append(g)
+            }
+            if merged.count > 1, merged[0].words.count < 3 { merged[1].words.insert(contentsOf: merged[0].words, at: 0); merged.removeFirst() }
+            groups = merged
+        }
+        if groups.count <= 1 {
+            let main = parts.max { $0.end - $0.start < $1.end - $1.start }?.match
+            groups = [(main, words)]
+        }
+        var out: [(TranscriptEntry, Int?)] = []
+        for g in groups {
+            let single = groups.count == 1
+            let start = single ? segment.start : g.words.first!.start
+            let end = single ? segment.end : g.words.last!.end
+            let voice = noteVoice(g.match, guessed: guessed, start: start, end: end)
+            let text = single ? result.text : WordText.join(g.words.map(\.word))
+            let label = voice.flatMap { state.voiceNames[$0] } ?? remoteBase
+            out.append((TranscriptEntry(channel: .them, speaker: label, start: start, end: end, text: text,
+                                        confidence: result.confidence, createdAt: Date(), words: g.words.isEmpty ? nil : g.words), voice))
+        }
+        return out
+    }
+
+    /// Records the voice of a finished far-end line (main actor). Without a confident match the
+    /// line goes to the voice guessed while it was spoken, else to the previous far-end voice.
+    private func noteVoice(_ match: LiveSpeakers.Match?, guessed: Int?, start: Double, end: Double) -> Int? {
+        guard let voice = match?.voice ?? guessed ?? state.currentVoice ?? (liveSpeakers == nil ? 1 : nil) else { return nil }
+        state.currentVoice = voice
+        remoteVoiceSegments.append((voice, start, end))
+        if let match, match.isNew { AppLog.write(String(format: "Live voice %d heard first at %.0f s", voice, start)) }
+        if let match, match.seconds >= 6, state.voiceNumbers[voice] == nil {
+            state.voiceNumbers[voice] = (state.voiceNumbers.values.max() ?? 0) + 1
+        }
+        if let match, match.seconds >= 8, state.voiceNames[voice] == nil, let live = liveSpeakers {
+            Task { await self.matchRememberedVoice(voice, live: live) }
+        }
+        if state.voiceNames[voice] != nil { refreshSpeakerTags(names: state.voiceNames) }
+        return voice
+    }
+
+    /// Names a voice after a remembered one (Settings › Transcription › voices) when it sounds
+    /// like it. The after-call pass decides again with the whole call.
+    private func matchRememberedVoice(_ voice: Int, live: LiveSpeakers) async {
+        guard let centroid = await live.centroid(of: voice), state.voiceNames[voice] == nil else { return }
+        let taken = Set(state.voiceNames.values)
+        let best = VoiceLibrary.shared.voices
+            .filter { !taken.contains($0.name) }
+            .map { ($0.name, RemoteDiarizer.cosine(centroid, $0.embedding)) }
+            .max { $0.1 < $1.1 }
+        guard let (name, sim) = best, sim >= VoiceLibrary.matchThreshold, state.isRecording else { return }
+        AppLog.write(String(format: "Live voice %d sounds like %@ (%.2f)", voice, name, sim))
+        state.autoNamedVoices.insert(voice)
+        state.voiceNames[voice] = name
+    }
+
+    /// One speaker tag per run of lines of a voice the user named (names that only came from a
+    /// remembered voice are left out, so they are never learned back).
+    private func refreshSpeakerTags(names: [Int: String]) {
+        var tags: [SpeakerTag] = []
+        var lastVoice: Int?
+        for seg in remoteVoiceSegments {
+            defer { lastVoice = seg.voice }
+            guard let name = names[seg.voice], !state.autoNamedVoices.contains(seg.voice) else { continue }
+            if lastVoice == seg.voice, let i = tags.indices.last, tags[i].name == name {
+                tags[i].end = seg.end
+            } else {
+                tags.append(SpeakerTag(name: name, start: seg.start, end: seg.end))
+            }
+        }
+        if tags != state.speakerTags { state.speakerTags = tags }
     }
 
     // MARK: - Stop
@@ -374,7 +526,6 @@ final class RecordingCoordinator {
     func stop() async {
         guard state.isRecording, let store else { return }
         state.phase = .stopping("Finishing transcription…")
-        state.endSpeakerTag(at: state.sessionClock?() ?? 0)
         if let i = state.muteIntervals.indices.last, state.muteIntervals[i].end == nil {
             state.muteIntervals[i].end = state.sessionClock?() ?? 0
         }
@@ -394,6 +545,7 @@ final class RecordingCoordinator {
         await RecordingFinalizer.finish(store: store, settings: settings, state: state, askTitle: settings.askForTitle)
         self.store = nil
         engine = nil
+        liveSpeakers = nil
         // Same at the end: nothing else should run on the main thread while the pill shrinks.
         await Task.yield()
         state.reset()
@@ -413,6 +565,7 @@ final class RecordingCoordinator {
         statsTimer?.invalidate(); statsTimer = nil
         diskTimer?.invalidate(); diskTimer = nil
         speakerTagCancellable = nil
+        voiceNamesCancellable = nil
         muteCancellable = nil
         deviceListeners = []
         mic?.stop(); mic = nil
@@ -486,6 +639,56 @@ final class RecordingCoordinator {
         }
     }
 
+    private func noteSystemBuffer() {
+        levelLock.lock(); systemBufferAt = Date(); levelLock.unlock()
+    }
+
+    /// Rebuilds the system tap when something plays but no buffers arrive: after 3 s, then every
+    /// 3 s for the first attempts and every 10 s after that, for as long as the recording runs.
+    /// The tap is silent (no buffers at all) whenever nothing plays, so silence alone means
+    /// nothing.
+    private func checkSystemStall() {
+        guard settings.captureSystemAudio, state.isRecording, !state.isPaused,
+              let system, !systemStallRestarting else { return }
+        levelLock.lock(); let buffer = systemBufferAt; levelLock.unlock()
+        let now = Date()
+        let silent = now.timeIntervalSince(max(buffer ?? .distantPast, systemStartedAt))
+        if systemRestartAttempts > 0, let buffer, buffer > systemStartedAt {
+            AppLog.write("System audio is coming through again")
+            systemRestartAttempts = 0
+            if state.lastError?.hasPrefix("System audio") == true { state.lastError = nil }
+            return
+        }
+        guard silent > (systemRestartAttempts < 3 ? 3.0 : 10.0),
+              now.timeIntervalSince(systemPlaybackCheckedAt) >= 1 else { return }
+        systemPlaybackCheckedAt = now
+        let playback = system.playbackState()
+        guard !playback.playing.isEmpty else {
+            // Nothing plays: the silence is real. A later failure starts with fresh attempts.
+            systemRestartAttempts = 0
+            return
+        }
+        systemRestartAttempts += 1
+        let names = (playback.untapped.isEmpty ? playback.playing : playback.untapped).prefix(4).map { SystemAudioCapture.processName($0) }.joined(separator: ", ")
+        AppLog.write(String(format: "System audio: %@ playing (%@) but no buffers for %.0f s (attempt %d) – rebuilding the tap",
+                            playback.untapped.isEmpty ? "tapped process" : "untapped process", names, silent, systemRestartAttempts))
+        if systemRestartAttempts == 3 {
+            state.lastError = "System audio is not coming through – retrying. Reconnect Audio in the menu bar menu tries again right away."
+        }
+        restartSystemAudio(delay: 0)
+    }
+
+    /// Manual "Reconnect Audio": restarts the microphone and rebuilds the system tap.
+    func reconnectAudio() {
+        guard state.isRecording else { return }
+        AppLog.write("Reconnect Audio requested")
+        if settings.captureMicrophone, mic != nil {
+            micStallRestarting = true
+            restartMicrophone()
+        }
+        if settings.captureSystemAudio, system != nil { restartSystemAudio(delay: 0) }
+    }
+
     // MARK: - Levels
 
     private func notePeak(mic: Float? = nil, system: Float? = nil) {
@@ -510,6 +713,7 @@ final class RecordingCoordinator {
             self.shownSystem = s.map { AudioResampler.displayLevel(rms: $0) } ?? self.shownSystem * 0.8
             self.state.pushLevel(mic: self.shownMic, system: self.shownSystem)
             self.checkMicStall()
+            self.checkSystemStall()
         }
         statsTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             guard let self else { return }
@@ -564,10 +768,16 @@ final class RecordingCoordinator {
         }
     }
 
-    private func restartSystemAudio() {
+    private func restartSystemAudio(delay: TimeInterval = 0.5) {
         guard let system, state.isRecording else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self, self.state.isRecording else { return }
+        systemStallRestarting = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self else { return }
+            defer {
+                self.systemStartedAt = Date()   // a full grace window for the rebuilt tap
+                self.systemStallRestarting = false
+            }
+            guard self.state.isRecording else { return }
             do {
                 try system.start()
                 AppLog.write("System audio restarted on \(AudioDevices.defaultOutputDevice()?.name ?? "-")")

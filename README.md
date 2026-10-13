@@ -84,7 +84,10 @@ tap, echo-gate stats every 30 s, and any restarts. The microphone engine is watc
 ways, a buffer that reads all zeros for 5 s and a complete stop in delivered buffers for
 4 s, and either one restarts the input engine automatically (and says so in the log).
 That's there so a mid-call device switch doesn't quietly kill your side of the
-recording. There are two self-tests:
+recording. The system-audio tap is watched too: it only delivers audio while something
+plays, so when an app is playing and nothing arrives for 3 s, the tap is rebuilt (every
+3 s, later every 10 s, until audio flows). While recording, **Reconnect Audio** in the
+menu bar menu restarts both channels by hand. There are two self-tests:
 
 ```sh
 # full recording session without UI (uses the real coordinator, echo gate, ASR)
@@ -134,16 +137,21 @@ after you click Record; a debug build skips the question.
     "Latest" button shows up whenever you're not at the end. Click the waveform or the
     pin to keep the card open without hovering. The newest words stay blurred, often
     for several lines, until the model has heard enough of the sentence to be sure.
-- **Name whoever is speaking** (Settings › Speakers, on by default). When the card opens
-  on hover, the cursor is already in its "Who's speaking?" field. Type the name of
-  whoever is talking on the far end and press Enter. Move the pointer away with the
-  field empty and the keyboard goes back to the app in front; a half-typed name keeps
-  the card open until Enter or Escape. It's meant for longer turns, someone giving a
-  talk or presenting for a few minutes, not quick back-and-forth. Names you've used
-  in the call show up as chips, so one click is enough when that person speaks again,
-  and ✕ ends the name when they stop. Everything that voice says gets the name, live
-  in the card and, after the call, across the whole recording: diarization finds the
-  same voice everywhere, also where you didn't name it.
+- **The far-end voices are told apart live** (needs "Separate remote speakers"). Each
+  voice on the other side shows up in the card as "Speaker 1", "Speaker 2", … in its
+  own colour, numbered once it has said a few seconds. When two people speak in one
+  breath, the line is split where the voice changes. A voice you named in an earlier
+  call is named right away.
+- **Name a voice** (Settings › Speakers, on by default). The bottom of the card shows
+  the voice talking right now as a coloured chip, and next to it the name field; when
+  the card opens on hover, the cursor is already in it. Type the name, press Enter, and
+  every line of that voice carries the name, the earlier ones too. Nobody else gets it,
+  so naming Anna while she talks doesn't turn the next speaker into Anna. Click a name
+  in the transcript to name that voice instead of the current one. Names you've used
+  show up as chips; if the live separation split one person in two, giving both the
+  same name puts them back together. Move the pointer away with the field empty and the
+  keyboard goes back to the app in front. After the call, diarization over the whole
+  recording has the last word, and the names follow the voices there.
 - **Re-transcribe after the call** (Settings › Transcription, off by default). When a
   recording stops, the recorded audio runs through the model again in long context
   windows and replaces the live transcript. The live pass works on single utterances,
@@ -200,8 +208,13 @@ whatever audio hadn't been processed yet and writes the final files.
   clustering splits off with only a few seconds of speech are merged into the closest
   real speaker; anyone who said more than a sentence or two keeps their own label, also
   in big meetings.
-- Names typed for the current speaker during the call are matched to these voices: the
-  voice that dominates the named stretch gets the name everywhere.
+- During the call, every far-end utterance is matched against the voices heard so far
+  (same embedding model as the after-call pass, about 0.15 s per utterance), so the live
+  card can show who is talking. Names typed in the card belong to a live voice; each of
+  its utterances is stored as a name tag, and after the call the diarization cluster that
+  covers those utterances gets the name everywhere. Replaying three recorded calls
+  through the live path put 90–96 % of the far end's speech on the right voice; the
+  after-call pass is still the more exact one.
 - **Remember voices** (Settings › Transcription, on by default). A voice you name in the
   pill is kept as a voice print (an embedding, no audio) in
   `~/Library/Application Support/Transcriber/voices.json` and recognised in later
@@ -224,8 +237,10 @@ whatever audio hadn't been processed yet and writes the final files.
 - **System audio tap on macOS 26.** A global tap (`stereoGlobalTapButExcludeProcesses`)
   is created without an error, but its aggregate device never actually starts IO. A
   mixdown tap over the explicit list of audio process objects does work, so that's what
-  Transcriber uses, and it rebuilds the tap whenever the process list changes (an app
-  launched mid-recording, say).
+  Transcriber uses, and it rebuilds the tap whenever the set of audio processes changes
+  (an app launched mid-recording, say). It compares the processes themselves, not how
+  many there are: when a FaceTime call starts, one audio process is swapped for another,
+  and a count-only check kept a tap that never heard the call.
 - **System audio sample rate.** The tap's buffers arrive on the output device's clock,
   which isn't always the rate the tap reports: AirPods drop to 24 kHz in call mode once
   their microphone opens. Transcriber uses the aggregate device's actual rate, follows

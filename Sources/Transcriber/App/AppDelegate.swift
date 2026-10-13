@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onConfirmStop: { [weak self] in self?.floatingBar?.confirmStop { self?.toggleRecording() } },
             onTogglePause: { [weak self] in self?.coordinator.togglePause() },
             onToggleMute: { [weak self] in self?.coordinator.toggleMicMute() },
+            onReconnectAudio: { [weak self] in self?.coordinator.reconnectAudio() },
             onOpenSettings: { [weak self] in self?.showSettings() },
             onOpenRecordings: { [weak self] in self?.showSettings(section: .recordings) },
             onQuit: { NSApp.terminate(nil) }
@@ -33,7 +34,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         floatingBar = FloatingBarController(state: state, settings: settings)
         floatingBar?.onToggleMute = { [weak self] in self?.coordinator.toggleMicMute() }
         floatingBar?.onTogglePause = { [weak self] in self?.coordinator.togglePause() }
-        floatingBar?.speakerTagStart = { [weak self] in self?.coordinator.speakerTagStart() ?? 0 }
         FloatingBarController.shared = floatingBar
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.floatingBar?.prepare() }
 
@@ -117,17 +117,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 state.phase = .recording
                 state.sessionClock = { 60 }
                 let me = self.settings.myName
-                let lines: [(Channel, String, String)] = [
-                    (.them, "Speaker", "Good morning everyone, let's get started. We have a lot on the agenda today, so I'd suggest we keep the updates short."),
-                    (.me, me, "Sounds good. I can start with the release status if that helps."),
-                    (.them, "Anna", "Yes please, go ahead. And afterwards I'd like to talk about the budget for the next quarter, because the numbers changed quite a bit since last week."),
-                    (.me, me, "Okay. The release candidate is ready, we found two smaller issues in testing and both are fixed now."),
-                    (.them, "Anna", "That's great news. Do we already know when it goes out to customers?"),
+                let lines: [(Channel, Int?, String)] = [
+                    (.them, 1, "Good morning everyone, let's get started. We have a lot on the agenda today, so I'd suggest we keep the updates short."),
+                    (.me, nil, "Sounds good. I can start with the release status if that helps."),
+                    (.them, 2, "Yes please, go ahead. And afterwards I'd like to talk about the budget for the next quarter, because the numbers changed quite a bit since last week."),
+                    (.me, nil, "Okay. The release candidate is ready, we found two smaller issues in testing and both are fixed now."),
+                    (.them, 2, "That's great news. Do we already know when it goes out to customers?"),
                 ]
+                state.voiceNumbers = [1: 1, 2: 2]
+                state.voiceNames = [2: "Anna"]
+                state.currentVoice = 2
                 for (i, l) in lines.enumerated() {
-                    state.appendLive(TranscriptLine(channel: l.0, speaker: l.1, text: l.2, start: Double(i) * 8), channel: l.0)
+                    state.appendLive(TranscriptLine(channel: l.0, speaker: l.1 == nil ? me : state.label(forVoice: l.1), text: l.2, voice: l.1, start: Double(i) * 8), channel: l.0)
                 }
-                state.speakerTags = [SpeakerTag(name: "Anna", start: 16, end: nil)]
                 // A partial with a long blurred tail; refreshed so it does not time out.
                 Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
                     Task { @MainActor in

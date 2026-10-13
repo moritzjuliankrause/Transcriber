@@ -30,6 +30,10 @@ if CommandLine.arguments.contains("--import") || CommandLine.arguments.contains(
     let code = await HeadlessHistory.run(arguments: CommandLine.arguments)
     exit(code)
 }
+if CommandLine.arguments.contains("--live-speakers") {
+    let code = await LiveSpeakersTest.run(arguments: CommandLine.arguments)
+    exit(code)
+}
 if CommandLine.arguments.contains("--transcribe") {
     let code = await HeadlessTranscribe.run(arguments: CommandLine.arguments)
     exit(code)

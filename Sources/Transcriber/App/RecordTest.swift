@@ -22,7 +22,8 @@ enum RecordTest {
             let savedAskTitle = settings.askForTitle
             let savedDiarize = settings.diarizeRemote
             settings.askForTitle = false
-            settings.diarizeRemote = false
+            // --voices keeps diarization on, so the live voice separation runs too.
+            if !arguments.contains("--voices") { settings.diarizeRemote = false }
             defer {
                 settings.askForTitle = savedAskTitle
                 settings.diarizeRemote = savedDiarize
@@ -39,6 +40,13 @@ enum RecordTest {
             while Date().timeIntervalSince(started) < seconds {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 print(String(format: "  t=%2.0fs mic=%.2f sys=%.2f lines=%d", Date().timeIntervalSince(started), state.micLevel, state.systemLevel, state.liveLines.count))
+            }
+            if arguments.contains("--voices") {
+                print("Live lines:")
+                for line in state.liveLines {
+                    let label = line.channel == .them ? state.label(forVoice: line.voice) : line.speaker
+                    print(String(format: "  %6.1f %@ [v%@] %@", line.start, label, line.voice.map(String.init) ?? "-", String(line.text.prefix(70))))
+                }
             }
             await coordinator.stop()
             guard let url = state.currentSessionURL else { return 1 }

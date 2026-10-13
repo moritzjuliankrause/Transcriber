@@ -649,7 +649,7 @@ struct TranscriptionSettings: View {
             }
             SettingsCard(title: "Speakers", footer: "Your own voice is identified by the microphone channel and never needs diarization.") {
                 ToggleRow(title: "Separate remote speakers", caption: "Diarization runs after the call on the system audio and finds how many people spoke on its own", isOn: $settings.diarizeRemote)
-                ToggleRow(title: "Name speakers during the call", caption: "Adds a \"Who's speaking?\" field to the pill's live transcript. Type the name of whoever is talking (best for longer turns, like a talk); after the call that voice gets the name everywhere it spoke.", isOn: $settings.nameSpeakersLive)
+                ToggleRow(title: "Name speakers during the call", caption: "The pill's live transcript tells the voices on the far end apart. Type a name next to whoever is talking (or click a name in the transcript) and that voice carries it, live and in the saved transcript.", isOn: $settings.nameSpeakersLive)
                 ToggleRow(title: "Remember voices", caption: "When you name a speaker in the pill, their voice is remembered and recognised in later recordings. Only a voice print is stored on this Mac, no audio.", isOn: $settings.rememberVoices)
                 if settings.rememberVoices || !voices.voices.isEmpty {
                     RememberedVoicesRow(voices: voices)

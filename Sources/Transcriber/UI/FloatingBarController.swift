@@ -22,8 +22,6 @@ final class FloatingBarController {
 
     var onToggleMute: (() -> Void)?
     var onTogglePause: (() -> Void)?
-    /// Where a name typed for the current remote speaker should start (session seconds).
-    var speakerTagStart: (() -> Double)?
 
     /// Duration of the capsule morph (size and content changes).
     static let resizeDuration: TimeInterval = 0.35
@@ -292,10 +290,16 @@ final class FloatingBarController {
         model.onTogglePause = { [weak self] in self?.onTogglePause?() }
         model.onTogglePin = { [weak self] in self?.togglePin() }
         model.onTagSubmit = { [weak self] in self?.submitTag() }
-        model.onTagChip = { [weak self] name in self?.tag(name) }
-        model.onEndTag = { [weak self] in
+        model.onTagChip = { [weak self] name in
             guard let self else { return }
-            self.state.endSpeakerTag(at: self.state.sessionClock?() ?? 0)
+            self.tag(name, voice: self.model.targetVoice)
+            self.model.targetVoice = nil
+        }
+        model.onPickVoice = { [weak self] voice in
+            guard let self else { return }
+            self.model.targetVoice = voice
+            self.autoFocusSuspended = false
+            self.beginTagEditing()
         }
         model.onTagFocus = { [weak self] in self?.beginTagEditing() }
         model.onTagCancel = { [weak self] in
@@ -311,7 +315,7 @@ final class FloatingBarController {
         state.phase == .recording && !model.askingTitle && !model.confirmingStop && model.message == nil
     }
 
-    /// The card offers the "Who's speaking?" field.
+    /// The card offers the field that names a far-end voice.
     private var namingAvailable: Bool { settings.nameSpeakersLive && settings.captureSystemAudio }
 
     /// The pointer is over the visible pill / card (not the transparent rest of the panel).
@@ -425,23 +429,27 @@ final class FloatingBarController {
     private func endTagEditing() {
         model.tagFieldFocused = false
         model.tagDraft = ""
+        model.targetVoice = nil
         if !model.askingTitle, !model.confirmingStop, panel?.isKeyWindow == true { panel?.resignKey() }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { FloatingBarController.dismissTextInputHelperWindows() }
     }
 
     private func submitTag() {
         let name = model.tagDraft
+        let voice = model.targetVoice
         autoFocusSuspended = true
         endTagEditing()
-        tag(name)
+        tag(name, voice: voice)
         if !model.pinned, !pointerOverPanel { setExpanded(false) }
     }
 
-    private func tag(_ name: String) {
-        guard state.phase == .recording else { return }
-        let start = speakerTagStart?() ?? state.sessionClock?() ?? 0
-        state.tagSpeaker(name, from: start)
-        if let tag = state.activeSpeakerTag { AppLog.write("Speaker tag: \(tag.name) from \(Int(tag.start)) s") }
+    /// Names a far-end voice: the one picked in the transcript, else whoever spoke last. Before
+    /// anyone on the far end spoke, the name goes to the first voice that will be heard.
+    private func tag(_ name: String, voice: Int? = nil) {
+        guard state.phase == .recording, !name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        let voice = voice ?? model.targetVoice ?? state.currentVoice ?? 1
+        state.nameVoice(voice, name)
+        AppLog.write("Voice \(voice) named \(state.voiceNames[voice] ?? "-")")
     }
 }
 
@@ -528,6 +536,8 @@ final class FloatingBarModel: ObservableObject {
         let id: Int
         var speaker: String
         var isMe: Bool
+        /// Far-end voice id (click the name to name that voice).
+        var voice: Int? = nil
         /// Sharp words.
         var text: String
         /// Blurred words at the end (not settled yet).
@@ -557,6 +567,8 @@ final class FloatingBarModel: ObservableObject {
     @Published var followLatest = true
     @Published var tagDraft = ""
     @Published var tagFieldFocused = false
+    /// The far-end voice picked by clicking its name in the transcript; nil = whoever spoke last.
+    @Published var targetVoice: Int?
     /// Marketing renders (`--render-hero`): ImageRenderer cannot draw scroll views or AppKit
     /// fields, so the card shows its lines in a plain stack, sized to fit.
     var renderStatic = false
@@ -566,7 +578,7 @@ final class FloatingBarModel: ObservableObject {
     var onTogglePin: (() -> Void)?
     var onTagSubmit: (() -> Void)?
     var onTagChip: ((String) -> Void)?
-    var onEndTag: (() -> Void)?
+    var onPickVoice: ((Int) -> Void)?
     var onTagFocus: (() -> Void)?
     var onTagCancel: (() -> Void)?
 
@@ -590,25 +602,30 @@ final class FloatingBarModel: ObservableObject {
 
     static func paragraphs(state: AppState) -> [Paragraph] {
         var out: [Paragraph] = []
-        func add(_ speaker: String, isMe: Bool, text: String, tail: [String]) {
+        func add(_ speaker: String, isMe: Bool, voice: Int? = nil, text: String, tail: [String]) {
             guard !text.isEmpty || !tail.isEmpty else { return }
-            if var last = out.last, last.speaker == speaker, last.tail.isEmpty {
+            if var last = out.last, last.speaker == speaker, last.voice == voice || isMe, last.tail.isEmpty {
                 last.text = [last.text, text].filter { !$0.isEmpty }.joined(separator: " ")
                 last.tail = tail
                 out[out.count - 1] = last
             } else {
-                out.append(Paragraph(id: out.count, speaker: speaker, isMe: isMe, text: text, tail: tail))
+                out.append(Paragraph(id: out.count, speaker: speaker, isMe: isMe, voice: voice, text: text, tail: tail))
             }
         }
+        // Far-end lines show their voice's current name, so naming a voice renames its earlier
+        // lines too.
+        func speaker(_ line: TranscriptLine) -> String {
+            line.channel == .them && line.voice != nil ? state.label(forVoice: line.voice) : line.speaker
+        }
         for line in state.liveLines {
-            add(line.speaker, isMe: line.channel == .me, text: line.text, tail: [])
+            add(speaker(line), isMe: line.channel == .me, voice: line.voice, text: line.text, tail: [])
         }
         let now = Date()
         for (channel, partial) in state.partialLines.sorted(by: { $0.value.start < $1.value.start })
         where now.timeIntervalSince(partial.createdAt) <= partialTimeout {
             let words = partial.text.split(separator: " ").map(String.init)
             let stable = min(words.count, partial.stableWords ?? words.count)
-            add(partial.speaker, isMe: channel == .me, text: words[..<stable].joined(separator: " "), tail: Array(words[stable...]))
+            add(speaker(partial), isMe: channel == .me, voice: partial.voice, text: words[..<stable].joined(separator: " "), tail: Array(words[stable...]))
         }
         return out
     }
@@ -824,7 +841,7 @@ private struct PillIconButton: View {
 }
 
 /// The live transcript card that unfolds below the pill: scrollable history, blurred tail,
-/// and the "Who's speaking?" field.
+/// and the bar that names a far-end voice.
 private struct TranscriptCard: View {
     @ObservedObject var state: AppState
     @ObservedObject var settings: AppSettings
@@ -846,7 +863,7 @@ private struct TranscriptCard: View {
             VStack(alignment: .leading, spacing: 0) {
                 header
                 VStack(alignment: .leading, spacing: 11) {
-                    ForEach(model.paragraphs) { ParagraphView(paragraph: $0) }
+                    ForEach(model.paragraphs) { ParagraphView(paragraph: $0, model: model) }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 6)
@@ -940,7 +957,7 @@ private struct TranscriptCard: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     ForEach(model.paragraphs) { p in
-                        ParagraphView(paragraph: p)
+                        ParagraphView(paragraph: p, model: model)
                     }
                     Color.clear.frame(height: 1).id(TranscriptCard.bottomID)
                         .background(GeometryReader { marker in
@@ -1012,12 +1029,34 @@ private struct BottomMarkerKey: PreferenceKey {
 /// the sharp ones and lose their blur in place as they settle.
 private struct ParagraphView: View {
     let paragraph: FloatingBarModel.Paragraph
+    @ObservedObject var model: FloatingBarModel
+    @State private var hovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(paragraph.speaker)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(paragraph.isMe ? Color.cyan : Color.orange)
+            if let voice = paragraph.voice, !paragraph.isMe, !model.renderStatic {
+                // A far-end name is a button: click it to name that voice.
+                let picked = model.targetVoice == voice
+                Button { model.onPickVoice?(voice) } label: {
+                    HStack(spacing: 3) {
+                        Text(paragraph.speaker)
+                        Image(systemName: "pencil").font(.system(size: 8.5, weight: .bold))
+                            .opacity(hovering || picked ? 0.9 : 0)
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(VoiceColor.of(voice))
+                    .padding(.horizontal, 5).padding(.vertical, 1)
+                    .background(VoiceColor.of(voice).opacity(picked ? 0.25 : hovering ? 0.14 : 0), in: Capsule())
+                    .padding(.horizontal, -5)
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering = $0 }
+            } else {
+                Text(paragraph.speaker)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(paragraph.isMe ? Color.cyan : VoiceColor.of(paragraph.voice))
+            }
             if paragraph.tail.isEmpty {
                 Text(paragraph.text)
                     .font(.system(size: 12.5))
@@ -1081,41 +1120,50 @@ private struct FlowLayout: Layout {
     }
 }
 
-/// Bottom of the card: who is speaking right now (named by the user), a field to name them,
-/// and one-click chips for names used earlier in this call.
+/// One colour per far-end voice, the same in the transcript and in the naming bar.
+enum VoiceColor {
+    static let palette: [Color] = [.orange, Color(red: 1, green: 0.45, blue: 0.7), .green, Color(red: 0.7, green: 0.55, blue: 1), .yellow, .mint]
+    static func of(_ voice: Int?) -> Color {
+        guard let voice else { return .orange }
+        return palette[(max(voice, 1) - 1) % palette.count]
+    }
+}
+
+/// Bottom of the card: the far-end voice speaking now (or the one picked in the transcript) as
+/// a coloured chip, and right next to it the field that names it. Names already given sit
+/// below as chips, one click gives the voice that name.
 private struct SpeakerTagBar: View {
     @ObservedObject var state: AppState
     @ObservedObject var model: FloatingBarModel
 
     var body: some View {
-        let active = state.activeSpeakerTag?.name
-        let others = state.usedSpeakerNames.filter { $0 != active }
+        let voice = model.targetVoice ?? state.currentVoice ?? 1
+        let label = state.label(forVoice: voice)
+        let named = state.voiceNames[voice] != nil
+        let talking = model.targetVoice == nil && state.currentVoice != nil && state.systemLevel > 0.08
+        let others = state.usedSpeakerNames.filter { $0 != state.voiceNames[voice] }
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 6) {
-                Image(systemName: "person.wave.2.fill")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.orange.opacity(0.9))
-                if let active {
-                    HStack(spacing: 4) {
-                        Text(active)
-                            .font(.system(size: 11.5, weight: .semibold))
-                            .foregroundStyle(.orange)
-                        Button { model.onEndTag?() } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 8.5, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .frame(width: 16, height: 16)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .help("\(active) stopped speaking")
-                    }
-                    .padding(.leading, 9).padding(.trailing, 3)
-                    .frame(height: 24)
-                    .background(.orange.opacity(0.18), in: Capsule())
+                HStack(spacing: 5) {
+                    Image(systemName: talking ? "waveform" : "person.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .symbolEffect(.variableColor.iterative, isActive: talking)
+                    Text(label)
+                        .font(.system(size: 11.5, weight: .semibold))
+                        .lineLimit(1)
                 }
+                .foregroundStyle(VoiceColor.of(voice))
+                .padding(.horizontal, 9)
+                .frame(height: 24)
+                .background(VoiceColor.of(voice).opacity(0.2), in: Capsule())
+                .overlay(Capsule().strokeBorder(VoiceColor.of(voice).opacity(model.targetVoice != nil ? 0.8 : 0)))
+                .fixedSize()
+                .animation(.easeOut(duration: 0.2), value: voice)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.35))
                 TagField(text: $model.tagDraft,
-                         placeholder: active == nil ? "Who's speaking? Type a name ⏎" : "Someone else? ⏎",
+                         placeholder: named ? "Rename ⏎" : "Name ⏎",
                          focused: model.tagFieldFocused,
                          onSubmit: { model.onTagSubmit?() },
                          onCancel: { model.onTagCancel?() },
@@ -1124,7 +1172,7 @@ private struct SpeakerTagBar: View {
                     .padding(.horizontal, 10)
                     .frame(height: 24)
                     .background(.white.opacity(model.tagFieldFocused ? 0.14 : 0.08), in: Capsule())
-                    .overlay(Capsule().stroke(.white.opacity(model.tagFieldFocused ? 0.35 : 0.12)))
+                    .overlay(Capsule().stroke(model.tagFieldFocused ? VoiceColor.of(voice).opacity(0.7) : .white.opacity(0.12)))
             }
             if !others.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -1139,7 +1187,7 @@ private struct SpeakerTagBar: View {
                                     .background(.white.opacity(0.1), in: Capsule())
                             }
                             .buttonStyle(.plain)
-                            .help("\(name) is speaking again")
+                            .help("This is \(name)")
                         }
                     }
                 }
@@ -1150,7 +1198,7 @@ private struct SpeakerTagBar: View {
     }
 }
 
-/// The "Who's speaking?" field: like TitleField, but capitalises the first letter and reports
+/// The voice name field: like TitleField, but capitalises the first letter and reports
 /// when it is clicked into (the panel only becomes key then).
 private struct TagField: NSViewRepresentable {
     @Binding var text: String

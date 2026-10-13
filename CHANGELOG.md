@@ -3,6 +3,12 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.6.3 (2026-10-13)
+- Fixed calls that recorded nothing from the far end when Transcriber started together with the call (FaceTime): the call's audio was never picked up, and the waveform stayed flat. System audio is now watched: when something plays but nothing arrives, the capture is rebuilt on its own within seconds.
+- New "Reconnect Audio" in the menu bar menu while recording: restarts microphone and system audio without stopping the recording.
+- The far-end voices are told apart live: the transcript card shows "Speaker 1", "Speaker 2", … in their own colours, also when two people talk in one breath, and a remembered voice is named right away.
+- Naming is per voice now: the card's bottom bar shows who is talking, type the name next to it and Enter. Every line of that voice gets the name, earlier ones too, and no one else does. Click a name in the transcript to name that voice instead.
+
 ## 0.6.2 (2026-10-13)
 - When auto-paste into your AI tool fails because the Accessibility permission is missing, the dialog now explains why (a switch that looks on can still belong to an older version) and opens the right settings with one click.
 
