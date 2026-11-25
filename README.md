@@ -176,7 +176,10 @@ date, length and whether its audio is still around.
   over by time, so speakers keep their names even if the numbering changes.
 - **Transcribe an audio file.** Drop a WAV, M4A, MP3, AIFF or video file onto the
   section (or pick one) and it becomes a new recording named after the file, with every
-  voice in it separated.
+  voice in it separated. Quicker: right-click the menu bar icon › *Transcribe Audio
+  File…* opens a small window to drop the file on; when it's done, copy the transcript
+  as plain text, text with timestamps or Markdown (the Markdown copy also carries the
+  `transcript.md` file, so Finder, Mail or Slack attach it).
 - **Unfinished recordings** (a crash, a forced quit) show up at the top with *Finalize*.
 - **Keep raw audio** (Settings › Output): delete when saved, 7 days (the default), 30
   days, or until you delete it. Expired audio is removed automatically, at launch and

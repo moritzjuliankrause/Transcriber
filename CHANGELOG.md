@@ -3,6 +3,9 @@
 Shown in the app under Settings → General → Show Changes. `scripts/release.sh` adds a
 section for every release; keep entries short, one bullet per user-visible change.
 
+## 0.6.4 (2026-11-25)
+- New "Transcribe Audio File…" in the menu bar menu (right-click the icon): drop an audio or video file (WAV, M4A, MP3, AIFF, MP4, MOV) into a small window, and copy the transcript as plain text, text with timestamps or Markdown. Videos are transcribed from their sound. The file is also saved under Recordings.
+
 ## 0.6.3 (2026-10-13)
 - Fixed calls that recorded nothing from the far end when Transcriber started together with the call (FaceTime): the call's audio was never picked up, and the waveform stayed flat. System audio is now watched: when something plays but nothing arrives, the capture is rebuilt on its own within seconds.
 - New "Reconnect Audio" in the menu bar menu while recording: restarts microphone and system audio without stopping the recording.

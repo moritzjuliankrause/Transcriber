@@ -47,7 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // A UI test instance (`--bar-test`) runs next to the installed app: no login item, model
         // loading, update check or recovery prompt for the other instance's open session.
-        let uiTest = CommandLine.arguments.contains("--bar-test") || CommandLine.arguments.contains("--card-test")
+        let uiTest = ["--bar-test", "--card-test", "--transcribe-window"].contains { CommandLine.arguments.contains($0) }
         if !uiTest {
             ConsentNotice.showIfNeeded(settings: settings)
             LaunchAtLogin.sync(enabled: settings.launchAtLogin)
@@ -82,6 +82,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let i = CommandLine.arguments.firstIndex(of: "--settings") {
             let name = i + 1 < CommandLine.arguments.count ? CommandLine.arguments[i + 1] : ""
             showSettings(section: SettingsView.Section.allCases.first { $0.rawValue.lowercased() == name.lowercased() })
+        }
+        // Development aid: `Transcriber --transcribe-window [file]` opens the "Transcribe Audio File"
+        // window, and transcribes the file right away when one is given.
+        if let i = CommandLine.arguments.firstIndex(of: "--transcribe-window") {
+            let file = i + 1 < CommandLine.arguments.count && !CommandLine.arguments[i + 1].hasPrefix("--")
+                ? URL(fileURLWithPath: CommandLine.arguments[i + 1]) : nil
+            TranscribeFileWindowController.shared.show(transcribing: file)
         }
         if CommandLine.arguments.contains("--changelog") { ChangelogWindowController.shared.show() }
         // Development aid: `Transcriber --start` begins recording right after launch.

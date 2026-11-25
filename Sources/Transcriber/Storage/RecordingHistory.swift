@@ -81,9 +81,11 @@ final class RecordingHistory: ObservableObject {
     }
 
     /// Imports an audio file as a new recording (its own folder, the audio kept as system.wav so
-    /// every voice in it is separated) and transcribes it.
-    func importAudio(_ url: URL, settings: AppSettings, root: URL? = nil) async {
-        guard importStatus == nil else { return }
+    /// every voice in it is separated) and transcribes it. `onStart` gets the new recording's
+    /// folder as soon as it exists (its progress is then in `busy`); returns the final folder.
+    @discardableResult
+    func importAudio(_ url: URL, settings: AppSettings, root: URL? = nil, onStart: ((URL) -> Void)? = nil) async -> URL? {
+        guard importStatus == nil else { return nil }
         importStatus = "Reading \(url.lastPathComponent)…"
         defer { importStatus = nil; reload(settings: settings) }
         do {
@@ -102,13 +104,16 @@ final class RecordingHistory: ObservableObject {
             reload(settings: settings)
             busy[store.directory] = "Transcribing…"
             importStatus = nil
+            onStart?(store.directory)
             defer { busy[store.directory] = nil }
             try await run(store: store, settings: settings, extraTags: [])
             let final = store.renameFolderIfNeeded()
             AppLog.write("Imported \(url.lastPathComponent) → \(final.lastPathComponent): \(store.entries.count) entries")
+            return final
         } catch {
             lastError = "Import failed: \(error.localizedDescription)"
             AppLog.write("Import of \(url.lastPathComponent) failed: \(error)")
+            return nil
         }
     }
 

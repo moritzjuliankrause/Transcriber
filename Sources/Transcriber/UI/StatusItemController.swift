@@ -100,6 +100,10 @@ final class StatusItemController {
             menu.addItem(reconnect)
         }
 
+        let transcribeFile = NSMenuItem(title: "Transcribe Audio File…", action: #selector(menuTranscribeFile), keyEquivalent: "")
+        transcribeFile.target = self
+        menu.addItem(transcribeFile)
+
         let recordings = NSMenuItem(title: "Recordings…", action: #selector(menuRecordings), keyEquivalent: "")
         recordings.target = self
         menu.addItem(recordings)
@@ -144,6 +148,7 @@ final class StatusItemController {
     @objc private func menuCheckUpdates() { Task { await UpdateChecker.shared.check(interactive: true) } }
     @objc private func menuSettings() { onOpenSettings() }
     @objc private func menuRecordings() { onOpenRecordings() }
+    @objc private func menuTranscribeFile() { TranscribeFileWindowController.shared.show() }
     @objc private func menuQuit() { onQuit() }
     @objc private func menuOpenFolder() {
         let url = AppSettings.shared.outputDirectoryURL

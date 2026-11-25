@@ -67,6 +67,36 @@ enum TranscriptExporter {
         return out
     }
 
+    /// Plain text for pasting: one paragraph per speaker turn (merged like the Markdown), with
+    /// `[mm:ss]` in front when `timestamps` is on. Speaker names only when more than one speaks.
+    static func plainText(meta: SessionMeta, entries: [TranscriptEntry], timestamps: Bool) -> String {
+        let names = meta.speakerNames
+        let showSpeakers = Set(entries.map(\.speaker)).count > 1
+        var paragraphs: [String] = []
+        var lastSpeaker: String?
+        var paragraph: [String] = []
+        var paragraphStart = 0.0
+        func flush() {
+            guard let speaker = lastSpeaker, !paragraph.isEmpty else { return }
+            var head = timestamps ? "[\(timestamp(paragraphStart))] " : ""
+            if showSpeakers { head += "\(display(speaker, names)): " }
+            paragraphs.append(head + paragraph.joined(separator: " "))
+            paragraph = []
+        }
+        for e in entries {
+            let text = e.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { continue }
+            if e.speaker != lastSpeaker || (e.start - paragraphStart) > 90 {
+                flush()
+                lastSpeaker = e.speaker
+                paragraphStart = e.start
+            }
+            paragraph.append(text)
+        }
+        flush()
+        return paragraphs.joined(separator: "\n\n") + (paragraphs.isEmpty ? "" : "\n")
+    }
+
     static func srt(entries: [TranscriptEntry], names: [String: String]? = nil) -> String {
         func stamp(_ t: Double) -> String {
             let ms = Int((t - t.rounded(.down)) * 1000)
